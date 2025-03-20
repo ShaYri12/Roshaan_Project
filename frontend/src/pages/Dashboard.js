@@ -6,6 +6,7 @@ import { REACT_APP_API_URL } from "../env";
 import Chart from "react-apexcharts";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import Sidebar from "../components/Sidebar";
 
 const DashboardPage = () => {
   const co2ReductionRef = useRef(null);
@@ -20,6 +21,7 @@ const DashboardPage = () => {
   const [companyCount, setCompanyCount] = useState(0);
   const [emissionsCount, setEmissionsCount] = useState(0);
   const [vehicle, setVehicle] = useState(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Define theme-responsive chart colors
   const getChartColors = () => {
@@ -814,339 +816,305 @@ const DashboardPage = () => {
 
   return (
     <div className={`dashboard-container bg-${theme}`}>
-      <nav
-        className={`navbar navbar-expand-lg navbar-${theme} bg-${theme} mb-4`}
-      >
-        <div className="navbar-inner d-flex justify-content-between align-items-center flex-wrap gap-2 px-3">
-          <div className="">
-            <span className="navbar-brand d-flex align-items-center">
-              <i className="fas fa-hand-peace me-2"></i>
-              <div>
-                <span
-                  className="d-block"
-                  style={{ fontSize: "1.2rem", fontWeight: "bold" }}
-                >
-                  Welcome,{" "}
-                  <span className="text-primary">{userData?.username}</span>
-                </span>
-                <span
-                  className="d-block"
-                  style={{ fontSize: "0.9rem", fontStyle: "italic" }}
-                >
-                  It's a great day to be productive! ✨
-                </span>
-              </div>
-            </span>
-          </div>
-          <div className="d-flex">
-            {/* Theme toggle button with icons */}
-            <button
-              className={`btn ${
-                theme === "light" ? "btn-outline-dark" : "btn-outline-light"
-              } me-2`}
-              onClick={toggleTheme}
-            >
-              {theme === "light" ? (
-                <i className="fas fa-moon"></i> // Moon icon for Dark Mode
-              ) : (
-                <i className="fas fa-sun"></i> // Sun icon for Light Mode
-              )}
-            </button>
-            <button className="btn btn-outline-danger" onClick={handleLogout}>
-              Logout
-            </button>
-          </div>
-        </div>
-      </nav>
+      <Sidebar
+        userData={userData}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        handleLogout={handleLogout}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+      />
 
-      <div className="container text-center">
-        {/* Dashboard stats */}
-        <div className="row g-4">
-          {/* Employees Card */}
-          <div className="col-md-4">
-            <div
-              className={`card shadow-lg h-100 bg-${theme} text-${
-                theme === "light" ? "dark" : "light"
-              } rounded-3`}
-            >
-              <div className="card-header d-flex align-items-center">
-                <i className="fas fa-users fa-2x me-3"></i>
-                <h4 className="card-title mb-0">Employees</h4>
-              </div>
-              <div className="card-body text-center">
-                <div className="display-4 font-weight-bold mt-2">
-                  {employeeCount}
+      <div className={`main-content ${!isSidebarOpen ? "sidebar-closed" : ""}`}>
+        <div className="container text-center">
+          {/* Dashboard stats */}
+          <div className="row g-4">
+            {/* Employees Card */}
+            <div className="col-xl-4 col-md-6">
+              <div
+                className={`card shadow-lg h-100 bg-${theme} text-${
+                  theme === "light" ? "dark" : "light"
+                } rounded-3`}
+              >
+                <div className="card-header d-flex align-items-center">
+                  <i className="fas fa-users fa-2x me-3"></i>
+                  <h4 className="card-title mb-0">Employees</h4>
                 </div>
-                <p className="card-text mt-2">
-                  <span className="text-muted">Employees</span>
-                </p>
-              </div>
-              <div className="card-footer text-center">
-                <button
-                  className="btn btn-info w-100 shadow-sm"
-                  onClick={() => navigate("/employees")}
-                >
-                  Manage Employees
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Companies Card */}
-          <div className="col-md-4">
-            <div
-              className={`card shadow-lg h-100 bg-${theme} text-${
-                theme === "light" ? "dark" : "light"
-              } rounded-3`}
-            >
-              <div className="card-header d-flex align-items-center">
-                <i className="fas fa-building fa-2x me-3"></i>
-                <h4 className="card-title mb-0">Companies</h4>
-              </div>
-              <div className="card-body text-center">
-                <div className="display-4 font-weight-bold mt-2">
-                  {companyCount}
+                <div className="card-body text-center">
+                  <div className="display-4 font-weight-bold mt-2">
+                    {employeeCount}
+                  </div>
+                  <p className="card-text mt-2">
+                    <span className="text-muted">Employees</span>
+                  </p>
                 </div>
-                <p className="card-text mt-2">
-                  <span className="text-muted">Companies</span>
-                </p>
-              </div>
-              <div className="card-footer text-center">
-                <button
-                  className="btn btn-info w-100"
-                  onClick={() => navigate("/companies")}
-                >
-                  Manage Companies
-                </button>
-              </div>
-            </div>
-          </div>
-          {/* Regular User Information 
-
-           <div className="col-md-4">
-            <div
-              className={`card shadow-lg h-100 bg-${theme} text-${
-                theme === "light" ? "dark" : "light"
-              } rounded-3`}
-            >
-              <div className="card-header d-flex align-items-center">
-                <i className="fas fa-users fa-2x me-3"></i>
-                <h4 className="card-title mb-0">User</h4>
-              </div>
-              <div className="card-body text-center">
-                <p className="card-text mt-2">
-                  <span className="text-muted">User Information</span>
-                </p>
-              </div>
-              <div className="card-footer text-center">
-                <button
-                  className="btn btn-info w-100"
-                  onClick={() => navigate("/user-dashboard")}
-                >
-                  Manage Regular User
-                </button>
-              </div>
-            </div>
-          </div> */}
-
-          {/* Emission Records Card */}
-          <div className="col-md-4">
-            <div
-              className={`card shadow-lg h-100 bg-${theme} text-${
-                theme === "light" ? "dark" : "light"
-              } rounded-3`}
-            >
-              <div className="card-header d-flex align-items-center">
-                <i className="fas fa-chart-line fa-2x me-3"></i>
-                <h4 className="card-title mb-0">Emission Records</h4>
-              </div>
-              <div className="card-body text-center">
-                <div className="display-4 font-weight-bold mt-2">
-                  {emissionsCount}
+                <div className="card-footer text-center">
+                  <button
+                    className="btn btn-info w-100 shadow-sm"
+                    onClick={() => navigate("/employees")}
+                  >
+                    Manage Employees
+                  </button>
                 </div>
-                <p className="card-text mt-2">
-                  <span className="text-muted">Emissions</span>
-                </p>
-              </div>
-              <div className="card-footer text-center">
-                <button
-                  className="btn btn-info w-100"
-                  onClick={() => navigate("/emissions")}
-                >
-                  View Emission Records
-                </button>
               </div>
             </div>
-          </div>
-          {/* Emission Type Card */}
-          <div className="col-md-4">
-            <div
-              className={`card shadow-lg h-100 bg-${theme} text-${
-                theme === "light" ? "dark" : "light"
-              } rounded-3`}
-            >
-              <div className="card-header d-flex align-items-center">
-                <i className="fas fa-chart-line fa-2x me-3"></i>
-                <h4 className="card-title mb-0">Emission Type</h4>
-              </div>
-              <div className="card-body text-center">
-                <div className="display-4 font-weight-bold mt-2">
-                  {emissionsCount}
+
+            {/* Companies Card */}
+            <div className="col-xl-4 col-md-6">
+              <div
+                className={`card shadow-lg h-100 bg-${theme} text-${
+                  theme === "light" ? "dark" : "light"
+                } rounded-3`}
+              >
+                <div className="card-header d-flex align-items-center">
+                  <i className="fas fa-building fa-2x me-3"></i>
+                  <h4 className="card-title mb-0">Companies</h4>
                 </div>
-                <p className="card-text mt-2">
-                  <span className="text-muted">Emissions</span>
-                </p>
+                <div className="card-body text-center">
+                  <div className="display-4 font-weight-bold mt-2">
+                    {companyCount}
+                  </div>
+                  <p className="card-text mt-2">
+                    <span className="text-muted">Companies</span>
+                  </p>
+                </div>
+                <div className="card-footer text-center">
+                  <button
+                    className="btn btn-info w-100"
+                    onClick={() => navigate("/companies")}
+                  >
+                    Manage Companies
+                  </button>
+                </div>
               </div>
-              <div className="card-footer text-center">
-                <button
-                  className="btn btn-info w-100"
-                  onClick={() => navigate("/emission-types")}
-                >
-                  View Emission Type
-                </button>
+            </div>
+            {/* Regular User Information 
+
+             <div className="col-xl-4 col-md-6">
+              <div
+                className={`card shadow-lg h-100 bg-${theme} text-${
+                  theme === "light" ? "dark" : "light"
+                } rounded-3`}
+              >
+                <div className="card-header d-flex align-items-center">
+                  <i className="fas fa-users fa-2x me-3"></i>
+                  <h4 className="card-title mb-0">User</h4>
+                </div>
+                <div className="card-body text-center">
+                  <p className="card-text mt-2">
+                    <span className="text-muted">User Information</span>
+                  </p>
+                </div>
+                <div className="card-footer text-center">
+                  <button
+                    className="btn btn-info w-100"
+                    onClick={() => navigate("/user-dashboard")}
+                  >
+                    Manage Regular User
+                  </button>
+                </div>
+              </div>
+            </div> */}
+
+            {/* Emission Records Card */}
+            <div className="col-xl-4 col-md-6">
+              <div
+                className={`card shadow-lg h-100 bg-${theme} text-${
+                  theme === "light" ? "dark" : "light"
+                } rounded-3`}
+              >
+                <div className="card-header d-flex align-items-center">
+                  <i className="fas fa-chart-line fa-2x me-3"></i>
+                  <h4 className="card-title mb-0">Emission Records</h4>
+                </div>
+                <div className="card-body text-center">
+                  <div className="display-4 font-weight-bold mt-2">
+                    {emissionsCount}
+                  </div>
+                  <p className="card-text mt-2">
+                    <span className="text-muted">Emissions</span>
+                  </p>
+                </div>
+                <div className="card-footer text-center">
+                  <button
+                    className="btn btn-info w-100"
+                    onClick={() => navigate("/emissions")}
+                  >
+                    View Emission Records
+                  </button>
+                </div>
+              </div>
+            </div>
+            {/* Emission Type Card */}
+            <div className="col-xl-4 col-md-6">
+              <div
+                className={`card shadow-lg h-100 bg-${theme} text-${
+                  theme === "light" ? "dark" : "light"
+                } rounded-3`}
+              >
+                <div className="card-header d-flex align-items-center">
+                  <i className="fas fa-chart-line fa-2x me-3"></i>
+                  <h4 className="card-title mb-0">Emission Type</h4>
+                </div>
+                <div className="card-body text-center">
+                  <div className="display-4 font-weight-bold mt-2">
+                    {emissionsCount}
+                  </div>
+                  <p className="card-text mt-2">
+                    <span className="text-muted">Emissions</span>
+                  </p>
+                </div>
+                <div className="card-footer text-center">
+                  <button
+                    className="btn btn-info w-100"
+                    onClick={() => navigate("/emission-types")}
+                  >
+                    View Emission Type
+                  </button>
+                </div>
+              </div>
+            </div>
+            {/* Vehicle Card  */}
+            <div className="col-xl-4 col-md-6">
+              <div
+                className={`card shadow-lg h-100 bg-${theme} text-${
+                  theme === "light" ? "dark" : "light"
+                } rounded-3`}
+              >
+                <div className="card-header d-flex align-items-center">
+                  <i className="fas fa-car fa-2x me-3"></i>
+                  <h4 className="card-title mb-0">Vehicles</h4>
+                </div>
+                <div className="card-body text-center">
+                  <div className="display-4 font-weight-bold mt-2">
+                    {vehicle}
+                  </div>
+                  <p className="card-text mt-2">
+                    <span className="text-muted">Total Vehicles</span>
+                  </p>
+                </div>
+                <div className="card-footer text-center">
+                  <button
+                    className="btn btn-info w-100 shadow-sm"
+                    onClick={() => navigate("/vehicles")}
+                  >
+                    Manage Vehicles
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-          {/* Vehicle Card  */}
-          <div className="col-md-4">
-            <div
-              className={`card shadow-lg h-100 bg-${theme} text-${
-                theme === "light" ? "dark" : "light"
-              } rounded-3`}
-            >
-              <div className="card-header d-flex align-items-center">
-                <i className="fas fa-car fa-2x me-3"></i>
-                <h4 className="card-title mb-0">Vehicles</h4>
-              </div>
-              <div className="card-body text-center">
-                <div className="display-4 font-weight-bold mt-2">{vehicle}</div>
-                <p className="card-text mt-2">
-                  <span className="text-muted">Total Vehicles</span>
-                </p>
-              </div>
-              <div className="card-footer text-center">
-                <button
-                  className="btn btn-info w-100 shadow-sm"
-                  onClick={() => navigate("/vehicles")}
-                >
-                  Manage Vehicles
-                </button>
-              </div>
+
+          {/* graph work */}
+          <div className="row">
+            <div className="col-12 mt-3">
+              <button
+                onClick={downloadAllPDFs}
+                className="btn btn-info float-end mx-3 mt-3"
+              >
+                <i className="fas fa-file-pdf"></i> Download All Graphs
+              </button>
             </div>
           </div>
-        </div>
-
-        {/* graph work */}
-
-        <div className="row">
-          <div className="col-12 mt-3">
-            <button
-              onClick={downloadAllPDFs}
-              className="btn btn-info float-end mx-3 mt-3"
-            >
-              <i className="fas fa-file-pdf"></i> Download All Graphs
-            </button>
-          </div>
-        </div>
-        <div className="row mt-3 pb-5 row-gap-3">
-          <div className="col-md-6">
-            <div
-              className={`card shadow-lg h-100 bg-${theme} text-${
-                theme === "light" ? "dark" : "light"
-              } rounded-3`}
-            >
-              <div className="card-body text-center">
-                <div className="report-chart">
-                  {/* <button onClick={() => downloadPDF(co2ReductionRef, "CO2 Reduction")} className="graph-pdf-btn">
-                    <i className="fas fa-file-pdf"></i>
-                  </button> */}
-                  <div className="" ref={co2ReductionRef}>
-                    <Chart
-                      className="mt-6 -mb-6"
-                      options={co2Reduction}
-                      series={co2Reduction.series}
-                      type="line"
-                      height={350}
-                    />
+          <div className="row mt-3 pb-5 row-gap-3">
+            <div className="col-md-6">
+              <div
+                className={`card shadow-lg h-100 bg-${theme} text-${
+                  theme === "light" ? "dark" : "light"
+                } rounded-3`}
+              >
+                <div className="card-body text-center">
+                  <div className="report-chart">
+                    {/* <button onClick={() => downloadPDF(co2ReductionRef, "CO2 Reduction")} className="graph-pdf-btn">
+                      <i className="fas fa-file-pdf"></i>
+                    </button> */}
+                    <div className="" ref={co2ReductionRef}>
+                      <Chart
+                        className="mt-6 -mb-6"
+                        options={co2Reduction}
+                        series={co2Reduction.series}
+                        type="line"
+                        height={350}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div className="col-md-6">
-            <div
-              className={`card shadow-lg h-100 bg-${theme} text-${
-                theme === "light" ? "dark" : "light"
-              } rounded-3`}
-            >
-              <div className="card-body text-center">
-                <div className="report-chart">
-                  {/* <button onClick={() => downloadPDF(co2EmissionsByDateRef, "CO2 Emissions By Date")} className="graph-pdf-btn">
-                    <i className="fas fa-file-pdf"></i>
-                  </button> */}
-                  <div className="" ref={co2EmissionsByDateRef}>
-                    <Chart
-                      className="mt-6 -mb-6"
-                      options={co2EmissionsByDate}
-                      series={co2EmissionsByDateSeries}
-                      type="bar"
-                      height={350}
-                    />
+            <div className="col-md-6">
+              <div
+                className={`card shadow-lg h-100 bg-${theme} text-${
+                  theme === "light" ? "dark" : "light"
+                } rounded-3`}
+              >
+                <div className="card-body text-center">
+                  <div className="report-chart">
+                    {/* <button onClick={() => downloadPDF(co2EmissionsByDateRef, "CO2 Emissions By Date")} className="graph-pdf-btn">
+                      <i className="fas fa-file-pdf"></i>
+                    </button> */}
+                    <div className="" ref={co2EmissionsByDateRef}>
+                      <Chart
+                        className="mt-6 -mb-6"
+                        options={co2EmissionsByDate}
+                        series={co2EmissionsByDateSeries}
+                        type="bar"
+                        height={350}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div className="col-md-6 mt-2">
-            <div
-              className={`card shadow-lg h-100 bg-${theme} text-${
-                theme === "light" ? "dark" : "light"
-              } rounded-3`}
-            >
-              <div className="card-body text-center">
-                <div className="report-chart">
-                  {/* <button onClick={() => downloadPDF(co2EmissionsByCategoryRef, "CO2 Emissions By Category")} className="graph-pdf-btn">
-                    <i className="fas fa-file-pdf"></i>
-                  </button> */}
-                  <div className="" ref={co2EmissionsByCategoryRef}>
-                    <Chart
-                      className="mt-6 -mb-6"
-                      options={co2EmissionsByCategory}
-                      series={co2EmissionsByCategorySeries}
-                      type="pie"
-                      height={350}
-                    />
+            <div className="col-md-6 mt-2">
+              <div
+                className={`card shadow-lg h-100 bg-${theme} text-${
+                  theme === "light" ? "dark" : "light"
+                } rounded-3`}
+              >
+                <div className="card-body text-center">
+                  <div className="report-chart">
+                    {/* <button onClick={() => downloadPDF(co2EmissionsByCategoryRef, "CO2 Emissions By Category")} className="graph-pdf-btn">
+                      <i className="fas fa-file-pdf"></i>
+                    </button> */}
+                    <div className="" ref={co2EmissionsByCategoryRef}>
+                      <Chart
+                        className="mt-6 -mb-6"
+                        options={co2EmissionsByCategory}
+                        series={co2EmissionsByCategorySeries}
+                        type="pie"
+                        height={350}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="col-md-6 mt-2">
-            <div
-              className={`card shadow-lg h-100 bg-${theme} text-${
-                theme === "light" ? "dark" : "light"
-              } rounded-3`}
-            >
-              <div className="card-body text-center">
-                <div className="report-chart">
-                  {/* <button onClick={() => downloadPDF(co2EmissionsTrendRef, "CO2 Emissions Trend")} className="graph-pdf-btn">
-                    <i className="fas fa-file-pdf"></i>
-                  </button> */}
-                  <div className="" ref={co2EmissionsTrendRef}>
-                    <Chart
-                      options={co2EmissionsTrend}
-                      series={co2EmissionsTrend.series}
-                      type="line"
-                      height={350}
-                    />
+            <div className="col-md-6 mt-2">
+              <div
+                className={`card shadow-lg h-100 bg-${theme} text-${
+                  theme === "light" ? "dark" : "light"
+                } rounded-3`}
+              >
+                <div className="card-body text-center">
+                  <div className="report-chart">
+                    {/* <button onClick={() => downloadPDF(co2EmissionsTrendRef, "CO2 Emissions Trend")} className="graph-pdf-btn">
+                      <i className="fas fa-file-pdf"></i>
+                    </button> */}
+                    <div className="" ref={co2EmissionsTrendRef}>
+                      <Chart
+                        options={co2EmissionsTrend}
+                        series={co2EmissionsTrend.series}
+                        type="line"
+                        height={350}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        {/* end graph work */}
       </div>
     </div>
   );

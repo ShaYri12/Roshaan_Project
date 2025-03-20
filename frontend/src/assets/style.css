@@ -603,7 +603,7 @@ a:hover {
 }
 
 .dark-theme .btn-close {
-  filter: invert(1) grayscale(100%) brightness(200%);
+  filter: invert(1) grayscale(90%) brightness(100%);
 }
 
 .list-group-item {
@@ -995,4 +995,233 @@ h4 {
 /* Fix for ApexCharts dropdown menu positioning */
 .apexcharts-menu {
   z-index: 1050 !important;
+}
+
+/* Sidebar Styles */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  background-color: #272b30;
+  color: #e9ecef;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #343a40;
+}
+
+.sidebar.open {
+  width: 250px;
+}
+
+.sidebar.closed {
+  width: 70px;
+}
+
+.sidebar-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #343a40;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 0;
+}
+
+.sidebar-footer {
+  padding: 1rem;
+  border-top: 1px solid #343a40;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 0rem;
+  color: #e9ecef;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  gap: 1rem;
+}
+
+.nav-item:hover {
+  background-color: #343a40;
+  color: #0d6efd;
+}
+
+.nav-icon {
+  font-size: 1.2rem;
+  min-width: 1.2rem;
+}
+
+.nav-text {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Adjust main content to account for sidebar */
+.main-content {
+  margin-left: 250px;
+  transition: margin-left 0.3s ease;
+  padding: 1rem;
+}
+
+.main-content.sidebar-closed {
+  margin-left: 70px;
+}
+
+/* Light theme sidebar */
+.light-theme .sidebar {
+  background-color: #ffffff;
+  color: #212529;
+  border-right: 1px solid #dee2e6;
+}
+
+.light-theme .sidebar-header,
+.light-theme .sidebar-footer {
+  border-color: #dee2e6;
+}
+
+.light-theme .nav-item {
+  color: #212529;
+}
+
+.light-theme .nav-item:hover {
+  background-color: #f8f9fa;
+  color: #0d6efd;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .main-content.sidebar-closed {
+    margin-left: 0;
+  }
+}
+
+/* Sidebar toggle button */
+.sidebar-toggle {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  color: #e9ecef;
+  padding: 0.5rem;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.sidebar-toggled {
+  right: 0px;
+  left: 15px;
+}
+
+.sidebar-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #0d6efd;
+}
+
+.light-theme .sidebar-toggle {
+  color: #212529;
+}
+
+.light-theme .sidebar-toggle:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Mobile sidebar toggle button */
+.mobile-sidebar-toggle {
+  display: none;
+  position: fixed;
+  left: 10px;
+  top: 10px;
+  z-index: 1001;
+  background-color: #272b30;
+  color: #e9ecef;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  padding: 0.5rem;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.light-theme .mobile-sidebar-toggle {
+  background-color: #ffffff;
+  color: #212529;
+}
+
+.mobile-sidebar-toggle:hover {
+  background-color: #343a40;
+  color: #0d6efd;
+}
+
+.light-theme .mobile-sidebar-toggle:hover {
+  background-color: #f8f9fa;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .mobile-sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .main-content.sidebar-closed {
+    margin-left: 0;
+  }
+}
+
+/* Adjust welcome section for toggle button */
+.welcome-section {
+  padding-right: 2.5rem;
+  position: relative;
+}
+
+/* Ensure sidebar header has proper positioning */
+.sidebar-header {
+  position: relative;
+  padding: 1.5rem;
+  border-bottom: 1px solid #343a40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
