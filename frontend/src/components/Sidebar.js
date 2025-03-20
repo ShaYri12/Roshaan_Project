@@ -43,7 +43,11 @@ const Sidebar = ({
           >
             <FaBars />
           </button>
-          <div className={`welcome-section ${isSidebarOpen ? "" : "d-none"}`}>
+          <div
+            className={`welcome-section mt-md-0 mt-4 ${
+              isSidebarOpen ? "" : "d-none"
+            }`}
+          >
             <span
               className="d-block"
               style={{ fontSize: "1.2rem", fontWeight: "bold" }}
