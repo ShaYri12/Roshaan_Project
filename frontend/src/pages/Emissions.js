@@ -369,12 +369,12 @@ const EmissionPage = () => {
                   <tr key={record._id}>
                     <td>{index + 1}</td>
                     <td className="f10">
-                      <div class="scrollable-address">
+                      <div className="scrollable-address">
                         {record.startLocation.address}
                       </div>
                     </td>
                     <td className="f10">
-                      <div class="scrollable-address">
+                      <div className="scrollable-address">
                         {record.endLocation.address}
                       </div>
                     </td>
@@ -516,6 +516,7 @@ const EmissionPage = () => {
                   <DynamicSelect
                     label="Employee"
                     id="employee"
+                    className="form-select"
                     modalData={emissionRecord} // or selectedRecord for the edit modal
                     stateData={employeesState} // Array of employee objects
                     handleChange={(selected) =>
@@ -536,7 +537,7 @@ const EmissionPage = () => {
                 <Form.Group controlId="transportation" className="mb-3">
                   <DynamicSelect
                     label="Transportation"
-                    id="car"
+                    id="transportation"
                     modalData={emissionRecord} // or selectedRecord for the edit modal
                     stateData={carsState} // Array of car objects
                     handleChange={(selected) =>
@@ -683,7 +684,7 @@ const EmissionPage = () => {
                 <Form.Group controlId="transportation" className="mb-3">
                   <DynamicSelect
                     label="Transportation"
-                    id="car"
+                    id="transportation"
                     modalData={emissionRecord} // or selectedRecord for the edit modal
                     stateData={carsState} // Array of car objects
                     handleChange={(selected) =>

@@ -25,17 +25,35 @@ function calculateCO2(distance, transportation) {
   // Example CO2 emissions per km for different transportation types
   const co2EmissionsPerKm = {
     car: 0.2, // kg CO2 per km for a car
+    bike: 0.05, // kg CO2 per km for a bike
+    plane: 0.5, // kg CO2 per km for a plane
     bus: 0.1, // kg CO2 per km for a bus
     train: 0.05, // kg CO2 per km for a train
   };
-  return distance * (co2EmissionsPerKm[transportation] || 0);
+
+  // If transportation is a string, use it directly
+  if (typeof transportation === "string") {
+    // Check if it's one of our known types
+    if (co2EmissionsPerKm[transportation]) {
+      return distance * co2EmissionsPerKm[transportation];
+    }
+  }
+
+  // Default value if we can't determine the type
+  return distance * 0.2; // Default to car emissions
 }
 
 // Controller for creating a new emission record
 const createEmissionRecord = async (req, res) => {
   try {
-    const { date, startLocation, endLocation, employee, transportation } =
-      req.body;
+    const {
+      date,
+      startLocation,
+      endLocation,
+      employee,
+      transportation,
+      co2Used: providedCo2Used,
+    } = req.body;
 
     // Validate startLocation and endLocation
     if (
@@ -52,15 +70,18 @@ const createEmissionRecord = async (req, res) => {
     }
 
     // Calculate distance between startLocation and endLocation
-    const distance = await calculateDistance(
+    const distance = calculateDistance(
       startLocation.lat,
       startLocation.lon,
       endLocation.lat,
       endLocation.lon
     );
 
-    // Calculate CO2 emission
-    const co2Used = calculateCO2(distance, transportation);
+    // Use provided CO2 value if available, otherwise calculate
+    const co2Used =
+      providedCo2Used !== undefined
+        ? parseFloat(providedCo2Used)
+        : calculateCO2(distance, transportation);
 
     // Create the emission record
     const emissionRecord = new EmissionRecord({
@@ -78,7 +99,7 @@ const createEmissionRecord = async (req, res) => {
       employee,
       transportation,
       distance,
-      co2Used: parseFloat(co2Used),
+      co2Used: co2Used,
     });
 
     // Save the record to the database
@@ -136,9 +157,9 @@ const getEmissionRecords = async (req, res) => {
       }
     }
 
-    const records = await EmissionRecord.find(query).populate(
-      "employee transportation"
-    );
+    const records = await EmissionRecord.find(query)
+      .populate("employee")
+      .populate("transportation");
 
     res.status(200).json(records);
   } catch (error) {
@@ -148,12 +169,17 @@ const getEmissionRecords = async (req, res) => {
 };
 
 // Controller for updating an emission record
-// Controller for updating an emission record
 const updateEmissionRecord = async (req, res) => {
   try {
     const { id } = req.params; // Get the record ID from the request params
-    const { date, startLocation, endLocation, employee, transportation } =
-      req.body;
+    const {
+      date,
+      startLocation,
+      endLocation,
+      employee,
+      transportation,
+      co2Used: providedCo2Used,
+    } = req.body;
 
     // Validate startLocation and endLocation
     if (
@@ -195,27 +221,37 @@ const updateEmissionRecord = async (req, res) => {
     if (transportation) emissionRecord.transportation = transportation;
 
     // Calculate the updated distance between startLocation and endLocation
-    const distance = await calculateDistance(
+    const distance = calculateDistance(
       emissionRecord.startLocation.lat,
       emissionRecord.startLocation.lon,
       emissionRecord.endLocation.lat,
       emissionRecord.endLocation.lon
     );
 
-    // Calculate the updated CO2 emission
-    const co2Used = calculateCO2(distance, emissionRecord.transportation);
+    // Use provided CO2 value if available, otherwise calculate
+    if (providedCo2Used !== undefined) {
+      emissionRecord.co2Used = parseFloat(providedCo2Used);
+    } else {
+      // Only recalculate if not provided
+      const calculatedCo2 = calculateCO2(distance, transportation);
+      emissionRecord.co2Used = parseFloat(calculatedCo2);
+    }
 
-    // Update the record with new distance and CO2 emissions
+    // Update the distance
     emissionRecord.distance = distance;
-    emissionRecord.co2Used = parseFloat(co2Used);
 
     // Save the updated record to the database
     await emissionRecord.save();
 
+    // Fetch the updated record with populated fields
+    const updatedRecord = await EmissionRecord.findById(id)
+      .populate("employee")
+      .populate("transportation");
+
     // Respond with success
     res.status(200).json({
       message: "Emission record updated successfully",
-      emissionRecord,
+      emissionRecord: updatedRecord,
     });
   } catch (error) {
     console.error(error);

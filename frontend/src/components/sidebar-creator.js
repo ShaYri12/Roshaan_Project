@@ -1,15 +1,13 @@
-import React, { useState, useEffect } from "react";
+const fs = require("fs");
+const path = require("path");
+
+const sidebarContent = `import React, { useState, useEffect } from "react";
 import { CiLogout } from "react-icons/ci";
 import {
   FaBars,
   FaShippingFast,
   FaCog,
   FaBuilding,
-  FaCarAlt,
-  FaChartLine,
-  FaGasPump,
-  FaLeaf,
-  FaCarSide,
 } from "react-icons/fa";
 import { MdTravelExplore } from "react-icons/md";
 import { BsCloudHaze2Fill } from "react-icons/bs";
@@ -25,13 +23,13 @@ const Sidebar = ({
 }) => {
   const location = useLocation();
   const [expandedItem, setExpandedItem] = useState(null);
-
+  
   // Determine if user is admin
   const isAdmin = userData?.role === "admin";
-
+  
   // Check if a path is active
   const isActive = (path) => location.pathname === path;
-
+  
   // Toggle expanded state for menu items
   const toggleExpand = (itemName) => {
     if (expandedItem === itemName) {
@@ -64,20 +62,20 @@ const Sidebar = ({
         <FaBars />
       </button>
 
-      <div className={`sidebar ${isSidebarOpen ? "open" : "closed"}`}>
+      <div className={\`sidebar \${isSidebarOpen ? "open" : "closed"}\`}>
         <div className="sidebar-header">
           <button
-            className={`btn btn-link sidebar-toggle d-none d-md-flex align-items-center justify-content-center ${
+            className={\`btn btn-link sidebar-toggle d-none d-md-flex align-items-center justify-content-center \${
               isSidebarOpen ? "" : "sidebar-toggled"
-            }`}
+            }\`}
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           >
             <FaBars />
           </button>
           <div
-            className={`welcome-section mt-md-0 mt-4 ${
+            className={\`welcome-section mt-md-0 mt-4 \${
               isSidebarOpen ? "" : "d-none"
-            }`}
+            }\`}
           >
             <span
               className="d-block"
@@ -102,34 +100,27 @@ const Sidebar = ({
             {isAdmin ? (
               <>
                 {/* ADMIN MENU - 5 buttons */}
-
+                
                 {/* 1. Travel & Commute */}
                 <div className="nav-group mb-1">
-                  <div
-                    className={`nav-item px-3 py-2 d-flex align-items-center justify-content-between ${
+                  <div 
+                    className={\`nav-item px-3 py-2 d-flex align-items-center justify-content-between \${
                       expandedItem === "travel" ? "active" : ""
-                    }`}
+                    }\`}
                     onClick={() => toggleExpand("travel")}
-                    style={{ cursor: "pointer" }}
+                    style={{cursor: "pointer"}}
                   >
-                    <div
-                      className={`d-flex align-items-center ${
+                    <div className={`d-flex align-items-center ${
                         !isSidebarOpen && "justify-content-center w-100"
                       }`}
                     >
-                      <span className="nav-icon me-0">
-                        <MdTravelExplore size={22} />
-                      </span>
+                      <span className="nav-icon me-0"><MdTravelExplore size={22} /></span>
                       {isSidebarOpen && (
                         <span className="nav-text ms-2">Travel & Commute</span>
                       )}
                     </div>
                     {isSidebarOpen && (
-                      <i
-                        className={`fas fa-chevron-${
-                          expandedItem === "travel" ? "up" : "down"
-                        }`}
-                      ></i>
+                      <i className={\`fas fa-chevron-\${expandedItem === "travel" ? 'up' : 'down'}\`}></i>
                     )}
                   </div>
 
@@ -137,53 +128,44 @@ const Sidebar = ({
                     <div className="submenu">
                       <Link
                         to="/transport-emissions"
-                        className={`submenu-item px-3 py-2 d-block ${
+                        className={\`submenu-item px-3 py-2 d-block \${
                           isActive("/transport-emissions") ? "active" : ""
-                        }`}
+                        }\`}
                       >
                         Transport Emissions
                       </Link>
                       <Link
                         to="/vehicles"
-                        className={`submenu-item px-3 py-2 d-block ${
+                        className={\`submenu-item px-3 py-2 d-block \${
                           isActive("/vehicles") ? "active" : ""
-                        }`}
+                        }\`}
                       >
                         Vehicles
                       </Link>
                     </div>
                   )}
                 </div>
-
+                
                 {/* 2. Greenhouse & Emissions */}
                 <div className="nav-group mb-1">
-                  <div
-                    className={`nav-item px-3 py-2 d-flex align-items-center justify-content-between ${
+                  <div 
+                    className={\`nav-item px-3 py-2 d-flex align-items-center justify-content-between \${
                       expandedItem === "emissions" ? "active" : ""
-                    }`}
+                    }\`}
                     onClick={() => toggleExpand("emissions")}
-                    style={{ cursor: "pointer" }}
+                    style={{cursor: "pointer"}}
                   >
-                    <div
-                      className={`d-flex align-items-center ${
+                    <div className={`d-flex align-items-center ${
                         !isSidebarOpen && "justify-content-center w-100"
                       }`}
                     >
-                      <span className="nav-icon me-0">
-                        <BsCloudHaze2Fill size={22} />
-                      </span>
+                      <span className="nav-icon me-0"><BsCloudHaze2Fill size={22} /></span>
                       {isSidebarOpen && (
-                        <span className="nav-text ms-2">
-                          Greenhouse & Emissions
-                        </span>
+                        <span className="nav-text ms-2">Greenhouse & Emissions</span>
                       )}
                     </div>
                     {isSidebarOpen && (
-                      <i
-                        className={`fas fa-chevron-${
-                          expandedItem === "emissions" ? "up" : "down"
-                        }`}
-                      ></i>
+                      <i className={\`fas fa-chevron-\${expandedItem === "emissions" ? 'up' : 'down'}\`}></i>
                     )}
                   </div>
 
@@ -191,59 +173,52 @@ const Sidebar = ({
                     <div className="submenu">
                       <Link
                         to="/emissions"
-                        className={`submenu-item px-3 py-2 d-block ${
+                        className={\`submenu-item px-3 py-2 d-block \${
                           isActive("/emissions") ? "active" : ""
-                        }`}
+                        }\`}
                       >
                         Emissions
                       </Link>
                       <Link
                         to="/emission-types"
-                        className={`submenu-item px-3 py-2 d-block ${
+                        className={\`submenu-item px-3 py-2 d-block \${
                           isActive("/emission-types") ? "active" : ""
-                        }`}
+                        }\`}
                       >
                         Emission Types
                       </Link>
                       <Link
                         to="/energy-emissions"
-                        className={`submenu-item px-3 py-2 d-block ${
+                        className={\`submenu-item px-3 py-2 d-block \${
                           isActive("/energy-emissions") ? "active" : ""
-                        }`}
+                        }\`}
                       >
                         Energy Emissions
                       </Link>
                     </div>
                   )}
                 </div>
-
+                
                 {/* 3. Purchased Goods */}
                 <div className="nav-group mb-1">
-                  <div
-                    className={`nav-item px-3 py-2 d-flex align-items-center justify-content-between ${
+                  <div 
+                    className={\`nav-item px-3 py-2 d-flex align-items-center justify-content-between \${
                       expandedItem === "products" ? "active" : ""
-                    }`}
+                    }\`}
                     onClick={() => toggleExpand("products")}
-                    style={{ cursor: "pointer" }}
+                    style={{cursor: "pointer"}}
                   >
-                    <div
-                      className={`d-flex align-items-center ${
+                    <div className={`d-flex align-items-center ${
                         !isSidebarOpen && "justify-content-center w-100"
                       }`}
                     >
-                      <span className="nav-icon me-0">
-                        <FaBuilding size={22} />
-                      </span>
+                      <span className="nav-icon me-0"><FaBuilding size={22} /></span>
                       {isSidebarOpen && (
                         <span className="nav-text ms-2">Purchased Goods</span>
                       )}
                     </div>
                     {isSidebarOpen && (
-                      <i
-                        className={`fas fa-chevron-${
-                          expandedItem === "products" ? "up" : "down"
-                        }`}
-                      ></i>
+                      <i className={\`fas fa-chevron-\${expandedItem === "products" ? 'up' : 'down'}\`}></i>
                     )}
                   </div>
 
@@ -251,45 +226,36 @@ const Sidebar = ({
                     <div className="submenu">
                       <Link
                         to="/products"
-                        className={`submenu-item px-3 py-2 d-block ${
+                        className={\`submenu-item px-3 py-2 d-block \${
                           isActive("/products") ? "active" : ""
-                        }`}
+                        }\`}
                       >
                         Products
                       </Link>
                     </div>
                   )}
                 </div>
-
+                
                 {/* 4. Freight Transports */}
                 <div className="nav-group mb-1">
-                  <div
-                    className={`nav-item px-3 py-2 d-flex align-items-center justify-content-between ${
+                  <div 
+                    className={\`nav-item px-3 py-2 d-flex align-items-center justify-content-between \${
                       expandedItem === "freight" ? "active" : ""
-                    }`}
+                    }\`}
                     onClick={() => toggleExpand("freight")}
-                    style={{ cursor: "pointer" }}
+                    style={{cursor: "pointer"}}
                   >
-                    <div
-                      className={`d-flex align-items-center ${
+                    <div className={`d-flex align-items-center ${
                         !isSidebarOpen && "justify-content-center w-100"
                       }`}
                     >
-                      <span className="nav-icon me-0">
-                        <FaShippingFast size={22} />
-                      </span>
+                      <span className="nav-icon me-0"><FaShippingFast size={22} /></span>
                       {isSidebarOpen && (
-                        <span className="nav-text ms-2">
-                          Freight Transports
-                        </span>
+                        <span className="nav-text ms-2">Freight Transports</span>
                       )}
                     </div>
                     {isSidebarOpen && (
-                      <i
-                        className={`fas fa-chevron-${
-                          expandedItem === "freight" ? "up" : "down"
-                        }`}
-                      ></i>
+                      <i className={\`fas fa-chevron-\${expandedItem === "freight" ? 'up' : 'down'}\`}></i>
                     )}
                   </div>
 
@@ -299,34 +265,27 @@ const Sidebar = ({
                     </div>
                   )}
                 </div>
-
+                
                 {/* 5. Others */}
                 <div className="nav-group mb-1">
-                  <div
-                    className={`nav-item px-3 py-2 d-flex align-items-center justify-content-between ${
+                  <div 
+                    className={\`nav-item px-3 py-2 d-flex align-items-center justify-content-between \${
                       expandedItem === "others" ? "active" : ""
-                    }`}
+                    }\`}
                     onClick={() => toggleExpand("others")}
-                    style={{ cursor: "pointer" }}
+                    style={{cursor: "pointer"}}
                   >
-                    <div
-                      className={`d-flex align-items-center ${
+                    <div className={`d-flex align-items-center ${
                         !isSidebarOpen && "justify-content-center w-100"
                       }`}
                     >
-                      <span className="nav-icon me-0">
-                        <FaCog size={22} />
-                      </span>
+                      <span className="nav-icon me-0"><FaCog size={22} /></span>
                       {isSidebarOpen && (
                         <span className="nav-text ms-2">Others</span>
                       )}
                     </div>
                     {isSidebarOpen && (
-                      <i
-                        className={`fas fa-chevron-${
-                          expandedItem === "others" ? "up" : "down"
-                        }`}
-                      ></i>
+                      <i className={\`fas fa-chevron-\${expandedItem === "others" ? 'up' : 'down'}\`}></i>
                     )}
                   </div>
 
@@ -334,49 +293,49 @@ const Sidebar = ({
                     <div className="submenu">
                       <Link
                         to="/companies"
-                        className={`submenu-item px-3 py-2 d-block ${
+                        className={\`submenu-item px-3 py-2 d-block \${
                           isActive("/companies") ? "active" : ""
-                        }`}
+                        }\`}
                       >
                         Company Locations
                       </Link>
                       <Link
                         to="/employees"
-                        className={`submenu-item px-3 py-2 d-block ${
+                        className={\`submenu-item px-3 py-2 d-block \${
                           isActive("/employees") ? "active" : ""
-                        }`}
+                        }\`}
                       >
                         Employees
                       </Link>
                       <Link
                         to="/yearly-reports"
-                        className={`submenu-item px-3 py-2 d-block ${
+                        className={\`submenu-item px-3 py-2 d-block \${
                           isActive("/yearly-reports") ? "active" : ""
-                        }`}
+                        }\`}
                       >
                         Yearly Reports
                       </Link>
                       <Link
                         to="/invoices"
-                        className={`submenu-item px-3 py-2 d-block ${
+                        className={\`submenu-item px-3 py-2 d-block \${
                           isActive("/invoices") ? "active" : ""
-                        }`}
+                        }\`}
                       >
                         Invoices
                       </Link>
                       <Link
                         to="/license-plate"
-                        className={`submenu-item px-3 py-2 d-block ${
+                        className={\`submenu-item px-3 py-2 d-block \${
                           isActive("/license-plate") ? "active" : ""
-                        }`}
+                        }\`}
                       >
                         License Plate CO₂
                       </Link>
                       <Link
                         to="/dashboard"
-                        className={`submenu-item px-3 py-2 d-block ${
+                        className={\`submenu-item px-3 py-2 d-block \${
                           isActive("/dashboard") ? "active" : ""
-                        }`}
+                        }\`}
                       >
                         Dashboard
                       </Link>
@@ -388,31 +347,24 @@ const Sidebar = ({
               <>
                 {/* EMPLOYEE MENU - Single button */}
                 <div className="nav-group mb-1">
-                  <div
-                    className={`nav-item px-3 py-2 d-flex align-items-center justify-content-between ${
+                  <div 
+                    className={\`nav-item px-3 py-2 d-flex align-items-center justify-content-between \${
                       expandedItem === "travel" ? "active" : ""
-                    }`}
+                    }\`}
                     onClick={() => toggleExpand("travel")}
-                    style={{ cursor: "pointer" }}
+                    style={{cursor: "pointer"}}
                   >
-                    <div
-                      className={`d-flex align-items-center ${
+                    <div className={`d-flex align-items-center ${
                         !isSidebarOpen && "justify-content-center w-100"
                       }`}
                     >
-                      <span className="nav-icon me-0">
-                        <MdTravelExplore size={22} />
-                      </span>
+                      <span className="nav-icon me-0"><MdTravelExplore size={22} /></span>
                       {isSidebarOpen && (
                         <span className="nav-text ms-2">Travel & Commute</span>
                       )}
                     </div>
                     {isSidebarOpen && (
-                      <i
-                        className={`fas fa-chevron-${
-                          expandedItem === "travel" ? "up" : "down"
-                        }`}
-                      ></i>
+                      <i className={\`fas fa-chevron-\${expandedItem === "travel" ? 'up' : 'down'}\`}></i>
                     )}
                   </div>
 
@@ -420,67 +372,32 @@ const Sidebar = ({
                     <div className="submenu">
                       <Link
                         to="/user-dashboard"
-                        className={`submenu-item px-3 py-2 d-block ${
+                        className={\`submenu-item px-3 py-2 d-block \${
                           isActive("/user-dashboard") ? "active" : ""
-                        }`}
+                        }\`}
                       >
-                        <i className="fas fa-tachometer-alt me-2"></i>
                         My Dashboard
                       </Link>
-                      <button
-                        className="submenu-item px-3 py-2 d-block w-100 text-start border-0 bg-transparent"
-                        onClick={() => {
-                          const event = new CustomEvent("openTransportModal");
-                          window.dispatchEvent(event);
-                        }}
+                      <Link
+                        to="/vehicles"
+                        className={\`submenu-item px-3 py-2 d-block \${
+                          isActive("/vehicles") ? "active" : ""
+                        }\`}
                       >
-                        <i className="fas fa-car me-2"></i>
-                        Add New Transport
-                      </button>
-                      <button
-                        className="submenu-item px-3 py-2 d-block w-100 text-start border-0 bg-transparent"
-                        onClick={() => {
-                          const event = new CustomEvent(
-                            "openWorkTransportModal"
-                          );
-                          window.dispatchEvent(event);
-                        }}
+                        My Vehicles
+                      </Link>
+                      <Link
+                        to="/user-dashboard#transport"
+                        className={\`submenu-item px-3 py-2 d-block\`}
                       >
-                        <i className="fas fa-truck me-2"></i>
-                        Add New Work Transport
-                      </button>
-                      <button
-                        className="submenu-item px-3 py-2 d-block w-100 text-start border-0 bg-transparent"
-                        onClick={() => {
-                          const event = new CustomEvent("openVehicleModal");
-                          window.dispatchEvent(event);
-                        }}
+                        Add Transport Record
+                      </Link>
+                      <Link
+                        to="/user-dashboard#work-transport"
+                        className={\`submenu-item px-3 py-2 d-block\`}
                       >
-                        <i className="fas fa-plus-circle me-2"></i>
-                        Register Vehicle
-                      </button>
-                      <button
-                        className="submenu-item px-3 py-2 d-block w-100 text-start border-0 bg-transparent"
-                        onClick={() => {
-                          const event = new CustomEvent(
-                            "openOtherResourceModal"
-                          );
-                          window.dispatchEvent(event);
-                        }}
-                      >
-                        <i className="fas fa-plus me-2"></i>
-                        Add Other Resource
-                      </button>
-                      <button
-                        className="submenu-item px-3 py-2 d-block w-100 text-start border-0 bg-transparent"
-                        onClick={() => {
-                          const event = new CustomEvent("openProfileModal");
-                          window.dispatchEvent(event);
-                        }}
-                      >
-                        <i className="fas fa-user-edit me-2"></i>
-                        Profile
-                      </button>
+                        Add Work Transport
+                      </Link>
                     </div>
                   )}
                 </div>
@@ -490,12 +407,12 @@ const Sidebar = ({
         </div>
 
         <div
-          className={`sidebar-footer flex-column ${isSidebarOpen ? "" : "p-2"}`}
+          className={\`sidebar-footer flex-column \${isSidebarOpen ? "" : "p-2"}\`}
         >
           <button
-            className={`btn ${
+            className={\`btn \${
               theme === "light" ? "btn-outline-dark" : "btn-outline-light"
-            } mb-2`}
+            } mb-2\`}
             onClick={toggleTheme}
           >
             {theme === "light" ? (
@@ -506,7 +423,7 @@ const Sidebar = ({
             {isSidebarOpen && <span className="ms-2">Toggle Theme</span>}
           </button>
           <button
-            className={`btn btn-outline-danger ${isSidebarOpen ? "" : "px-1"}`}
+            className={\`btn btn-outline-danger \${isSidebarOpen ? "" : "px-1"}\`}
             onClick={handleLogout}
           >
             {isSidebarOpen ? (
@@ -523,4 +440,9 @@ const Sidebar = ({
   );
 };
 
-export default Sidebar;
+export default Sidebar;`;
+
+// Write the content to the file
+fs.writeFileSync(path.join(__dirname, "Sidebar.js"), sidebarContent, "utf8");
+
+console.log("Sidebar.js created successfully!");

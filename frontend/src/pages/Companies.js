@@ -194,7 +194,7 @@ const CompanyPage = () => {
         <div className="navbar-inner d-flex justify-content-between align-items-center flex-wrap gap-2 px-3">
           <div className="d-flex align-items-center justify-content-center">
             <i className="fas fa-building fa-2x me-3"></i>
-            <h4 className="card-title mb-0">Companies</h4>
+            <h4 className="card-title mb-0">Company Locations</h4>
           </div>
           <span>
             <button

@@ -8,10 +8,14 @@ const LoginPage = () => {
   const [email, setEmail] = useState("ethan.williams@example.com");
   const [password, setPassword] = useState("P@ssw0rd123");
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
 
     try {
       const response = await fetch(`${REACT_APP_API_URL}/auth/`, {
@@ -24,24 +28,44 @@ const LoginPage = () => {
       });
 
       if (!response?.ok) {
-        alert("Invalid credentials");
+        const errorText = await response.text();
+        throw new Error(`Login failed: ${errorText}`);
       }
-      const data = await response?.json();
-      console.log(data, "dtaa");
-      localStorage.setItem("userData", JSON.stringify(data.user));
 
-      if (data?.role === "admin") {
-        localStorage.setItem("userObj", JSON.stringify(data?.user));
+      const data = await response?.json();
+      console.log("Login successful:", data);
+
+      // Clear any old authentication data first
+      localStorage.clear();
+
+      // Store user data consistently
+      if (data?.user) {
+        // Ensure we store the full user object
+        localStorage.setItem("userObj", JSON.stringify(data.user));
+
+        // For backward compatibility
+        localStorage.setItem("userData", JSON.stringify(data.user));
+      }
+
+      // Always store the token if provided
+      if (data?.jwtToken) {
         localStorage.setItem("token", data.jwtToken);
+      }
+
+      // Navigate based on role
+      if (data?.role === "admin") {
         navigate("/dashboard");
       } else if (data?.role === "employee") {
-        console.log(data);
-        localStorage.setItem("userObj", JSON.stringify(data?.user));
-        localStorage.setItem("token", data?.jwtToken);
         navigate("/user-dashboard");
+      } else {
+        // Default navigation if role is not specified
+        navigate("/dashboard");
       }
     } catch (error) {
       console.error("Error logging in:", error.message);
+      setError(error.message || "Invalid credentials");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -57,6 +81,11 @@ const LoginPage = () => {
           <div className="card">
             <div className="card-body">
               <h2 className="card-title text-center mb-4">Login</h2>
+              {error && (
+                <div className="alert alert-danger" role="alert">
+                  {error}
+                </div>
+              )}
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label className="form-label">Email</label>
@@ -99,8 +128,12 @@ const LoginPage = () => {
                   </p>
                 </div>
                 <div className="d-flex justify-content-center">
-                  <button type="submit" className="btn btn-primary w-50">
-                    Login
+                  <button
+                    type="submit"
+                    className="btn btn-primary w-50"
+                    disabled={loading}
+                  >
+                    {loading ? "Logging in..." : "Login"}
                   </button>
                 </div>
               </form>

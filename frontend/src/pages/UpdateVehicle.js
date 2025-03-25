@@ -3,28 +3,42 @@ import { FaEye, FaEyeSlash } from "react-icons/fa"; // Importing the eye icons
 import { REACT_APP_API_URL } from "../env";
 
 const UpdateVehicle = ({ userData, isModelVisible, onUpdate }) => {
-  const [vehicleName, setVehicleName] = useState(userData?.vehicleName || "");
-  const [vehicleType, setVehicleType] = useState(userData?.vehicleType || "");
-  const [engineNumber, setEngineNumber] = useState(userData?.engineNumber || "");
-  const [vehicleModel, setVehicleModel] = useState(userData?.vehicleModel || "");
-  const [licensePlate, setLicensePlate] = useState(userData?.car?.licensePlate || "");
-  const [carType, setCarType] = useState(userData?.car?.companyCar ? "Company" : "Personal");
+  const [vehicleName, setVehicleName] = useState("");
+  const [vehicleType, setVehicleType] = useState("");
+  const [engineNumber, setEngineNumber] = useState("");
+  const [vehicleModel, setVehicleModel] = useState("");
+  const [licensePlate, setLicensePlate] = useState("");
+  const [carType, setCarType] = useState("Personal");
   const [isLoading, setIsLoading] = useState(false);
-
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (isModelVisible) {
-      setVehicleName(userData?.vehicleName || "");
-      setVehicleType(userData?.vehicleType || "");
-      setEngineNumber(userData?.engineNumber || "");
-      setVehicleModel(userData?.vehicleModel || "");
-      setLicensePlate(userData?.car?.licensePlate || "");
-      setCarType(userData?.car?.companyCar ? "Company" : "Personal");
+    if (isModelVisible && userData) {
+      setVehicleName(userData.vehicleName || "");
+      setVehicleType(userData.vehicleType || "");
+      setEngineNumber(userData.engineNumber || "");
+      setVehicleModel(userData.vehicleModel || "");
+
+      // Properly set license plate based on where it might be in the data structure
+      if (userData.licensePlate) {
+        setLicensePlate(userData.licensePlate);
+      } else if (userData.car && userData.car.licensePlate) {
+        setLicensePlate(userData.car.licensePlate);
+      } else {
+        setLicensePlate("");
+      }
+
+      setCarType(
+        userData.car && userData.car.companyCar ? "Company" : "Personal"
+      );
+      setError("");
     }
   }, [userData, isModelVisible]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+
     const data = {
       vehicleName,
       vehicleType,
@@ -35,17 +49,17 @@ const UpdateVehicle = ({ userData, isModelVisible, onUpdate }) => {
     };
 
     try {
-      setIsLoading(true); // Set loading state
+      setIsLoading(true);
 
-      const url = `${REACT_APP_API_URL}/vehicles/${userData?._id}`; // Update API endpoint
+      const url = `${REACT_APP_API_URL}/vehicles/${userData?._id}`;
 
       const response = await fetch(url, {
-        method: "PUT", // Use PUT for updating
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`, // Include token for authentication
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify(data), // Convert data to JSON format
+        body: JSON.stringify(data),
       });
 
       if (response.ok) {
@@ -53,11 +67,18 @@ const UpdateVehicle = ({ userData, isModelVisible, onUpdate }) => {
         onUpdate(responseData?.vehicle);
         console.log("Vehicle updated successfully!");
       } else {
-        console.error("Vehicle update failed!");
+        const errorData = await response.json();
+        if (errorData.message && errorData.message.includes("duplicate")) {
+          setError(
+            "This license plate is already registered to another vehicle."
+          );
+        } else {
+          setError("Failed to update vehicle. Please try again.");
+        }
       }
     } catch (error) {
       console.error("Error updating vehicle:", error);
-      alert("An error occurred. Please try again later.");
+      setError("An error occurred. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -65,6 +86,12 @@ const UpdateVehicle = ({ userData, isModelVisible, onUpdate }) => {
 
   return (
     <div className="container">
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit}>
         <div className="row">
           <div className="col-6 mb-3">
@@ -122,6 +149,9 @@ const UpdateVehicle = ({ userData, isModelVisible, onUpdate }) => {
               onChange={(e) => setLicensePlate(e.target.value)}
               required
             />
+            <small className="text-muted">
+              Must be unique across all vehicles
+            </small>
           </div>
           <div className="col-6 mb-3">
             <label className="form-label">Car Type</label>
@@ -138,7 +168,11 @@ const UpdateVehicle = ({ userData, isModelVisible, onUpdate }) => {
         </div>
 
         <div className="d-flex justify-content-end">
-          <button type="submit" className="btn btn-primary" disabled={isLoading}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={isLoading}
+          >
             {isLoading ? "Updating..." : "Update"}
           </button>
         </div>

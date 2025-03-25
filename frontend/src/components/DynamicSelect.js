@@ -1,6 +1,5 @@
 import React from "react";
-import Select from "react-select";
-import { Modal, Button, Form } from "react-bootstrap";
+import { Form } from "react-bootstrap";
 
 const DynamicSelect = ({
   label,
@@ -11,24 +10,36 @@ const DynamicSelect = ({
   formatData,
   isMulti = false,
 }) => {
+  // Format data for regular select
   const options =
     stateData && Array.isArray(stateData) ? stateData.map(formatData) : [];
 
-  const selectedValue = modalData ? modalData[id] : null;
+  // Get the current value - either directly from modalData or default to empty string
+  const currentValue = modalData && modalData[id] ? modalData[id] : "";
 
-  const selectedOptions = isMulti
-    ? options.filter((opt) => selectedValue?.includes(opt.value))
-    : options.find((opt) => opt.value === selectedValue);
+  // Handle change for the select
+  const onSelectChange = (e) => {
+    // Create a synthetic event similar to what react-select would provide
+    const selectedOption = options.find((opt) => opt.value === e.target.value);
+    handleChange(selectedOption, { name: id, action: "select-option" });
+  };
 
   return (
     <Form.Group controlId={id}>
       <Form.Label>{label}</Form.Label>
-      <Select
-        isMulti={isMulti}
-        options={options}
-        value={selectedOptions}
-        onChange={handleChange}
-      />
+      <Form.Select
+        className="form-select"
+        value={currentValue}
+        onChange={onSelectChange}
+        aria-label={`Select ${label}`}
+      >
+        <option value="">Select {label}</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </Form.Select>
     </Form.Group>
   );
 };

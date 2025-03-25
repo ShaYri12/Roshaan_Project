@@ -59,46 +59,88 @@ const DashboardPage = () => {
     };
   };
 
-  // Updated toolbar config with simpler structure
+  // Updated toolbar config with only download option
   const getToolbarConfig = () => {
     return {
       show: true,
       tools: {
         download: true,
-        selection: false,
-        zoom: false,
         zoomin: false,
         zoomout: false,
         pan: false,
         reset: false,
+        selection: false,
       },
+      export: {
+        csv: {
+          filename: "chart-data",
+          columnDelimiter: ",",
+          headerCategory: "Category",
+          headerValue: "Value",
+        },
+        svg: {
+          filename: "chart-svg",
+        },
+        png: {
+          filename: "chart-png",
+        },
+      },
+      autoSelected: "zoom", // This setting doesn't matter since zoom is disabled
     };
   };
 
   const [co2Reduction, setco2Reduction] = useState({
     chart: {
       type: "line",
-      zoom: { enabled: false },
+      zoom: { enabled: false }, // Disable zoom
       foreColor: chartColors.labelColor,
       background: "transparent",
       toolbar: getToolbarConfig(),
       theme: getChartTheme(),
+      animations: {
+        enabled: true,
+        easing: "easeinout",
+        speed: 400,
+        animateGradually: {
+          enabled: true,
+          delay: 100,
+        },
+        dynamicAnimation: {
+          enabled: true,
+          speed: 250,
+        },
+      },
     },
     title: {
       text: "CO₂ Reduction Over Time",
       style: {
         color: chartColors.titleColor,
         fontWeight: "bold",
+        fontSize: "16px",
       },
     },
     stroke: {
       curve: "smooth",
       width: 3,
+      lineCap: "round",
     },
     grid: {
       borderColor: chartColors.gridColor,
       row: {
         colors: ["transparent"],
+        opacity: 0.5,
+      },
+      xaxis: {
+        lines: { show: false },
+      },
+      yaxis: {
+        lines: { show: true },
+      },
+      padding: {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
       },
     },
     xaxis: {
@@ -107,6 +149,8 @@ const DashboardPage = () => {
         rotate: -45, // Rotate labels for better visibility
         style: {
           colors: chartColors.labelColor,
+          fontSize: "12px",
+          fontFamily: "Helvetica, Arial, sans-serif",
         },
       },
       axisBorder: {
@@ -118,48 +162,127 @@ const DashboardPage = () => {
     },
     yaxis: {
       title: {
-        text: "Total Records",
+        text: "CO₂ Reduction (Metric Tons)",
         style: {
           color: chartColors.labelColor,
+          fontSize: "12px",
+          fontWeight: "normal",
         },
       },
       labels: {
         style: {
           colors: chartColors.labelColor,
+          fontSize: "12px",
+          fontFamily: "Helvetica, Arial, sans-serif",
+        },
+        formatter: (value) => {
+          return value.toFixed(0) + " MT";
         },
       },
     },
     tooltip: {
+      enabled: true,
       theme: theme === "dark" ? "dark" : "light",
-      valueSuffix: " MT",
+      x: {
+        show: true,
+        format: "dd MMM yyyy",
+      },
+      y: {
+        formatter: function (value) {
+          return value.toFixed(2) + " MT";
+        },
+        title: {
+          formatter: () => "CO₂ Reduction:",
+        },
+      },
+      marker: {
+        show: true,
+        fillColors: ["#4CAF50"],
+      },
       style: {
         fontSize: "12px",
+        fontFamily: "Helvetica, Arial, sans-serif",
+      },
+      fixed: {
+        enabled: false,
+        position: "topRight",
+        offsetX: 0,
+        offsetY: 0,
       },
     },
     legend: {
+      position: "top",
+      horizontalAlign: "right",
+      floating: false,
+      offsetY: -25,
+      offsetX: -5,
       labels: {
         colors: chartColors.legendColor,
       },
     },
     series: [
       {
-        name: "Total Records",
+        name: "CO₂ Reduction",
         data: [],
       },
     ],
-    credits: {
+    responsive: [
+      {
+        breakpoint: 576,
+        options: {
+          legend: {
+            position: "bottom",
+            offsetY: 0,
+            offsetX: 0,
+          },
+        },
+      },
+    ],
+    dataLabels: {
       enabled: false,
+    },
+    fill: {
+      type: "gradient",
+      gradient: {
+        shade: "light",
+        type: "vertical",
+        shadeIntensity: 0.4,
+        gradientToColors: undefined,
+        inverseColors: true,
+        opacityFrom: 0.8,
+        opacityTo: 0.2,
+        stops: [0, 100],
+      },
+    },
+    colors: ["#4CAF50", "#F44336", "#2196F3"],
+    markers: {
+      size: 5,
+      colors: ["#4CAF50"],
+      strokeColors: "#fff",
+      strokeWidth: 2,
+      hover: {
+        size: 8,
+      },
     },
   });
 
   const [co2EmissionsByDate, setCo2EmissionsByDate] = useState({
     chart: {
       type: "bar",
-      zoom: { enabled: false },
+      zoom: { enabled: false }, // Explicitly disable zoom
       foreColor: chartColors.labelColor,
       background: "transparent",
       toolbar: getToolbarConfig(),
       theme: getChartTheme(),
+      animations: {
+        enabled: true,
+        easing: "easeinout",
+        speed: 400,
+        dynamicAnimation: {
+          enabled: true,
+          speed: 250,
+        },
+      },
     },
     title: {
       text: "CO₂ Emissions by Date",
@@ -198,16 +321,49 @@ const DashboardPage = () => {
       },
     },
     tooltip: {
-      x: { format: "dd-mm-yyyy" },
+      enabled: true,
+      x: {
+        show: true,
+        format: "dd-mm-yyyy",
+      },
       theme: theme === "dark" ? "dark" : "light",
       style: {
         fontSize: "12px",
       },
+      y: {
+        formatter: function (value) {
+          return value.toFixed(2) + " MT";
+        },
+        title: {
+          formatter: () => "CO₂ Emissions:",
+        },
+      },
+      fixed: {
+        enabled: false,
+        position: "topRight",
+        offsetX: 0,
+        offsetY: 0,
+      },
     },
     plotOptions: {
       bar: {
-        columnWidth: "50%",
+        columnWidth: "60%",
         distributed: true, // Different colors for each bar
+        dataLabels: {
+          position: "top",
+        },
+        borderRadius: 3,
+        colors: {
+          ranges: [
+            {
+              from: 0,
+              to: 100000000,
+              color: undefined, // Use the default color palette
+            },
+          ],
+          backgroundBarColors: theme === "dark" ? ["#393e46"] : ["#f1f1f1"],
+          backgroundBarOpacity: 0.1,
+        },
       },
     },
     colors: [
@@ -222,7 +378,9 @@ const DashboardPage = () => {
       "#34495E",
       "#7F8C8D",
     ],
-    // dataLabels: { enabled: false },
+    dataLabels: {
+      enabled: false,
+    },
     legend: {
       show: false, // Show only series name
       labels: {
@@ -237,10 +395,20 @@ const DashboardPage = () => {
   const [co2EmissionsByCategory, setco2EmissionsByCategory] = useState({
     chart: {
       type: "pie",
+      zoom: { enabled: false }, // Explicitly disable zoom
       foreColor: chartColors.labelColor,
       background: "transparent",
       toolbar: getToolbarConfig(),
       theme: getChartTheme(),
+      animations: {
+        enabled: true,
+        easing: "easeinout",
+        speed: 400,
+        animateGradually: {
+          enabled: true,
+          delay: 100,
+        },
+      },
     },
     title: {
       text: "CO₂ Emissions by Category",
@@ -251,28 +419,72 @@ const DashboardPage = () => {
     },
     labels: [],
     tooltip: {
+      enabled: true,
       theme: theme === "dark" ? "dark" : "light",
+      fillSeriesColor: false,
       y: {
-        formatter: (val) => `${val} Tons`,
+        formatter: function (val) {
+          return val.toFixed(0) + " MT";
+        },
+        title: {
+          formatter: function (seriesName) {
+            return seriesName ? seriesName + ": " : "";
+          },
+        },
       },
       style: {
         fontSize: "12px",
       },
+      fixed: {
+        enabled: false,
+        position: "topRight",
+        offsetX: 0,
+        offsetY: 0,
+      },
     },
     legend: {
       position: "bottom",
+      horizontalAlign: "center",
+      fontSize: "14px",
+      fontFamily: "Helvetica, Arial, sans-serif",
+      offsetY: 8,
+      itemMargin: {
+        horizontal: 15,
+        vertical: 5,
+      },
+      markers: {
+        width: 10,
+        height: 10,
+        radius: 6,
+        offsetX: -5,
+      },
       labels: {
         colors: chartColors.legendColor,
+        useSeriesColors: false,
+      },
+      formatter: function (seriesName, opts) {
+        return (
+          seriesName + ":  " + opts.w.globals.series[opts.seriesIndex] + " MT"
+        );
       },
     },
     dataLabels: {
-      style: {
-        colors: theme === "dark" ? ["#fff"] : undefined,
-      },
+      enabled: false,
     },
     stroke: {
       width: 1,
       colors: theme === "dark" ? ["#343a40"] : undefined,
+    },
+    plotOptions: {
+      pie: {
+        expandOnClick: false,
+        donut: {
+          size: "55%",
+          labels: {
+            show: false,
+          },
+        },
+      },
     },
   });
 
@@ -281,14 +493,25 @@ const DashboardPage = () => {
 
   const [co2EmissionsTrend, setCo2EmissionsTrend] = useState({
     chart: {
-      scrollablePlotArea: {
-        minWidth: 100,
-      },
-      zoom: { enabled: false },
+      type: "line", // Explicitly set chart type
+      zoom: { enabled: false }, // Disable zoom
       foreColor: chartColors.labelColor,
       background: "transparent",
       toolbar: getToolbarConfig(),
       theme: getChartTheme(),
+      animations: {
+        enabled: true,
+        easing: "easeinout",
+        speed: 400,
+        animateGradually: {
+          enabled: true,
+          delay: 100,
+        },
+        dynamicAnimation: {
+          enabled: true,
+          speed: 250,
+        },
+      },
     },
     title: {
       text: "CO2 Emissions Trend ",
@@ -304,11 +527,9 @@ const DashboardPage = () => {
         colors: ["transparent"],
       },
     },
-    xAxis: {
-      type: "datetime",
-      tickInterval: 365 * 24 * 3600 * 1000, // 1 year interval
+    xaxis: {
+      type: "category", // Changed from datetime to category
       labels: {
-        format: "{value:%Y}", // Shows year (e.g., 2024, 2025)
         style: {
           colors: chartColors.labelColor,
         },
@@ -320,61 +541,55 @@ const DashboardPage = () => {
         color: chartColors.gridColor,
       },
     },
-    yaxis: [
-      {
-        title: {
-          text: null,
+    yaxis: {
+      title: {
+        text: "CO₂ Emissions (Metric Tons)",
+        style: {
+          color: chartColors.labelColor,
         },
-        labels: {
-          align: "left",
-          x: 3,
-          y: 16,
-          format: "{value:.,0f}",
-          style: {
-            colors: chartColors.labelColor,
-          },
-        },
-        showFirstLabel: false,
       },
-      {
-        linkedTo: 0,
-        gridLineWidth: 0,
-        opposite: true,
-        title: {
-          text: null,
-        },
-        labels: {
-          align: "right",
-          x: -3,
-          y: 16,
-          format: "{value:.,0f}",
-          style: {
-            colors: chartColors.labelColor,
-          },
-        },
-        showFirstLabel: false,
-      },
-    ],
-    legend: {
-      align: "left",
-      verticalAlign: "top",
-      borderWidth: 0,
       labels: {
-        colors: chartColors.legendColor,
+        style: {
+          colors: chartColors.labelColor,
+        },
       },
     },
     tooltip: {
+      enabled: true,
       shared: true,
-      crosshairs: true,
+      intersect: false,
       theme: theme === "dark" ? "dark" : "light",
       style: {
         fontSize: "12px",
       },
+      y: {
+        formatter: function (value) {
+          return value.toFixed(2) + " MT";
+        },
+        title: {
+          formatter: () => "CO₂ Emissions:",
+        },
+      },
+      marker: {
+        show: true,
+      },
+      fixed: {
+        enabled: false,
+        position: "topRight",
+        offsetX: 0,
+        offsetY: 0,
+      },
+    },
+    legend: {
+      position: "top",
+      horizontalAlign: "right",
+      labels: {
+        colors: chartColors.legendColor,
+      },
     },
     plotOptions: {
       series: {
-        cursor: "pointer",
-        className: "popup-on-click",
+        cursor: "default", // Change from pointer to default to indicate non-interactive
         marker: {
           lineWidth: 1,
         },
@@ -384,15 +599,23 @@ const DashboardPage = () => {
       {
         name: "CO₂ Emissions",
         data: [],
-        // lineWidth: 4,
-        // marker: {
-        //   radius: 4,
-        // },
       },
     ],
     stroke: {
       curve: "smooth",
       width: 3,
+    },
+    dataLabels: {
+      enabled: false,
+    },
+    markers: {
+      size: 5,
+      colors: undefined,
+      strokeColors: "#fff",
+      strokeWidth: 2,
+      hover: {
+        size: 8,
+      },
     },
   });
 
@@ -406,6 +629,7 @@ const DashboardPage = () => {
       ...prev,
       chart: {
         ...prev.chart,
+        zoom: { enabled: false }, // Ensure zoom is disabled after theme change
         foreColor: chartColors.labelColor,
         toolbar: toolbarConfig,
         theme: chartTheme,
@@ -468,6 +692,7 @@ const DashboardPage = () => {
       ...prev,
       chart: {
         ...prev.chart,
+        zoom: { enabled: false }, // Ensure zoom is disabled after theme change
         foreColor: chartColors.labelColor,
         toolbar: toolbarConfig,
         theme: chartTheme,
@@ -523,6 +748,7 @@ const DashboardPage = () => {
       ...prev,
       chart: {
         ...prev.chart,
+        zoom: { enabled: false }, // Ensure zoom is disabled after theme change
         foreColor: chartColors.labelColor,
         toolbar: toolbarConfig,
         theme: chartTheme,
@@ -536,7 +762,19 @@ const DashboardPage = () => {
       },
       tooltip: {
         ...prev.tooltip,
+        enabled: true,
         theme: theme === "dark" ? "dark" : "light",
+        fillSeriesColor: false,
+        y: {
+          formatter: function (val) {
+            return val.toFixed(0) + " MT";
+          },
+          title: {
+            formatter: function (seriesName) {
+              return seriesName ? seriesName + ": " : "";
+            },
+          },
+        },
       },
       legend: {
         ...prev.legend,
@@ -545,9 +783,7 @@ const DashboardPage = () => {
         },
       },
       dataLabels: {
-        style: {
-          colors: theme === "dark" ? ["#fff"] : undefined,
-        },
+        enabled: false,
       },
       stroke: {
         width: 1,
@@ -555,47 +791,82 @@ const DashboardPage = () => {
       },
     }));
 
-    setCo2EmissionsTrend((prev) => ({
-      ...prev,
-      chart: {
-        ...prev.chart,
-        foreColor: chartColors.labelColor,
-        toolbar: toolbarConfig,
-        theme: chartTheme,
-      },
-      title: {
-        ...prev.title,
-        style: {
-          color: chartColors.titleColor,
-          fontWeight: "bold",
+    setCo2EmissionsTrend((prev) => {
+      // Preserve the existing categories and data
+      const existingCategories = prev.xaxis?.categories || [];
+      const existingData = prev.series[0]?.data || [];
+
+      return {
+        ...prev,
+        chart: {
+          ...prev.chart,
+          zoom: { enabled: false }, // Ensure zoom is disabled after theme change
+          foreColor: chartColors.labelColor,
+          toolbar: toolbarConfig,
+          theme: chartTheme,
         },
-      },
-      grid: {
-        borderColor: chartColors.gridColor,
-        row: {
-          colors: ["transparent"],
-        },
-      },
-      yaxis: prev.yaxis.map((axis) => ({
-        ...axis,
-        labels: {
-          ...axis.labels,
+        title: {
+          ...prev.title,
           style: {
-            colors: chartColors.labelColor,
+            color: chartColors.titleColor,
+            fontWeight: "bold",
           },
         },
-      })),
-      tooltip: {
-        ...prev.tooltip,
-        theme: theme === "dark" ? "dark" : "light",
-      },
-      legend: {
-        ...prev.legend,
-        labels: {
-          colors: chartColors.legendColor,
+        grid: {
+          borderColor: chartColors.gridColor,
+          row: {
+            colors: ["transparent"],
+          },
         },
-      },
-    }));
+        xaxis: {
+          ...prev.xaxis,
+          categories: existingCategories,
+          labels: {
+            ...prev.xaxis?.labels,
+            style: {
+              colors: chartColors.labelColor,
+            },
+          },
+          axisBorder: {
+            color: chartColors.gridColor,
+          },
+          axisTicks: {
+            color: chartColors.gridColor,
+          },
+        },
+        yaxis: {
+          ...prev.yaxis,
+          title: {
+            ...prev.yaxis.title,
+            style: {
+              color: chartColors.labelColor,
+            },
+          },
+          labels: {
+            ...prev.yaxis.labels,
+            style: {
+              colors: chartColors.labelColor,
+            },
+          },
+        },
+        tooltip: {
+          ...prev.tooltip,
+          theme: theme === "dark" ? "dark" : "light",
+        },
+        legend: {
+          ...prev.legend,
+          labels: {
+            colors: chartColors.legendColor,
+          },
+        },
+        series: [
+          {
+            name: "CO₂ Emissions",
+            data: existingData,
+          },
+        ],
+      };
+    });
   }, [theme]);
 
   useEffect(() => {
@@ -691,57 +962,80 @@ const DashboardPage = () => {
         setEmissionsCount(emissionsData?.length || 0);
         setVehicle(vehiclesData?.length || 0);
 
-        // **Handle undefined data before using map()**
-        const dateArray = (redutionOverTime || []).map((item) => {
-          if (!item?.date) return "";
-          const [year, month] = item.date.split("-");
-          return new Date(year, month - 1)
-            .toLocaleString("en-US", { month: "short", year: "numeric" })
-            .replace(" ", "-");
-        });
+        // Handle CO2 Reduction Over Time data
+        if (redutionOverTime && Array.isArray(redutionOverTime)) {
+          const dateArray = redutionOverTime.map((item) => {
+            if (!item?.date) return "";
+            const [year, month] = item.date.split("-");
+            return new Date(year, month - 1)
+              .toLocaleString("en-US", { month: "short", year: "numeric" })
+              .replace(" ", "-");
+          });
 
-        const recordsArray = (redutionOverTime || []).map(
-          (item) => item.total_emission || 0
-        );
+          const recordsArray = redutionOverTime.map(
+            (item) => item.total_emission || 0
+          );
 
-        setco2Reduction((prev) => ({
-          ...prev,
-          xaxis: { ...prev.xaxis, categories: dateArray },
-          series: [{ name: "Total Records", data: recordsArray }],
-        }));
+          setco2Reduction((prev) => ({
+            ...prev,
+            xaxis: { ...prev.xaxis, categories: dateArray },
+            series: [{ name: "CO₂ Reduction", data: recordsArray }],
+          }));
+        }
 
-        const dateByArray = (emissionsByDate || []).map((item) => ({
-          x: dateFormat(item?.date || ""),
-          y: item?.total_emissions || 0,
-        }));
+        // Handle Emissions By Date data
+        if (emissionsByDate && Array.isArray(emissionsByDate)) {
+          const dateByArray = emissionsByDate.map((item) => ({
+            x: dateFormat(item?.date || ""),
+            y: item?.total_emissions || 0,
+          }));
 
-        setCo2EmissionsByDateSeries([
-          {
-            name: "CO₂ Emissions",
-            data: dateByArray,
-          },
-        ]);
+          setCo2EmissionsByDateSeries([
+            {
+              name: "CO₂ Emissions",
+              data: dateByArray,
+            },
+          ]);
+        }
 
-        setco2EmissionsByCategory((prev) => ({
-          ...prev,
-          labels: (emissionsByCategory || []).map(
+        // Handle Emissions By Category data
+        if (emissionsByCategory && Array.isArray(emissionsByCategory)) {
+          const categoryLabels = emissionsByCategory.map(
             (item) => item?.categoryTitle || ""
-          ),
-        }));
+          );
+          const categoryValues = emissionsByCategory.map(
+            (item) => item?.totalEmissions || 0
+          );
 
-        setco2EmissionsByCategorySeries(
-          (emissionsByCategory || []).map((item) => item?.totalEmissions || 0)
-        );
+          setco2EmissionsByCategory((prev) => ({
+            ...prev,
+            labels: categoryLabels,
+          }));
 
-        const emissionsDataArray = (emissionsTrend || []).map((item) => [
-          item.year || "",
-          item.totalEmissions || 0,
-        ]);
+          setco2EmissionsByCategorySeries(categoryValues);
+        }
 
-        setCo2EmissionsTrend((prevState) => ({
-          ...prevState,
-          series: [{ ...prevState.series[0], data: emissionsDataArray }],
-        }));
+        // Handle Emissions Trend data
+        if (emissionsTrend && Array.isArray(emissionsTrend)) {
+          const years = emissionsTrend.map((item) => item.year || "");
+          const emissions = emissionsTrend.map(
+            (item) => item.totalEmissions || 0
+          );
+
+          setCo2EmissionsTrend((prevState) => ({
+            ...prevState,
+            xaxis: {
+              ...prevState.xaxis,
+              categories: years,
+            },
+            series: [
+              {
+                name: "CO₂ Emissions",
+                data: emissions,
+              },
+            ],
+          }));
+        }
       } catch (error) {
         console.error("Error fetching stats", error);
       }
@@ -765,44 +1059,53 @@ const DashboardPage = () => {
     document.body.className = `${newTheme}-theme`;
   };
 
-  // Function to download chart as PDF
-  const downloadPDF = (chartRef, title) => {
-    if (!chartRef.current) return;
-    const chartElement = chartRef.current;
-
-    html2canvas(chartElement).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("landscape");
-      pdf.addImage(imgData, "PNG", 10, 10, 280, 150);
-      pdf.save(`${title}.pdf`);
-    });
-  };
-
   const downloadAllPDFs = async () => {
     const pdf = new jsPDF("portrait", "mm", "a4");
     const charts = [
-      { ref: co2ReductionRef },
-      { ref: co2EmissionsByDateRef },
-      { ref: co2EmissionsByCategoryRef },
-      { ref: co2EmissionsTrendRef },
+      { ref: co2ReductionRef, title: "CO₂ Reduction Over Time" },
+      { ref: co2EmissionsByDateRef, title: "CO₂ Emissions By Date" },
+      { ref: co2EmissionsByCategoryRef, title: "CO₂ Emissions By Category" },
+      { ref: co2EmissionsTrendRef, title: "CO₂ Emissions Trend" },
     ];
 
-    for (let i = 0; i < charts.length; i++) {
-      const { ref } = charts[i];
+    try {
+      for (let i = 0; i < charts.length; i++) {
+        const { ref, title } = charts[i];
 
-      if (!ref.current) continue;
+        if (!ref.current) continue;
 
-      const canvas = await html2canvas(ref.current, { scale: 2 });
-      const imgData = canvas.toDataURL("image/png");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        const canvas = await html2canvas(ref.current, {
+          scale: 2,
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: theme === "dark" ? "#1e293b" : "#ffffff",
+        });
 
-      if (i !== 0) pdf.addPage(); // Add a new page for each chart except the first
-      pdf.setFontSize(16);
-      pdf.addImage(imgData, "PNG", 10, 20, pdfWidth - 20, pdfHeight - 20);
+        const imgData = canvas.toDataURL("image/png", 1.0);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        if (i !== 0) pdf.addPage();
+
+        // Add title
+        pdf.setFontSize(16);
+        pdf.setTextColor(theme === "dark" ? 200 : 50);
+        pdf.text(title, 10, 20);
+
+        // Add date
+        pdf.setFontSize(10);
+        pdf.setTextColor(100);
+        pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, 10, 28);
+
+        // Add image
+        pdf.addImage(imgData, "PNG", 10, 35, pdfWidth - 20, pdfHeight - 20);
+      }
+
+      pdf.save("All_CO2_Emissions_Charts.pdf");
+    } catch (error) {
+      console.error("Error generating PDFs:", error);
     }
-
-    pdf.save("All_CO2_Emissions_Charts.pdf");
   };
 
   const dateFormat = (date) => {
@@ -868,7 +1171,9 @@ const DashboardPage = () => {
               >
                 <div className="card-header d-flex align-items-center">
                   <i className="fas fa-building fa-2x me-3"></i>
-                  <h4 className="card-title mb-0">Companies</h4>
+                  <h4 className="card-title mb-0 text-start">
+                    Company Locations
+                  </h4>
                 </div>
                 <div className="card-body text-center">
                   <div className="display-4 font-weight-bold mt-2">
@@ -1017,20 +1322,17 @@ const DashboardPage = () => {
             </div>
           </div>
           <div className="row mt-3 pb-5 row-gap-3">
-            <div className="col-md-6">
+            <div className="col-lg-6">
               <div
                 className={`card shadow-lg h-100 bg-${theme} text-${
                   theme === "light" ? "dark" : "light"
                 } rounded-3`}
               >
-                <div className="card-body text-center">
-                  <div className="report-chart">
-                    {/* <button onClick={() => downloadPDF(co2ReductionRef, "CO2 Reduction")} className="graph-pdf-btn">
-                      <i className="fas fa-file-pdf"></i>
-                    </button> */}
-                    <div className="" ref={co2ReductionRef}>
+                <div className="text-center">
+                  <div className="report-chart position-relative">
+                    <div className="chart-container" ref={co2ReductionRef}>
                       <Chart
-                        className="mt-6 -mb-6"
+                        className="mt-2"
                         options={co2Reduction}
                         series={co2Reduction.series}
                         type="line"
@@ -1041,20 +1343,20 @@ const DashboardPage = () => {
                 </div>
               </div>
             </div>
-            <div className="col-md-6">
+            <div className="col-lg-6">
               <div
                 className={`card shadow-lg h-100 bg-${theme} text-${
                   theme === "light" ? "dark" : "light"
                 } rounded-3`}
               >
-                <div className="card-body text-center">
-                  <div className="report-chart">
-                    {/* <button onClick={() => downloadPDF(co2EmissionsByDateRef, "CO2 Emissions By Date")} className="graph-pdf-btn">
-                      <i className="fas fa-file-pdf"></i>
-                    </button> */}
-                    <div className="" ref={co2EmissionsByDateRef}>
+                <div className="text-center">
+                  <div className="report-chart position-relative">
+                    <div
+                      className="chart-container"
+                      ref={co2EmissionsByDateRef}
+                    >
                       <Chart
-                        className="mt-6 -mb-6"
+                        className="mt-2"
                         options={co2EmissionsByDate}
                         series={co2EmissionsByDateSeries}
                         type="bar"
@@ -1065,20 +1367,20 @@ const DashboardPage = () => {
                 </div>
               </div>
             </div>
-            <div className="col-md-6 mt-2">
+            <div className="col-lg-6 mt-2">
               <div
                 className={`card shadow-lg h-100 bg-${theme} text-${
                   theme === "light" ? "dark" : "light"
                 } rounded-3`}
               >
-                <div className="card-body text-center">
-                  <div className="report-chart">
-                    {/* <button onClick={() => downloadPDF(co2EmissionsByCategoryRef, "CO2 Emissions By Category")} className="graph-pdf-btn">
-                      <i className="fas fa-file-pdf"></i>
-                    </button> */}
-                    <div className="" ref={co2EmissionsByCategoryRef}>
+                <div className="text-center">
+                  <div className="report-chart position-relative">
+                    <div
+                      className="chart-container"
+                      ref={co2EmissionsByCategoryRef}
+                    >
                       <Chart
-                        className="mt-6 -mb-6"
+                        className="mt-2"
                         options={co2EmissionsByCategory}
                         series={co2EmissionsByCategorySeries}
                         type="pie"
@@ -1090,19 +1392,17 @@ const DashboardPage = () => {
               </div>
             </div>
 
-            <div className="col-md-6 mt-2">
+            <div className="col-lg-6 mt-2">
               <div
                 className={`card shadow-lg h-100 bg-${theme} text-${
                   theme === "light" ? "dark" : "light"
                 } rounded-3`}
               >
-                <div className="card-body text-center">
-                  <div className="report-chart">
-                    {/* <button onClick={() => downloadPDF(co2EmissionsTrendRef, "CO2 Emissions Trend")} className="graph-pdf-btn">
-                      <i className="fas fa-file-pdf"></i>
-                    </button> */}
-                    <div className="" ref={co2EmissionsTrendRef}>
+                <div className="text-center">
+                  <div className="report-chart position-relative">
+                    <div className="chart-container" ref={co2EmissionsTrendRef}>
                       <Chart
+                        className="mt-2"
                         options={co2EmissionsTrend}
                         series={co2EmissionsTrend.series}
                         type="line"

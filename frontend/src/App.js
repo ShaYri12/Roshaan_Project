@@ -12,6 +12,10 @@ import EnergyEmissions from "./pages/EnergyEmissions";
 import TransportEmissions from "./pages/TransportEmissions";
 import VehiclePage from "./pages/Vehicles";
 import VehicleRegisterPage from "./pages/VehicleRegister";
+import YearlyReportsPage from "./pages/YearlyReports";
+import InvoicesPage from "./pages/Invoices";
+import ProductsPage from "./pages/Products";
+import LicensePlatePage from "./pages/LicensePlate";
 import "./assets/style.css";
 
 const App = () => {
@@ -37,6 +41,10 @@ const App = () => {
         <Route path="/transport-emissions" element={<TransportEmissions />} />
         <Route path="/vehicles" element={<VehiclePage />} />
         <Route path="/vehicle-register" element={<VehicleRegisterPage />} />
+        <Route path="/yearly-reports" element={<YearlyReportsPage />} />
+        <Route path="/invoices" element={<InvoicesPage />} />
+        <Route path="/products" element={<ProductsPage />} />
+        <Route path="/license-plate" element={<LicensePlatePage />} />
       </Routes>
     </div>
   );

@@ -10,7 +10,7 @@ const dotEnv = process.env;
 const authRoutes = require("./routes/auth");
 const dashboardRoutes = require("./routes/dashboard");
 const employeeRoutes = require("./routes/employee");
-const vehicleRoutes=require("./routes/Vehicle")
+const vehicleRoutes = require("./routes/Vehicle");
 const companyRoutes = require("./routes/company");
 const emissionRoutes = require("./routes/emission");
 const employeeTransportation = require("./routes/employeeTransportation");
@@ -19,6 +19,8 @@ const transportationRoutes = require("./routes/transportation");
 const workingHoursRoutes = require("./routes/workingHours");
 const emissionTypeRoutes = require("./routes/emissionTypeRoutes");
 const userEmissionRoutes = require("./routes/userEmissionRoutes");
+const productRoutes = require("./routes/productRoutes");
+const yearlyReportRoutes = require("./routes/yearlyReportRoutes");
 
 const energyEmissionRoutes = require("./routes/energyEmissions");
 const transportEmissionRoutes = require("./routes/transportEmission");
@@ -26,11 +28,13 @@ const transportEmissionRoutes = require("./routes/transportEmission");
 // Middleware
 app.use(cors());
 // OR, Allow specific origins
-app.use(cors({
-  origin: dotEnv.CORS_ORIGIN || "http://localhost:3000",  // Replace with your React frontend URL
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true // Allow cookies and authentication headers
-}));
+app.use(
+  cors({
+    origin: dotEnv.CORS_ORIGIN || "http://localhost:3000", // Replace with your React frontend URL
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true, // Allow cookies and authentication headers
+  })
+);
 
 app.use(bodyParser.json());
 
@@ -47,6 +51,8 @@ app.use("/api/transportations", transportationRoutes);
 app.use("/api/workinghours", workingHoursRoutes);
 app.use("/api/user-emissions", userEmissionRoutes);
 app.use("/api/emission-types", emissionTypeRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/yearly-reports", yearlyReportRoutes);
 
 app.use("/api/energy-emissions", energyEmissionRoutes);
 app.use("/api/transport-emissions", transportEmissionRoutes);

@@ -100,6 +100,10 @@ const DashboardPage = () => {
     date: "",
     recurring: false,
     employeeId: "",
+    co2Emission: "",
+    usageType: "",
+    workFromHomeDays: "",
+    recurrenceDays: "",
   });
   const [employeeWorkTransportationData, setEmployeeWorkTransportationData] =
     useState({});
@@ -442,6 +446,54 @@ const DashboardPage = () => {
   const handleEmpTransSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Validate required fields
+      const requiredFields = [
+        "transportationMode",
+        "beginLocation",
+        "endLocation",
+        "date",
+        "co2Emission",
+        "usageType",
+      ];
+      const missingFields = requiredFields.filter(
+        (field) => !employeeTransportationData[field]
+      );
+
+      if (missingFields.length > 0) {
+        alert(
+          `Please fill in all required fields: ${missingFields.join(", ")}`
+        );
+        return;
+      }
+
+      // Clean up and format the data before sending
+      const formData = {
+        ...employeeTransportationData,
+        // Clean up location strings by removing any extra quotes
+        beginLocation: employeeTransportationData.beginLocation.replace(
+          /"/g,
+          ""
+        ),
+        endLocation: employeeTransportationData.endLocation.replace(/"/g, ""),
+        // Format date
+        date: new Date(employeeTransportationData.date).toISOString(),
+        // Convert numeric fields
+        co2Emission: parseFloat(employeeTransportationData.co2Emission) || 0,
+        workFromHomeDays:
+          parseInt(employeeTransportationData.workFromHomeDays) || 0,
+        recurrenceDays:
+          parseInt(employeeTransportationData.recurrenceDays) || 0,
+        // Ensure employeeId is set
+        employeeId:
+          employeeId || JSON.parse(localStorage.getItem("userObj"))?._id,
+        // Set default values for optional fields
+        isFavorite: employeeTransportationData.isFavorite || false,
+        recurring: employeeTransportationData.recurring || false,
+      };
+
+      // Log the data being sent for debugging
+      console.log("Sending data:", formData);
+
       const response = await fetch(
         `${REACT_APP_API_URL}/employeeTransportations`,
         {
@@ -450,18 +502,27 @@ const DashboardPage = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
           },
-          body: JSON.stringify(employeeTransportationData),
+          body: JSON.stringify(formData),
         }
       );
 
-      if (response.ok) {
-        console.log("Transportation record saved!");
-        window.location.reload();
-      } else {
-        throw new Error("Failed to save transportation record?.");
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Server error response:", errorData);
+        throw new Error(
+          errorData.message || "Failed to save transportation record"
+        );
       }
+
+      console.log("Transportation record saved successfully!");
+      setIsTransportationModalVisible(false);
+      window.location.reload();
     } catch (error) {
       console.error("Error saving transportation record:", error);
+      alert(
+        error.message ||
+          "Failed to save transportation record. Please try again."
+      );
     }
   };
 
@@ -500,6 +561,34 @@ const DashboardPage = () => {
 
   useEffect(() => {
     document.body.className = `${theme}-theme`;
+
+    // Add event listeners for modal triggers
+    const handleTransportModal = () => handleAddNewTransport();
+    const handleWorkTransportModal = () => handleAddNewWorkTransport();
+    const handleVehicleModal = () => regVehicle(true);
+    const handleOtherResourceModal = () => handleAddOtherResource();
+    const handleProfileModal = () => setIsProfileModalVisible(true);
+
+    window.addEventListener("openTransportModal", handleTransportModal);
+    window.addEventListener("openWorkTransportModal", handleWorkTransportModal);
+    window.addEventListener("openVehicleModal", handleVehicleModal);
+    window.addEventListener("openOtherResourceModal", handleOtherResourceModal);
+    window.addEventListener("openProfileModal", handleProfileModal);
+
+    // Cleanup event listeners
+    return () => {
+      window.removeEventListener("openTransportModal", handleTransportModal);
+      window.removeEventListener(
+        "openWorkTransportModal",
+        handleWorkTransportModal
+      );
+      window.removeEventListener("openVehicleModal", handleVehicleModal);
+      window.removeEventListener(
+        "openOtherResourceModal",
+        handleOtherResourceModal
+      );
+      window.removeEventListener("openProfileModal", handleProfileModal);
+    };
   }, [theme]);
 
   const handleAddNewTransport = () => {
@@ -703,48 +792,10 @@ const DashboardPage = () => {
       />
 
       <div className={`main-content ${!isSidebarOpen ? "sidebar-closed" : ""}`}>
-        <div className="mt-4">
-          <div className="row justify-content-between align-items-center w-100 gap-3">
-            <div className="col-auto">
-              <div className="d-flex flex-wrap btn-group-spacing gap-2">
-                <button
-                  className="btn btn-outline-primary mb-0 me-0"
-                  onClick={() => handleAddNewTransport()}
-                >
-                  <i className="fas fa-car me-1"></i> Add New Transport
-                </button>
-                <button
-                  className="btn btn-outline-primary mb-0 me-0"
-                  onClick={() => handleAddNewWorkTransport()}
-                >
-                  <i className="fas fa-car me-1"></i> Add New Work Transport
-                </button>
-                <button
-                  className="btn btn-outline-primary mb-0 me-0"
-                  onClick={() => regVehicle(true)}
-                >
-                  <FaPlusCircle className="me-1" />
-                  Register Vehicle
-                </button>
-                <button
-                  className="btn btn-outline-primary mb-0 me-0"
-                  onClick={handleAddOtherResource}
-                >
-                  <i className="fas fa-plus me-1"></i> Add Other Resource
-                </button>
-                <button
-                  className="btn btn-outline-primary mb-0 me-0"
-                  onClick={() => setIsProfileModalVisible(true)}
-                >
-                  <i className="fas fa-user-edit me-1"></i> Profile
-                </button>
-              </div>
-            </div>
-          </div>
-
+        <div className="mt-2 mt-md-0">
           <div className="container-fluid px-0">
-            <ul className="nav nav-tabs">
-              <li className="nav-item">
+            <ul className="nav nav-tabs py-2">
+              <li className="nav-item tab-item">
                 <button
                   className={`nav-link ${
                     activeTab === "transport" ? "active" : ""
@@ -754,7 +805,7 @@ const DashboardPage = () => {
                   <i className="fas fa-car me-1"></i> Transport
                 </button>
               </li>
-              <li className="nav-item">
+              <li className="nav-item tab-item">
                 <button
                   className={`nav-link ${
                     activeTab === "workTransport" ? "active" : ""
@@ -764,7 +815,7 @@ const DashboardPage = () => {
                   <i className="fas fa-building me-1"></i> Work Transport
                 </button>
               </li>
-              <li className="nav-item">
+              <li className="nav-item tab-item">
                 <button
                   className={`nav-link ${
                     activeTab === "otherResources" ? "active" : ""
@@ -774,7 +825,7 @@ const DashboardPage = () => {
                   <i className="fas fa-leaf me-1"></i> Other Resources
                 </button>
               </li>
-              <li className="nav-item">
+              <li className="nav-item tab-item">
                 <button
                   className={`nav-link ${
                     activeTab === "TransportEmissions" ? "active" : ""
@@ -785,7 +836,7 @@ const DashboardPage = () => {
                   Emissions
                 </button>
               </li>
-              <li className="nav-item">
+              <li className="nav-item tab-item">
                 <button
                   className={`nav-link ${
                     activeTab === "Manage Vehicles" ? "active" : ""
@@ -1095,7 +1146,7 @@ const DashboardPage = () => {
                         >
                           <option value="bike">Bike</option>
                           <option value="walking">Walking</option>
-                          <option value="public transport">
+                          <option value="public_transport">
                             Public Transport
                           </option>
                           <option value="car">Car</option>
@@ -1141,13 +1192,14 @@ const DashboardPage = () => {
                           id="co2Emission"
                           className="form-control"
                           name="co2Emission"
-                          value={employeeWorkTransportationData.co2Emission}
+                          value={employeeTransportationData.co2Emission}
                           onChange={(e) =>
-                            setEmployeeWorkTransportationData((prevData) => ({
-                              ...prevData,
+                            setEmployeeTransportationData((prev) => ({
+                              ...prev,
                               co2Emission: e.target.value,
                             }))
                           }
+                          required
                         />
                       </div>
 
@@ -1159,10 +1211,10 @@ const DashboardPage = () => {
                           id="usageType"
                           className="form-select"
                           name="usageType"
-                          value={employeeWorkTransportationData.usageType}
+                          value={employeeTransportationData.usageType}
                           onChange={(e) =>
-                            setEmployeeWorkTransportationData((prevData) => ({
-                              ...prevData,
+                            setEmployeeTransportationData((prev) => ({
+                              ...prev,
                               usageType: e.target.value,
                             }))
                           }
@@ -1189,11 +1241,9 @@ const DashboardPage = () => {
                           id="workFromHomeDays"
                           className="form-control"
                           name="workFromHomeDays"
-                          value={
-                            employeeWorkTransportationData.workFromHomeDays
-                          }
+                          value={employeeTransportationData.workFromHomeDays}
                           onChange={(e) =>
-                            setEmployeeWorkTransportationData((prevData) => ({
+                            setEmployeeTransportationData((prevData) => ({
                               ...prevData,
                               workFromHomeDays: e.target.value,
                             }))
@@ -1211,9 +1261,9 @@ const DashboardPage = () => {
                           id="recurrenceDays"
                           className="form-select"
                           name="recurrenceDays"
-                          value={employeeWorkTransportationData.recurrenceDays}
+                          value={employeeTransportationData.recurrenceDays}
                           onChange={(e) =>
-                            setEmployeeWorkTransportationData((prevData) => ({
+                            setEmployeeTransportationData((prevData) => ({
                               ...prevData,
                               recurrenceDays: e.target.value,
                             }))
@@ -1237,9 +1287,9 @@ const DashboardPage = () => {
                           id="date"
                           className="form-control"
                           name="date"
-                          value={employeeWorkTransportationData.date}
+                          value={employeeTransportationData.date}
                           onChange={(e) =>
-                            setEmployeeWorkTransportationData((prevData) => ({
+                            setEmployeeTransportationData((prevData) => ({
                               ...prevData,
                               date: e.target.value,
                             }))

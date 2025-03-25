@@ -7,6 +7,7 @@ exports.createEmissionType = async (req, res) => {
     await newEmissionType.save();
     res.status(201).json(newEmissionType);
   } catch (error) {
+    console.error("Error creating emission type:", error);
     res.status(400).json({ error: error.message });
   }
 };
@@ -17,7 +18,8 @@ exports.getAllEmissionTypes = async (req, res) => {
     const emissionTypes = await EmissionType.find();
     res.status(200).json(emissionTypes);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error("Error fetching emission types:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -29,18 +31,32 @@ exports.updateEmissionType = async (req, res) => {
       req.body,
       { new: true }
     );
+
+    if (!updatedEmissionType) {
+      return res.status(404).json({ error: "Emission type not found" });
+    }
+
     res.status(200).json(updatedEmissionType);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error("Error updating emission type:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
 // Delete an emission type
 exports.deleteEmissionType = async (req, res) => {
   try {
-    await EmissionType.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: "Emission type deleted" });
+    const deletedEmissionType = await EmissionType.findByIdAndDelete(
+      req.params.id
+    );
+
+    if (!deletedEmissionType) {
+      return res.status(404).json({ error: "Emission type not found" });
+    }
+
+    res.status(200).json({ message: "Emission type deleted successfully" });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error("Error deleting emission type:", error);
+    res.status(500).json({ error: error.message });
   }
 };

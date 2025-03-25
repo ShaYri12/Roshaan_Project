@@ -14,22 +14,42 @@ const EmissionTypesPage = () => {
     conversionFactor: "",
   });
   const [editEmissionTypeId, setEditEmissionTypeId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchEmissionTypes = async () => {
+      setLoading(true);
       try {
-        const response = await axios.get(
-          `${REACT_APP_API_URL}/emission-types`,
-          {
-            headers: {
-              Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
-            },
-          }
-        );
-        setEmissionTypes(response.data);
+        console.log("Fetching emission types...");
+        console.log("API URL:", `${REACT_APP_API_URL}/emission-types`);
+
+        const response = await fetch(`${REACT_APP_API_URL}/emission-types`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
+          },
+        });
+
+        if (!response.ok) {
+          console.error(
+            "Error response:",
+            response.status,
+            response.statusText
+          );
+          throw new Error(`Failed to fetch emission types: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Emission types data:", data);
+        setEmissionTypes(data);
       } catch (error) {
         console.error("Error fetching emission types:", error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -134,6 +154,16 @@ const EmissionTypesPage = () => {
             <FaPlus className="me-2" /> Add New Emission Type
           </button>
         </div>
+
+        {loading && (
+          <div className="alert alert-info">Loading emission types...</div>
+        )}
+        {error && (
+          <div className="alert alert-danger">
+            Error: {error}. Please check console for details.
+          </div>
+        )}
+
         <div className="table-responsive">
           <table className="table table-striped table-bordered table-hover">
             <thead>
@@ -145,37 +175,37 @@ const EmissionTypesPage = () => {
               </tr>
             </thead>
             <tbody>
-              {emissionTypes.length > 0 ? (
-                emissionTypes.map((type, index) => (
-                  <tr key={type._id}>
-                    <td>{index + 1}</td>
-                    <td>{type.name}</td>
-                    <td>{type.conversionFactor}</td>
-                    <td>
-                      <div className="d-flex">
-                        <button
-                          className="btn btn-info btn-sm me-2"
-                          onClick={() => handleEditEmissionType(type)}
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => handleDeleteEmissionType(type._id)}
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="4" className="text-center text-muted">
-                    No emission types found
-                  </td>
-                </tr>
-              )}
+              {emissionTypes.length > 0
+                ? emissionTypes.map((type, index) => (
+                    <tr key={type._id}>
+                      <td>{index + 1}</td>
+                      <td>{type.name}</td>
+                      <td>{type.conversionFactor}</td>
+                      <td>
+                        <div className="d-flex">
+                          <button
+                            className="btn btn-info btn-sm me-2"
+                            onClick={() => handleEditEmissionType(type)}
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDeleteEmissionType(type._id)}
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                : !loading && (
+                    <tr>
+                      <td colSpan="4" className="text-center text-muted">
+                        No emission types found
+                      </td>
+                    </tr>
+                  )}
             </tbody>
           </table>
         </div>

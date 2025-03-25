@@ -5,13 +5,26 @@ import { REACT_APP_API_URL } from "../env";
 
 const VehicleRegisterPage = ({ userData, isModelVisible, isAdmin }) => {
   const [vehicleName, setVehicleName] = useState(userData?.vehicleName || "");
-  const [vehicleType, setVehicleType] = useState(userData?.vehicleType || "");
-  const [engineNumber, setEngineNumber] = useState(userData?.engineNumber || "");
-  const [vehicleModel, setVehicleModel] = useState(userData?.vehicleModel || "");
-  const [vehicleUse, setVehicleUse] = useState(userData?.car?.name || "Personal");
-  const [licensePlate, setLicensePlate] = useState(userData?.car?.licensePlate || "");
-  const [carType, setCarType] = useState(userData?.car?.companyCar ? "Company" : "Personal");
+  const [vehicleType, setVehicleType] = useState(
+    userData?.vehicleType || "car"
+  );
+  const [engineNumber, setEngineNumber] = useState(
+    userData?.engineNumber || ""
+  );
+  const [vehicleModel, setVehicleModel] = useState(
+    userData?.vehicleModel || ""
+  );
+  const [vehicleUse, setVehicleUse] = useState(
+    userData?.car?.name || "Personal"
+  );
+  const [licensePlate, setLicensePlate] = useState(
+    userData?.car?.licensePlate || ""
+  );
+  const [carType, setCarType] = useState(
+    userData?.car?.companyCar ? "Company" : "Personal"
+  );
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -23,15 +36,17 @@ const VehicleRegisterPage = ({ userData, isModelVisible, isAdmin }) => {
       setVehicleUse(userData?.car?.name || "Personal");
       setLicensePlate(userData?.car?.licensePlate || "");
       setCarType(userData?.car?.companyCar ? "Company" : "Personal");
+      setError("");
     }
   }, [userData, isModelVisible]);
   const user = JSON.parse(localStorage.getItem("userData") || "{}");
   const userId = user?.id;
   console.log("User ID:", userId); // ✅ Output: 677d81fc514db45c144072af
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+    setError("");
+
     const data = {
       vehicleName,
       vehicleType,
@@ -41,16 +56,16 @@ const VehicleRegisterPage = ({ userData, isModelVisible, isAdmin }) => {
       licensePlate,
       owner: userId, // Assuming the owner ID is needed
     };
-  
+
     try {
       setIsLoading(true);
-  
+
       const url = isModelVisible
         ? `${REACT_APP_API_URL}/vehicles/${userData?._id}`
         : `${REACT_APP_API_URL}/vehicles`;
-  
+
       const method = isModelVisible ? "PUT" : "POST";
-  
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -59,37 +74,48 @@ const VehicleRegisterPage = ({ userData, isModelVisible, isAdmin }) => {
         },
         body: JSON.stringify(data),
       });
-  
+
       if (response.ok) {
         const responseData = await response.json();
-  
+
         // ✅ Get existing user data without overwriting
         const storedUserData = localStorage.getItem("userObj");
         let existingUserData = storedUserData ? JSON.parse(storedUserData) : {};
-  
+
         // ✅ Only update `vehicles` array, don't overwrite entire `userObj`
         existingUserData.vehicles = [
           ...(existingUserData.vehicles || []), // Keep existing vehicles
           responseData?.vehicle, // Add new vehicle
         ];
-  
+
         // ✅ Store updated user data
         localStorage.setItem("userObj", JSON.stringify(existingUserData));
-  
+
         window.location.reload();
       } else {
         const errorData = await response.json();
         console.error("Error:", errorData);
+
+        // Handle specific error cases
+        if (errorData.message && errorData.message.includes("duplicate")) {
+          setError(
+            "This license plate is already registered to another vehicle."
+          );
+        } else if (errorData.message) {
+          setError(errorData.message);
+        } else {
+          setError(
+            "An error occurred while saving the vehicle. Please try again."
+          );
+        }
       }
     } catch (error) {
       console.error("Error during registration/update", error);
-      // alert("An error occurred. Please try again later.");
+      setError("An error occurred. Please try again later.");
     } finally {
       setIsLoading(false);
     }
   };
-  
-  
 
   return (
     <>
@@ -104,9 +130,17 @@ const VehicleRegisterPage = ({ userData, isModelVisible, isAdmin }) => {
         <div className={userData ? "" : "row justify-content-center"}>
           <div className={userData ? "" : "col-md-8"}>
             <div className="container">
+              {error && (
+                <div className="alert alert-danger mb-3" role="alert">
+                  {error}
+                </div>
+              )}
+
               <form
                 onSubmit={handleSubmit}
-                className={!isModelVisible && !isAdmin ? "border p-4 rounded" : ""}
+                className={
+                  !isModelVisible && !isAdmin ? "border p-4 rounded" : ""
+                }
               >
                 <div className="row">
                   <div className="col-6 mb-3">
@@ -179,6 +213,9 @@ const VehicleRegisterPage = ({ userData, isModelVisible, isAdmin }) => {
                       onChange={(e) => setLicensePlate(e.target.value)}
                       required
                     />
+                    <small className="text-muted">
+                      Must be unique across all vehicles
+                    </small>
                   </div>
                 </div>
 
@@ -207,8 +244,25 @@ const VehicleRegisterPage = ({ userData, isModelVisible, isAdmin }) => {
                 )}
 
                 <div className="d-flex justify-content-end">
-                  <button type="submit" className="btn btn-primary" disabled={isLoading}>
-                    {isModelVisible ? "Update" : "Register"}
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                        {isModelVisible ? "Updating..." : "Registering..."}
+                      </>
+                    ) : isModelVisible ? (
+                      "Update"
+                    ) : (
+                      "Register"
+                    )}
                   </button>
                 </div>
               </form>
