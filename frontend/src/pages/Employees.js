@@ -106,7 +106,7 @@ const EmployeePage = () => {
       <nav className="navbar navbar-expand-lg navbar-light bg-light">
         <div className="navbar-inner d-flex justify-content-between align-items-center flex-wrap gap-2 px-3">
           <span className="navbar-brand">
-            <div className="card-header d-flex align-items-center">
+            <div className="d-flex align-items-center">
               <i className="fas fa-users fa-1x me-3"></i>
               <h4 className="card-title mb-0">Employees</h4>
             </div>

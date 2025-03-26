@@ -892,9 +892,9 @@ const YearlyReportsPage = () => {
         <div className="container">
           <h1 className="my-4">Yearly CO₂ Emissions Reports</h1>
 
-          <div className="row mb-4">
+          <div className="row mb-4 row-gap-5">
             <div className="col-md-4">
-              <div className={`card bg-${theme} border-0 shadow-sm`}>
+              <div className={`bg-${theme} border-0 shadow-sm`}>
                 <div className="card-body">
                   <h5 className="card-title">Generate New Report</h5>
                   <div className="mb-3">
@@ -938,10 +938,10 @@ const YearlyReportsPage = () => {
               </div>
             </div>
 
-            <div className="col-md-8">
-              <div className={`card bg-${theme} border-0 shadow-sm`}>
+            <div className="col-md-12">
+              <div className={`bg-${theme} border-0 shadow-sm`}>
                 <div className="card-body">
-                  <h5 className="card-title">Saved Reports</h5>
+                  <h5 className="card-title mb-2">Saved Reports</h5>
                   {savedReports.length === 0 ? (
                     <p className="text-muted">
                       No saved reports yet. Generate and save your first report!

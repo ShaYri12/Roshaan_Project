@@ -1131,11 +1131,11 @@ const DashboardPage = () => {
       <div className={`main-content ${!isSidebarOpen ? "sidebar-closed" : ""}`}>
         <div className="container text-center">
           {/* Dashboard stats */}
-          <div className="row g-4">
+          <div className="row g-4 ">
             {/* Employees Card */}
             <div className="col-xl-4 col-md-6">
               <div
-                className={`card shadow-lg h-100 bg-${theme} text-${
+                className={`card m-0 shadow-lg h-100 bg-${theme} text-${
                   theme === "light" ? "dark" : "light"
                 } rounded-3`}
               >
@@ -1165,7 +1165,7 @@ const DashboardPage = () => {
             {/* Companies Card */}
             <div className="col-xl-4 col-md-6">
               <div
-                className={`card shadow-lg h-100 bg-${theme} text-${
+                className={`card m-0 shadow-lg h-100 bg-${theme} text-${
                   theme === "light" ? "dark" : "light"
                 } rounded-3`}
               >
@@ -1224,7 +1224,7 @@ const DashboardPage = () => {
             {/* Emission Records Card */}
             <div className="col-xl-4 col-md-6">
               <div
-                className={`card shadow-lg h-100 bg-${theme} text-${
+                className={`card m-0 shadow-lg h-100 bg-${theme} text-${
                   theme === "light" ? "dark" : "light"
                 } rounded-3`}
               >
@@ -1253,7 +1253,7 @@ const DashboardPage = () => {
             {/* Emission Type Card */}
             <div className="col-xl-4 col-md-6">
               <div
-                className={`card shadow-lg h-100 bg-${theme} text-${
+                className={`card m-0 shadow-lg h-100 bg-${theme} text-${
                   theme === "light" ? "dark" : "light"
                 } rounded-3`}
               >
@@ -1282,7 +1282,7 @@ const DashboardPage = () => {
             {/* Vehicle Card  */}
             <div className="col-xl-4 col-md-6">
               <div
-                className={`card shadow-lg h-100 bg-${theme} text-${
+                className={`card m-0 shadow-lg h-100 bg-${theme} text-${
                   theme === "light" ? "dark" : "light"
                 } rounded-3`}
               >

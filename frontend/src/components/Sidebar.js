@@ -1,16 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { CiLogout } from "react-icons/ci";
-import {
-  FaBars,
-  FaShippingFast,
-  FaCog,
-  FaBuilding,
-  FaCarAlt,
-  FaChartLine,
-  FaGasPump,
-  FaLeaf,
-  FaCarSide,
-} from "react-icons/fa";
+import { FaBars, FaShippingFast, FaCog, FaBuilding } from "react-icons/fa";
 import { MdTravelExplore } from "react-icons/md";
 import { BsCloudHaze2Fill } from "react-icons/bs";
 import { Link, useLocation } from "react-router-dom";
@@ -34,6 +24,7 @@ const Sidebar = ({
 
   // Toggle expanded state for menu items
   const toggleExpand = (itemName) => {
+    setIsSidebarOpen(true);
     if (expandedItem === itemName) {
       setExpandedItem(null);
     } else {

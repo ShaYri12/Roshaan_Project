@@ -520,6 +520,7 @@ a:hover {
 
   .card {
     margin: 10px 0;
+    padding: 10px 0px;
   }
 
   .btn {
@@ -1248,7 +1249,7 @@ h4 {
 
 .sidebar-toggled {
   right: 0px;
-  left: 15px;
+  left: 17px;
 }
 
 .sidebar-toggle:hover {
