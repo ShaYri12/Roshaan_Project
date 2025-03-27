@@ -193,7 +193,7 @@ const EmployeePage = () => {
       {/* Profile Update Modal */}
       {isModalVisible && (
         <div
-          className="modal fade show"
+          className="modal fade show custom-scrollbar"
           tabIndex="-1"
           style={{ display: "block" }}
           aria-labelledby="exampleModalLabel"

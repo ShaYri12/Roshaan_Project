@@ -600,6 +600,7 @@ const YearlyReportsPage = () => {
   const loadReport = (reportId) => {
     try {
       const token = localStorage.getItem("token");
+      console.log(`Attempting to load report with ID: ${reportId}`);
 
       fetch(`${REACT_APP_API_URL}/yearly-reports/${reportId}`, {
         method: "GET",
@@ -608,13 +609,24 @@ const YearlyReportsPage = () => {
           Authorization: `Bearer ${token}`,
         },
       })
-        .then((response) => {
+        .then(async (response) => {
           if (!response.ok) {
-            throw new Error(`Error loading report: ${response.statusText}`);
+            // Try to get the error message from the response body
+            let errorMessage = `Error loading report: ${response.statusText}`;
+            try {
+              const errorData = await response.json();
+              if (errorData && errorData.message) {
+                errorMessage = `Error loading report: ${errorData.message}`;
+              }
+            } catch (e) {
+              console.error("Error parsing error response:", e);
+            }
+            throw new Error(errorMessage);
           }
           return response.json();
         })
         .then((report) => {
+          console.log("Report loaded successfully:", report);
           setReportData(report);
           setSelectedYear(report.year);
 
@@ -636,7 +648,7 @@ const YearlyReportsPage = () => {
           alert(`Failed to load report: ${error.message}`);
         });
     } catch (error) {
-      console.error("Error loading report:", error);
+      console.error("Error in loadReport function:", error);
       alert(`Failed to load report: ${error.message}`);
     }
   };
@@ -894,7 +906,7 @@ const YearlyReportsPage = () => {
 
           <div className="row mb-4 row-gap-5">
             <div className="col-md-4">
-              <div className={`bg-${theme} border-0 shadow-sm`}>
+              <div className={`card m-0 p-0 bg-${theme} border-0 shadow-sm`}>
                 <div className="card-body">
                   <h5 className="card-title">Generate New Report</h5>
                   <div className="mb-3">
@@ -939,7 +951,7 @@ const YearlyReportsPage = () => {
             </div>
 
             <div className="col-md-12">
-              <div className={`bg-${theme} border-0 shadow-sm`}>
+              <div className={`card m-0 p-0 bg-${theme} border-0 shadow-sm`}>
                 <div className="card-body">
                   <h5 className="card-title mb-2">Saved Reports</h5>
                   {savedReports.length === 0 ? (
@@ -1003,7 +1015,9 @@ const YearlyReportsPage = () => {
           {reportData && (
             <div className="row">
               <div className="col-12">
-                <div className={`card bg-${theme} border-0 shadow-sm mb-4`}>
+                <div
+                  className={`card m-0 p-0 bg-${theme} border-0 shadow-sm mb-4`}
+                >
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-center mb-4">
                       <h4 className="mb-0">
@@ -1051,7 +1065,7 @@ const YearlyReportsPage = () => {
                       <div className="row">
                         <div className="col-md-4 mb-4">
                           <div
-                            className={`card bg-${theme} border-0 shadow-sm h-100`}
+                            className={`card m-0 bg-${theme} border-0 shadow-sm h-100`}
                           >
                             <div className="card-body text-center">
                               <h5 className="card-title">Total Emissions</h5>
@@ -1065,7 +1079,7 @@ const YearlyReportsPage = () => {
 
                         <div className="col-md-8 mb-4">
                           <div
-                            className={`card bg-${theme} border-0 shadow-sm h-100`}
+                            className={`card m-0 bg-${theme} border-0 shadow-sm h-100`}
                           >
                             <div className="card-body">
                               <h5 className="card-title">
@@ -1085,7 +1099,7 @@ const YearlyReportsPage = () => {
                       <div className="row">
                         <div className="col-md-6 mb-4">
                           <div
-                            className={`card bg-${theme} border-0 shadow-sm h-100`}
+                            className={`card m-0 bg-${theme} border-0 shadow-sm h-100`}
                           >
                             <div className="card-body">
                               <h5 className="card-title">
@@ -1103,7 +1117,7 @@ const YearlyReportsPage = () => {
 
                         <div className="col-md-6 mb-4">
                           <div
-                            className={`card bg-${theme} border-0 shadow-sm h-100`}
+                            className={`card m-0 bg-${theme} border-0 shadow-sm h-100`}
                           >
                             <div className="card-body">
                               <h5 className="card-title">Summary</h5>

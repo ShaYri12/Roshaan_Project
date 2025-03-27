@@ -172,12 +172,25 @@ exports.getReportById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const report = await YearlyReport.findById(id);
+    console.log("Attempting to fetch report with ID:", id);
+
+    // Try to find by MongoDB ID or reportId
+    let report = null;
+
+    // Check if it's a valid MongoDB ObjectId
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      report = await YearlyReport.findById(id);
+    } else {
+      // If not a valid ObjectId, try by reportId
+      report = await YearlyReport.findOne({ reportId: id });
+    }
 
     if (!report) {
+      console.log("Report not found:", id);
       return res.status(404).json({ message: "Report not found" });
     }
 
+    console.log("Report found successfully:", report._id, report.reportId);
     res.status(200).json(report);
   } catch (error) {
     console.error("Error fetching yearly report:", error);

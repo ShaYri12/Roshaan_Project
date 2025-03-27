@@ -509,8 +509,14 @@ const ProductsPage = () => {
           {/* Add Product Modal */}
           {showAddModal && (
             <div className="modal-overlay">
-              <div className="modal show d-block" tabIndex="-1">
-                <div className="modal-dialog modal-lg">
+              <div
+                className="modal mw-100 w-100 show d-block custom-scrollbar"
+                tabIndex="-1"
+              >
+                <div
+                  className="modal-dialog w-100"
+                  style={{ maxWidth: "740px" }}
+                >
                   <div className={`modal-content bg-${theme}`}>
                     <div className="modal-header">
                       <h5 className="modal-title">Add New Product</h5>
@@ -771,8 +777,14 @@ const ProductsPage = () => {
           {/* Edit Product Modal */}
           {showEditModal && selectedProduct && (
             <div className="modal-overlay">
-              <div className="modal show d-block" tabIndex="-1">
-                <div className="modal-dialog modal-lg">
+              <div
+                className="modal mw-100 w-100 show d-block custom-scrollbar"
+                tabIndex="-1"
+              >
+                <div
+                  className="modal-dialog w-100"
+                  style={{ maxWidth: "740px" }}
+                >
                   <div className={`modal-content bg-${theme}`}>
                     <div className="modal-header">
                       <h5 className="modal-title">Edit Product</h5>

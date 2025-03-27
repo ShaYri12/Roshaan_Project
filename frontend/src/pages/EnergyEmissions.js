@@ -413,7 +413,11 @@ const EnergyEmissions = () => {
         </div>
 
         {/* Modal Form */}
-        <Modal show={showAddModal} onHide={closeAddModal}>
+        <Modal
+          className="custom-scrollbar"
+          show={showAddModal}
+          onHide={closeAddModal}
+        >
           <Modal.Header closeButton>
             <Modal.Title>Add Energy Emission Record</Modal.Title>
           </Modal.Header>
@@ -519,7 +523,11 @@ const EnergyEmissions = () => {
         </Modal>
 
         {/* Edit form */}
-        <Modal show={showEditModal} onHide={closeEditModal}>
+        <Modal
+          className="custom-scrollbar"
+          show={showEditModal}
+          onHide={closeEditModal}
+        >
           <Modal.Header closeButton>
             <Modal.Title>Update Energy Emission Record</Modal.Title>
           </Modal.Header>

@@ -799,9 +799,12 @@ const InvoicesPage = () => {
       {/* Invoice Details Modal */}
       {showModal && selectedInvoice && (
         <div className="modal-overlay">
-          <div className="modal show d-block" tabIndex="-1">
-            <div className="modal-dialog modal-lg">
-              <div className={`modal-content bg-${theme}`}>
+          <div
+            className="modal mw-100 w-100 show d-block custom-scrollbar"
+            tabIndex="-1"
+          >
+            <div className="modal-dialog w-100" style={{ maxWidth: "740px" }}>
+              <div className="modal-content">
                 <div className="modal-header">
                   <h5 className="modal-title">Invoice Details</h5>
                   <button

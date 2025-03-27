@@ -16,8 +16,14 @@ const CompanyPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState(null);
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light"); // Add theme state
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Apply theme class to body element on mount and when theme changes
+    document.body.className = `${theme}-theme`;
+  }, [theme]);
 
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -281,7 +287,11 @@ const CompanyPage = () => {
       </div>
 
       {showModal && (
-        <div className="modal show" tabIndex="-1" style={{ display: "block" }}>
+        <div
+          className="modal show custom-scrollbar"
+          tabIndex="-1"
+          style={{ display: "block" }}
+        >
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
@@ -340,6 +350,7 @@ const CompanyPage = () => {
                     modalData={modalData}
                     employeesState={employeesState}
                     handleEmployeeChange={handleEmployeeChange}
+                    theme={theme}
                   />
 
                   {/* <div className="mb-3">
@@ -388,6 +399,7 @@ const CompanyPage = () => {
                     modalData={modalData}
                     carsState={carsState}
                     handleCarChange={handleCarChange}
+                    theme={theme}
                   />
                 </form>
               </div>

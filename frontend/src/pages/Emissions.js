@@ -415,7 +415,11 @@ const EmissionPage = () => {
         </div>
 
         {/* Add Modal */}
-        <Modal show={showAddModal} onHide={closeAddModal}>
+        <Modal
+          show={showAddModal}
+          onHide={closeAddModal}
+          className="custom-scrollbar"
+        >
           <Modal.Header closeButton>
             <Modal.Title>Add New Emission Record</Modal.Title>
           </Modal.Header>
@@ -564,7 +568,11 @@ const EmissionPage = () => {
           </Modal.Body>
         </Modal>
 
-        <Modal show={showEditModal} onHide={closeEditModal}>
+        <Modal
+          show={showEditModal}
+          onHide={closeEditModal}
+          className="custom-scrollbar"
+        >
           <Modal.Header closeButton>
             <Modal.Title>Update Record</Modal.Title>
           </Modal.Header>

@@ -211,7 +211,11 @@ const EmissionTypesPage = () => {
         </div>
 
         {/* Add Modal */}
-        <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
+        <Modal
+          className="custom-scrollbar"
+          show={showAddModal}
+          onHide={() => setShowAddModal(false)}
+        >
           <Modal.Header closeButton>
             <Modal.Title>Add New Emission Type</Modal.Title>
           </Modal.Header>
@@ -247,7 +251,11 @@ const EmissionTypesPage = () => {
         </Modal>
 
         {/* Edit Modal */}
-        <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+        <Modal
+          className="custom-scrollbar"
+          show={showEditModal}
+          onHide={() => setShowEditModal(false)}
+        >
           <Modal.Header closeButton>
             <Modal.Title>Edit Emission Type</Modal.Title>
           </Modal.Header>

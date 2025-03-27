@@ -1106,11 +1106,30 @@ const DashboardPage = () => {
             </div>
           )}
           <TransportEmissions activeTab={activeTab} />
+
+          {/* Transportation Modal Backdrop */}
           {isTransportationModalVisible && (
             <div
-              className="modal fade show"
+              className="modal-backdrop fade show"
+              style={{
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 1040,
+              }}
+              onClick={() => setIsTransportationModalVisible(false)}
+            ></div>
+          )}
+
+          {/* Transportation Modal */}
+          {isTransportationModalVisible && (
+            <div
+              className="modal fade show custom-scrollbar"
               tabIndex="-1"
-              style={{ display: "block" }}
+              style={{ display: "block", zIndex: 1050 }}
               aria-labelledby="transportationModalLabel"
               aria-hidden="true"
             >
@@ -1309,11 +1328,29 @@ const DashboardPage = () => {
               </div>
             </div>
           )}
+          {/* Other Resources Modal Backdrop */}
           {isOtherResourcesModalVisible && (
             <div
-              className="modal fade show"
+              className="modal-backdrop fade show"
+              style={{
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 1040,
+              }}
+              onClick={() => setIsOtherResourcesModalVisible(false)}
+            ></div>
+          )}
+
+          {/* Other Resources Modal */}
+          {isOtherResourcesModalVisible && (
+            <div
+              className="modal fade show custom-scrollbar"
               tabIndex="-1"
-              style={{ display: "block" }}
+              style={{ display: "block", zIndex: 1050 }}
               aria-labelledby="otherResourcesModalLabel"
               aria-hidden="true"
             >
@@ -1399,11 +1436,29 @@ const DashboardPage = () => {
               </div>
             </div>
           )}
+          {/* Work Transportation Modal Backdrop */}
           {isWorkTransportationModalVisible && (
             <div
-              className="modal fade show"
+              className="modal-backdrop fade show"
+              style={{
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 1040,
+              }}
+              onClick={() => setIsWorkTransportationModalVisible(false)}
+            ></div>
+          )}
+
+          {/* Work Transportation Modal */}
+          {isWorkTransportationModalVisible && (
+            <div
+              className="modal fade show custom-scrollbar"
               tabIndex="-1"
-              style={{ display: "block" }}
+              style={{ display: "block", zIndex: 1050 }}
               aria-labelledby="extraTransportationModalLabel"
               aria-hidden="true"
             >
@@ -1606,11 +1661,29 @@ const DashboardPage = () => {
               </div>
             </div>
           )}
+          {/* Update Resource Modal Backdrop */}
           {isUpdateResourceModalVisible && (
             <div
-              className="modal fade show"
+              className="modal-backdrop fade show"
+              style={{
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 1040,
+              }}
+              onClick={() => setIsUpdateResourceModalVisible(false)}
+            ></div>
+          )}
+
+          {/* Update Resource Modal */}
+          {isUpdateResourceModalVisible && (
+            <div
+              className="modal fade show custom-scrollbar"
               tabIndex="-1"
-              style={{ display: "block" }}
+              style={{ display: "block", zIndex: 1050 }}
               aria-labelledby="updateResourceModalLabel"
               aria-hidden="true"
             >
@@ -1709,12 +1782,29 @@ const DashboardPage = () => {
               </div>
             </div>
           )}
+          {/* Register Vehicle Modal Backdrop */}
+          {isRegModel && (
+            <div
+              className="modal-backdrop fade show"
+              style={{
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 1040,
+              }}
+              onClick={closeModal}
+            ></div>
+          )}
+
           {/* Register Vehicle Modal */}
           {isRegModel && (
             <div
-              className="modal fade show"
+              className="modal fade show custom-scrollbar"
               tabIndex="-1"
-              style={{ display: "block" }}
+              style={{ display: "block", zIndex: 1050 }}
               aria-labelledby="exampleModalLabel"
               aria-hidden="true"
             >
@@ -1736,6 +1826,57 @@ const DashboardPage = () => {
                       userData={isRegModel}
                       isModalVisible={false}
                       isAdmin={true}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Profile Modal Backdrop */}
+          {isProfileModalVisible && (
+            <div
+              className="modal-backdrop fade show"
+              style={{
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 1040,
+              }}
+              onClick={() => setIsProfileModalVisible(false)}
+            ></div>
+          )}
+
+          {/* Profile Modal */}
+          {isProfileModalVisible && (
+            <div
+              className="modal fade show custom-scrollbar"
+              tabIndex="-1"
+              style={{ display: "block", zIndex: 1050 }}
+              aria-labelledby="profileModalLabel"
+              aria-hidden="true"
+            >
+              <div className="modal-dialog modal-lg">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title" id="profileModalLabel">
+                      Update Profile
+                    </h5>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      onClick={() => setIsProfileModalVisible(false)}
+                      aria-label="Close"
+                    ></button>
+                  </div>
+                  <div className="modal-body">
+                    <UpdateEmployee
+                      userData={userData}
+                      isModelVisible={isProfileModalVisible}
+                      onUpdate={handleProfileUpdate}
                     />
                   </div>
                 </div>

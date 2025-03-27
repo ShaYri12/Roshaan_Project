@@ -88,7 +88,7 @@ const Sidebar = ({
           </div>
         </div>
 
-        <div className="sidebar-content p-0">
+        <div className="sidebar-content custom-scrollbar p-0">
           <nav className="sidebar-nav">
             {isAdmin ? (
               <>
