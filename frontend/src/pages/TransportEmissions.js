@@ -3,6 +3,7 @@ import { Modal, Button, Form } from "react-bootstrap";
 import { FaHome, FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { JWT_ADMIN_SECRET, REACT_APP_API_URL } from "../env";
+import { isYearlyRecordEditable, formatDecimal } from "../utils/dateUtils";
 
 const TransportEmissions = (tab) => {
   console.log(tab);
@@ -326,24 +327,32 @@ const TransportEmissions = (tab) => {
                         <td>{record.month}</td>
                         <td>{record.year}</td>
                         <td>{record.transportMode}</td>
-                        <td>{record.distance}</td>
-                        <td>{record.weight}</td>
-                        <td>{record.emissionFactor}</td>
+                        <td>{formatDecimal(record.distance)}</td>
+                        <td>{formatDecimal(record.weight)}</td>
+                        <td>{formatDecimal(record.emissionFactor)}</td>
                         <td>
-                          <button
-                            className="btn btn-info btn-sm me-2"
-                            onClick={() => handleEdit(record)}
-                            disabled={isLoading}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => confirmDelete(record)}
-                            disabled={isLoading}
-                          >
-                            Delete
-                          </button>
+                          {isYearlyRecordEditable(record) ? (
+                            <>
+                              <button
+                                className="btn btn-info btn-sm me-2"
+                                onClick={() => handleEdit(record)}
+                                disabled={isLoading}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => confirmDelete(record)}
+                                disabled={isLoading}
+                              >
+                                Delete
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-muted small">
+                              Locked (previous year)
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))

@@ -14,6 +14,7 @@ import {
 import { useDebounce } from "use-debounce";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { isRecordEditable, formatDecimal } from "../utils/dateUtils"; // Import the utility functions
 
 const EmissionPage = () => {
   const [emissionRecords, setEmissionRecords] = useState([]);
@@ -379,7 +380,7 @@ const EmissionPage = () => {
                       </div>
                     </td>
                     <td>{new Date(record.date).toLocaleDateString()}</td>
-                    <td>{record.distance}</td>
+                    <td>{formatDecimal(record.distance)}</td>
                     <td>{record.co2Used}</td>
                     <td>
                       {record.employee?.firstName} {record.employee?.lastName}
@@ -387,18 +388,26 @@ const EmissionPage = () => {
                     <td>{record.transportation?.name || "N/A"}</td>
                     <td>
                       <div className="d-flex">
-                        <button
-                          className="btn btn-info btn-sm me-2"
-                          onClick={() => handleEdit(record)} // This triggers handleEdit for updating
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => confirmDelete(record)} // This triggers confirmDelete
-                        >
-                          Delete
-                        </button>
+                        {isRecordEditable(record) ? (
+                          <>
+                            <button
+                              className="btn btn-info btn-sm me-2"
+                              onClick={() => handleEdit(record)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => confirmDelete(record)}
+                            >
+                              Delete
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-muted small">
+                            Locked (previous year)
+                          </span>
+                        )}
                       </div>
                     </td>
                   </tr>

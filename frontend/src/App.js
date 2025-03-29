@@ -16,6 +16,7 @@ import YearlyReportsPage from "./pages/YearlyReports";
 import InvoicesPage from "./pages/Invoices";
 import ProductsPage from "./pages/Products";
 import LicensePlatePage from "./pages/LicensePlate";
+import LocationsPage from "./pages/Locations";
 import "./assets/style.css";
 
 const App = () => {
@@ -45,6 +46,7 @@ const App = () => {
         <Route path="/invoices" element={<InvoicesPage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/license-plate" element={<LicensePlatePage />} />
+        <Route path="/locations" element={<LocationsPage />} />
       </Routes>
     </div>
   );

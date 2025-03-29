@@ -7,6 +7,7 @@ import Chart from "react-apexcharts";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import Sidebar from "../components/Sidebar";
+import Leaderboard from "../components/Leaderboard";
 
 const DashboardPage = () => {
   const co2ReductionRef = useRef(null);
@@ -1413,6 +1414,11 @@ const DashboardPage = () => {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Energy Leaderboard */}
+          <div className="col-xl-12 col-lg-12 col-md-12 mb-4">
+            <Leaderboard />
           </div>
         </div>
       </div>

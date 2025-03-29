@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const {
-    getAll,
-    createEnergyEmission,
-    getEnergyEmission,
-    updateEnergyEmission,
-    deleteEnergyEmission,
+  getAll,
+  createEnergyEmission,
+  getEnergyEmission,
+  updateEnergyEmission,
+  deleteEnergyEmission,
 } = require("../controllers/energyEmissionController");
 
 // ✅ Routes

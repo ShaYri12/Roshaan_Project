@@ -5,7 +5,7 @@ const {
   getAll,
   getTransportEmission,
   updateTransportEmission,
-  deleteTransportEmission
+  deleteTransportEmission,
 } = require("../controllers/transportEmissionController");
 
 // ✅ Routes

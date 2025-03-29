@@ -21,6 +21,7 @@ const emissionTypeRoutes = require("./routes/emissionTypeRoutes");
 const userEmissionRoutes = require("./routes/userEmissionRoutes");
 const productRoutes = require("./routes/productRoutes");
 const yearlyReportRoutes = require("./routes/yearlyReportRoutes");
+const locationRoutes = require("./routes/locationRoutes");
 
 const energyEmissionRoutes = require("./routes/energyEmissions");
 const transportEmissionRoutes = require("./routes/transportEmission");
@@ -53,6 +54,7 @@ app.use("/api/user-emissions", userEmissionRoutes);
 app.use("/api/emission-types", emissionTypeRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/yearly-reports", yearlyReportRoutes);
+app.use("/api/locations", locationRoutes);
 
 app.use("/api/energy-emissions", energyEmissionRoutes);
 app.use("/api/transport-emissions", transportEmissionRoutes);

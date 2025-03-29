@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { JWT_ADMIN_SECRET, REACT_APP_API_URL } from "../env";
 import { FaHome, FaUserPlus } from "react-icons/fa";
 import { Modal, Button, Form } from "react-bootstrap";
+import { isRecordEditable, formatDecimal } from "../utils/dateUtils"; // Import the utility function and formatDecimal function
 
 const EnergyEmissions = () => {
   // Create a more reliable way to get the user ID
@@ -378,25 +379,34 @@ const EnergyEmissions = () => {
                           Array.isArray(record.energySources) &&
                           record.energySources.map((source, idx) => (
                             <li key={idx}>
-                              {source.type}: {source.emission} kg CO₂
+                              {source.type}: {formatDecimal(source.emission)} kg
+                              CO₂
                             </li>
                           ))}
                       </ul>
                     </td>
                     <td>
                       <div className="d-flex">
-                        <button
-                          className="btn btn-info btn-sm me-2"
-                          onClick={() => handleEdit(record)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => confirmDelete(record)}
-                        >
-                          Delete
-                        </button>
+                        {isRecordEditable(record, "startDate") ? (
+                          <>
+                            <button
+                              className="btn btn-info btn-sm me-2"
+                              onClick={() => handleEdit(record)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => confirmDelete(record)}
+                            >
+                              Delete
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-muted small">
+                            Locked (previous year)
+                          </span>
+                        )}
                       </div>
                     </td>
                   </tr>

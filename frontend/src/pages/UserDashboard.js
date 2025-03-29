@@ -14,6 +14,8 @@ import { FaArrowLeft, FaPlusCircle } from "react-icons/fa";
 import VehicleRegisterPage from "./VehicleRegister";
 import Sidebar from "../components/Sidebar";
 
+import { isRecordEditable, formatDecimal } from "../utils/dateUtils";
+
 const DashboardPage = () => {
   const { id } = useParams(); // Extract ID from URL
   const navigate = useNavigate();
@@ -947,7 +949,7 @@ const DashboardPage = () => {
                           <td>{index + 1}</td>
                           <td>{record?.carType}</td>
                           <td>{record?.transport.name}</td>
-                          <td>{record?.co2Emission}</td>
+                          <td>{formatDecimal(record?.co2Emission)}</td>
                           <td>{record?.usageType}</td>
                           <td>{record?.workFromHomeDays}</td>
                           <td>{record?.recurrenceDays}</td>
@@ -1009,27 +1011,35 @@ const DashboardPage = () => {
                         <tr key={resource?._id}>
                           <td>{index + 1}</td>
                           <td>{resource?.emissionType?.name}</td>
-                          <td>{resource?.quantity}</td>
-                          <td>{resource?.co2Equivalent}</td>
+                          <td>{formatDecimal(resource?.quantity)}</td>
+                          <td>{formatDecimal(resource?.co2Equivalent)}</td>
                           <td>
                             {new Date(resource?.date).toLocaleDateString()}
                           </td>
                           <td>
                             <div className="d-flex gap-2">
-                              <button
-                                className="btn btn-info btn-sm"
-                                onClick={() => handleEditResource(resource)}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                className="btn btn-danger btn-sm"
-                                onClick={() =>
-                                  handleDeleteResource(resource._id)
-                                }
-                              >
-                                Delete
-                              </button>
+                              {isRecordEditable(resource) ? (
+                                <>
+                                  <button
+                                    className="btn btn-info btn-sm"
+                                    onClick={() => handleEditResource(resource)}
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    className="btn btn-danger btn-sm"
+                                    onClick={() =>
+                                      handleDeleteResource(resource._id)
+                                    }
+                                  >
+                                    Delete
+                                  </button>
+                                </>
+                              ) : (
+                                <span className="text-muted small">
+                                  Locked (previous year)
+                                </span>
+                              )}
                             </div>
                           </td>
                         </tr>

@@ -332,6 +332,14 @@ const Sidebar = ({
                         Company Locations
                       </Link>
                       <Link
+                        to="/locations"
+                        className={`submenu-item px-3 py-2 d-block ${
+                          isActive("/locations") ? "active" : ""
+                        }`}
+                      >
+                        Locations
+                      </Link>
+                      <Link
                         to="/employees"
                         className={`submenu-item px-3 py-2 d-block ${
                           isActive("/employees") ? "active" : ""

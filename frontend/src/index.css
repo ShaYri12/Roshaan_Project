@@ -116,3 +116,37 @@ textarea:focus {
 .dark-theme .apexcharts-menu-item:hover {
   background-color: #495057 !important;
 }
+
+/* Leaderboard Styles */
+.leaderboard-card {
+  margin-bottom: 20px;
+  border-radius: 10px;
+}
+
+.leaderboard-card .card-body {
+  padding: 1.5rem;
+}
+
+.leaderboard-first {
+  background-color: rgba(255, 215, 0, 0.1);
+}
+
+.leaderboard-second {
+  background-color: rgba(192, 192, 192, 0.1);
+}
+
+.leaderboard-third {
+  background-color: rgba(205, 127, 50, 0.1);
+}
+
+.leaderboard-first:hover {
+  background-color: rgba(255, 215, 0, 0.2) !important;
+}
+
+.leaderboard-second:hover {
+  background-color: rgba(192, 192, 192, 0.2) !important;
+}
+
+.leaderboard-third:hover {
+  background-color: rgba(205, 127, 50, 0.2) !important;
+}
