@@ -3,7 +3,13 @@ require("dotenv").config();
 const dotEnv = process.env;
 
 const authMiddleware = (req, res, next) => {
-  const token = req.header("Authorization");
+  const authHeader = req.header("Authorization");
+  let token;
+
+  // Extract token from Authorization header
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.substring(7);
+  }
 
   // If no token is provided, we set req.user to null but still allow the request to proceed
   if (!token) {
@@ -25,15 +31,29 @@ const authMiddleware = (req, res, next) => {
 
 // Strict version of the middleware that requires authentication
 authMiddleware.required = (req, res, next) => {
-  const token = req.header("Authorization");
-  if (!token) return res.status(401).json({ message: "Access denied" });
+  const authHeader = req.header("Authorization");
+  let token;
+
+  // Extract token from Authorization header
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.substring(7);
+  }
+
+  if (!token) {
+    console.error("Access denied - No token provided");
+    return res
+      .status(401)
+      .json({ message: "Access denied. No token provided." });
+  }
 
   try {
     const decoded = jwt.verify(token, dotEnv.JWT_ADMIN_SECRET);
     req.user = decoded;
+    console.log("Token verified for user:", decoded.id, "role:", decoded.role);
     next();
   } catch (err) {
-    res.status(400).json({ message: "Invalid token" });
+    console.error("Invalid token:", err.message);
+    res.status(401).json({ message: "Invalid token." });
   }
 };
 

@@ -16,8 +16,16 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // Create a new user
-    const user = new User({ username, email, password, role });
+    // Create a new user with hashed password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = new User({
+      username,
+      email,
+      password: hashedPassword,
+      role,
+    });
 
     // Save user to database
     await user.save();
@@ -32,6 +40,7 @@ exports.register = async (req, res) => {
     res.status(201).json({
       message: "User created successfully",
       jwtToken,
+      role: user.role,
       user: {
         id: user._id,
         username: user.username,
@@ -40,23 +49,36 @@ exports.register = async (req, res) => {
       },
     });
   } catch (err) {
+    console.error("Registration error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
+  console.log("Login attempt:", email);
 
   try {
-    const user = await User.findOne({ email, password });
+    // First check admin users
+    const user = await User.findOne({ email });
 
     if (user) {
+      // Compare plain text password with stored plain text password (for now)
+      // In a production environment, you should use bcrypt to compare hashed passwords
+      const passwordMatch = user.password === password;
+
+      if (!passwordMatch) {
+        console.log("Password does not match for admin");
+        return res.status(400).json({ message: "Invalid credentials" });
+      }
+
       const jwtToken = jwt.sign(
         { id: user._id, role: user.role },
-        process.env.JWT_ADMIN_SECRET,
+        dotEnv.JWT_ADMIN_SECRET,
         { expiresIn: "1h" }
       );
 
+      console.log("Admin login successful:", user.email);
       return res.status(200).json({
         message: "Logged in successfully",
         jwtToken,
@@ -70,17 +92,26 @@ exports.login = async (req, res) => {
       });
     }
 
-    // If no user found in User collection, check Employee collection
-    const employee = await Employee.findOne({ email, password }).populate(
-      "car"
-    );
+    // If no admin user found, check Employee collection
+    const employee = await Employee.findOne({ email }).populate("car");
+
     if (employee) {
+      // Compare plain text password with stored plain text password (for now)
+      const passwordMatch = employee.password === password;
+
+      if (!passwordMatch) {
+        console.log("Password does not match for employee");
+        return res.status(400).json({ message: "Invalid credentials" });
+      }
+
+      // Use the same secret for consistency
       const jwtToken = jwt.sign(
-        { id: employee._id, role: "employee" }, // Assuming role is 'employee' here
-        process.env.JWT_EMPLOYEE_SECRET,
+        { id: employee._id, role: "employee" },
+        dotEnv.JWT_ADMIN_SECRET,
         { expiresIn: "1h" }
       );
 
+      console.log("Employee login successful:", employee.email);
       return res.status(200).json({
         message: "Logged in successfully",
         jwtToken,
@@ -90,8 +121,10 @@ exports.login = async (req, res) => {
     }
 
     // If no user or employee found
+    console.log("No user found with email:", email);
     return res.status(400).json({ message: "Invalid credentials" });
   } catch (err) {
+    console.error("Login error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };

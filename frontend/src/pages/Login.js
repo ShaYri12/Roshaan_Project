@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { JWT_ADMIN_SECRET, REACT_APP_API_URL } from "../env";
+import { REACT_APP_API_URL } from "../env";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("ethan.williams@example.com");
@@ -22,7 +22,6 @@ const LoginPage = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
         },
         body: JSON.stringify({ email, password }),
       });
@@ -36,7 +35,9 @@ const LoginPage = () => {
       console.log("Login successful:", data);
 
       // Clear any old authentication data first
-      localStorage.clear();
+      localStorage.removeItem("token");
+      localStorage.removeItem("userObj");
+      localStorage.removeItem("userData");
 
       // Store user data consistently
       if (data?.user) {
@@ -50,6 +51,11 @@ const LoginPage = () => {
       // Always store the token if provided
       if (data?.jwtToken) {
         localStorage.setItem("token", data.jwtToken);
+
+        // Also set the token for axios calls
+        axios.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${data.jwtToken}`;
       }
 
       // Navigate based on role

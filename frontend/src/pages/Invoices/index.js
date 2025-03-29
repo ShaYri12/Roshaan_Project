@@ -214,7 +214,7 @@ const InvoicesPage = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("userObj");
-    localStorage.clear();
+    localStorage.removeItem("userData");
     navigate("/");
   };
 

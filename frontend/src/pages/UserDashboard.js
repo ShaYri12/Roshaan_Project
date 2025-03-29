@@ -353,15 +353,25 @@ const DashboardPage = () => {
 
   useEffect(() => {
     const fetchTransport = async () => {
-      const response = await fetch(`${REACT_APP_API_URL}/transportations`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
-        },
-      });
-      const records = await response.json();
-      setTransport(records);
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${REACT_APP_API_URL}/transportations`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const records = await response.json();
+        setTransport(records);
+      } catch (error) {
+        console.error("Error fetching transport data:", error);
+      }
     };
     fetchTransport();
   }, []);
@@ -496,13 +506,14 @@ const DashboardPage = () => {
       // Log the data being sent for debugging
       console.log("Sending data:", formData);
 
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `${REACT_APP_API_URL}/employeeTransportations`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(formData),
         }
@@ -531,13 +542,14 @@ const DashboardPage = () => {
   const handleWorkTransSubmit = async (e) => {
     e.preventDefault();
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `${REACT_APP_API_URL}/employeeWorkTransportations`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(employeeWorkTransportationData),
         }

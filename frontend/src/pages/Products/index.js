@@ -165,7 +165,6 @@ const ProductsPage = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("userObj");
     localStorage.removeItem("userData");
-    localStorage.clear();
     navigate("/");
   };
 
