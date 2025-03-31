@@ -29,7 +29,7 @@ const VehicleRegisterPage = ({ userData, isModelVisible, isAdmin }) => {
 
   useEffect(() => {
     if (isModelVisible) {
-      setVehicleName(userData?.vehicleName || "");
+      setVehicleName(userData?.vehicleName || "car");
       setVehicleType(userData?.vehicleType || "");
       setEngineNumber(userData?.engineNumber || "");
       setVehicleModel(userData?.vehicleModel || "");

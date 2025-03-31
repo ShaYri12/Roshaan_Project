@@ -88,8 +88,14 @@ const VehiclePage = () => {
   }
 
   const handleProfileUpdate = (updatedData) => {
-    localStorage.setItem("userObj", JSON.stringify(updatedData));
-    window.location.reload();
+    // Update the vehicle in the vehicles array
+    setVehicles((prevVehicles) =>
+      prevVehicles.map((vehicle) =>
+        vehicle._id === updatedData._id ? updatedData : vehicle
+      )
+    );
+    // Close the modal
+    setModalVisible(false);
   };
 
   return (
@@ -177,7 +183,7 @@ const VehiclePage = () => {
         </div>
       </div>
 
-      {/* Profile Update Modal */}
+      {/* Vehicle Update Modal */}
       {isModalVisible && (
         <div
           className="modal fade show custom-scrollbar"
@@ -190,7 +196,7 @@ const VehiclePage = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title" id="exampleModalLabel">
-                  Update Profile
+                  Update Vehicle
                 </h5>
                 <button
                   type="button"
@@ -202,7 +208,7 @@ const VehiclePage = () => {
               <div className="modal-body">
                 <UpdateVehicle
                   userData={isModalVisible}
-                  isModalVisible={isModalVisible}
+                  isModelVisible={isModalVisible}
                   onUpdate={(updatedData) => handleProfileUpdate(updatedData)}
                 />
               </div>

@@ -7,14 +7,21 @@ import {
   REACT_APP_API_URL,
 } from "../env";
 import { FaEye, FaEyeSlash } from "react-icons/fa"; // Importing the eye icons
+import LocationPicker from "../components/LocationPicker"; // Import LocationPicker
 
 const RegisterPage = ({ userData, isModelVisible, isAdmin }) => {
   const [firstName, setFirstName] = useState(userData?.firstName || "");
   const [lastName, setLastName] = useState(userData?.lastName || "");
-  const [homeAddress, setHomeAddress] = useState(userData?.homeAddress || "");
-  const [companyAddress, setCompanyAddress] = useState(
-    userData?.companyAddress || ""
-  );
+  const [homeAddress, setHomeAddress] = useState({
+    address: userData?.homeAddress || "",
+    lat: userData?.homeLocation?.lat || 0,
+    lon: userData?.homeLocation?.lon || 0,
+  });
+  const [companyAddress, setCompanyAddress] = useState({
+    address: userData?.companyAddress || "",
+    lat: userData?.companyLocation?.lat || 0,
+    lon: userData?.companyLocation?.lon || 0,
+  });
   const [carName, setCarName] = useState(userData?.car?.name || ""); // Car name input
   const [licensePlate, setLicensePlate] = useState(
     userData?.car?.licensePlate || ""
@@ -30,8 +37,16 @@ const RegisterPage = ({ userData, isModelVisible, isAdmin }) => {
     if (isModelVisible) {
       setFirstName(userData?.firstName || "");
       setLastName(userData?.lastName || "");
-      setHomeAddress(userData?.homeAddress || "");
-      setCompanyAddress(userData?.companyAddress || "");
+      setHomeAddress({
+        address: userData?.homeAddress || "",
+        lat: userData?.homeLocation?.lat || 0,
+        lon: userData?.homeLocation?.lon || 0,
+      });
+      setCompanyAddress({
+        address: userData?.companyAddress || "",
+        lat: userData?.companyLocation?.lat || 0,
+        lon: userData?.companyLocation?.lon || 0,
+      });
       setCarName(userData?.car?.name || "");
       setLicensePlate(userData?.car?.licensePlate || "");
       setCarType(userData?.car?.companyCar);
@@ -46,8 +61,16 @@ const RegisterPage = ({ userData, isModelVisible, isAdmin }) => {
     const data = {
       firstName,
       lastName,
-      homeAddress,
-      companyAddress,
+      homeAddress: homeAddress.address,
+      homeLocation: {
+        lat: homeAddress.lat,
+        lon: homeAddress.lon,
+      },
+      companyAddress: companyAddress.address,
+      companyLocation: {
+        lat: companyAddress.lat,
+        lon: companyAddress.lon,
+      },
       car: {
         name: carName,
         licensePlate,
@@ -201,24 +224,24 @@ const RegisterPage = ({ userData, isModelVisible, isAdmin }) => {
                   {/* )} */}
                 </div>
                 <div className="row">
-                  <div className="col-6 mb-3">
-                    <label className="form-label">Home Address</label>
-                    <input
-                      type="text"
-                      className="form-control"
+                  <div className="col-6 mb-4">
+                    <LocationPicker
+                      label="Home Address"
                       value={homeAddress}
-                      onChange={(e) => setHomeAddress(e.target.value)}
+                      onChange={setHomeAddress}
                       required
+                      mapHeight="200px"
+                      placeholder="Enter your home address"
                     />
                   </div>
-                  <div className="col-6 mb-3">
-                    <label className="form-label">Company Address</label>
-                    <input
-                      type="text"
-                      className="form-control"
+                  <div className="col-6 mb-4">
+                    <LocationPicker
+                      label="Company Address"
                       value={companyAddress}
-                      onChange={(e) => setCompanyAddress(e.target.value)}
+                      onChange={setCompanyAddress}
                       required
+                      mapHeight="200px"
+                      placeholder="Enter company address"
                     />
                   </div>
                 </div>

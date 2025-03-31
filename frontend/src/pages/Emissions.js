@@ -4,24 +4,15 @@ import { Modal, Button, Form } from "react-bootstrap";
 import { JWT_ADMIN_SECRET, REACT_APP_API_URL } from "../env";
 import { FaChartLine, FaHome, FaUserPlus } from "react-icons/fa";
 import DynamicSelect from "../components/DynamicSelect";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-  useMapEvents,
-} from "react-leaflet";
-import { useDebounce } from "use-debounce";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { isRecordEditable, formatDecimal } from "../utils/dateUtils"; // Import the utility functions
+import LocationPicker from "../components/LocationPicker";
+import { isRecordEditable, formatDecimal } from "../utils/dateUtils";
 
 const EmissionPage = () => {
   const [emissionRecords, setEmissionRecords] = useState([]);
   const [error, setError] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [emissionRecord, emissionRecordRecord] = useState({
+  const [emissionRecord, setEmissionRecord] = useState({
     startLocation: { address: "", lat: 0, lon: 0 },
     endLocation: { address: "", lat: 0, lon: 0 },
     date: "",
@@ -34,44 +25,33 @@ const EmissionPage = () => {
   const [deleteRecordId, setDeleteRecordId] = useState(null);
   const [employeesState, setEmployeesState] = useState([]);
   const [carsState, setCarsState] = useState([]);
-  const [positionStart, setPositionStart] = useState([51.505, -0.09]); // Default position for start location
-  const [positionEnd, setPositionEnd] = useState([48.8566, 2.3522]); // Default position for end location
-  const [markerPositionStart, setMarkerPositionStart] = useState(positionStart); // Start marker
-  const [markerPositionEnd, setMarkerPositionEnd] = useState(positionEnd); // End marker
-  const [debouncedStartLocation] = useDebounce(
-    emissionRecord.startLocation.address,
-    1000
-  ); // 1-second debounce for start location
-  const [debouncedEndLocation] = useDebounce(
-    emissionRecord.endLocation.address,
-    1000
-  ); // 1-second debounce for end location
   const navigate = useNavigate();
 
   // Fetch all emission records, employees, and cars
   useEffect(() => {
     const fetchEmissions = async () => {
       try {
+        const token = localStorage.getItem("token") || JWT_ADMIN_SECRET;
         const [emissionsRes, employeesRes, carsRes] = await Promise.all([
           fetch(`${REACT_APP_API_URL}/emissions`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
+              Authorization: `Bearer ${token}`,
             },
           }),
           fetch(`${REACT_APP_API_URL}/employees`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
+              Authorization: `Bearer ${token}`,
             },
           }),
           fetch(`${REACT_APP_API_URL}/transportations`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
+              Authorization: `Bearer ${token}`,
             },
           }),
         ]);
@@ -93,98 +73,67 @@ const EmissionPage = () => {
     fetchEmissions();
   }, []);
 
-  useEffect(() => {
-    if (debouncedStartLocation) {
-      const fetchCoordinates = async () => {
-        const coords = await geocode(debouncedStartLocation);
-        if (coords) {
-          console.log("Location Coordinates:", coords); // Debugging
-          setPositionStart([coords.lat, coords.lon]);
-          setMarkerPositionStart([coords.lat, coords.lon]);
-          emissionRecordRecord((prev) => ({
-            ...prev,
-            startLocation: {
-              address: coords.address,
-              lat: coords.lat,
-              lon: coords.lon,
-            },
-          }));
-        } else {
-          console.log("Start location not found");
-        }
-      };
-      fetchCoordinates();
-    } else {
-      // Reset to default position if the search is cleared
-      setPositionStart([51.505, -0.09]);
-      setMarkerPositionStart([51.505, -0.09]);
-    }
-  }, [debouncedStartLocation]); // Ensure debouncedStartLocation triggers the effect
-
-  // Custom hook to handle map events (click event for start and end location)
-  const MapClickHandler = ({
-    setPosition,
-    setMarkerPosition,
-    setLocation,
-    locationType,
-  }) => {
-    useMapEvents({
-      click(event) {
-        const { lat, lng } = event.latlng; // Get clicked position
-        setPosition([lat, lng]); // Update map center
-        setMarkerPosition([lat, lng]); // Update marker position
-        // Reverse geocode the clicked location to get its name
-        const fetchLocationName = async () => {
-          const coords = await geocode(`${lat},${lng}`);
-          if (coords) {
-            const newLocation = {
-              address: coords.address, // Set location name in the object
-              lat: coords.lat,
-              lon: coords.lon,
-            };
-            setLocation(newLocation, locationType);
-          }
-        };
-        fetchLocationName();
-      },
-    });
-
-    return null;
+  // Calculate distance between two coordinates using Haversine formula
+  const calculateDistance = (startLat, startLon, endLat, endLon) => {
+    const R = 6371; // Radius of the Earth in kilometers
+    const dLat = ((endLat - startLat) * Math.PI) / 180;
+    const dLon = ((endLon - startLon) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((startLat * Math.PI) / 180) *
+        Math.cos((endLat * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c; // Distance in km
+    return distance.toFixed(2);
   };
+
+  // Update distance whenever start or end location changes
+  useEffect(() => {
+    if (
+      emissionRecord.startLocation?.lat &&
+      emissionRecord.startLocation?.lon &&
+      emissionRecord.endLocation?.lat &&
+      emissionRecord.endLocation?.lon
+    ) {
+      const distance = calculateDistance(
+        emissionRecord.startLocation.lat,
+        emissionRecord.startLocation.lon,
+        emissionRecord.endLocation.lat,
+        emissionRecord.endLocation.lon
+      );
+
+      setEmissionRecord((prev) => ({
+        ...prev,
+        distance,
+      }));
+    }
+  }, [emissionRecord.startLocation, emissionRecord.endLocation]);
 
   const handleInputChange = (e, field) => {
-    emissionRecordRecord({ ...emissionRecord, [field]: e.target.value });
-    // If start location is being changed, reset position on the map
-    if (field === "startLocation") {
-      setPositionStart([51.505, -0.09]); // Default position
-      setMarkerPositionStart([51.505, -0.09]); // Reset marker position
-    }
+    setEmissionRecord({
+      ...emissionRecord,
+      [field]: e.target.value,
+    });
   };
 
-  const geocode = async (location) => {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${location}&format=json&addressdetails=1`
-    );
-    const data = await response.json();
-    if (data && data[0]) {
-      return {
-        lat: parseFloat(data[0].lat),
-        lon: parseFloat(data[0].lon),
-        address: data[0].display_name,
-      };
-    }
-    return null;
-  };
-
-  const handleLocationChange = (location, locationType) => {
-    emissionRecordRecord((prev) => ({
+  const handleStartLocationChange = (location) => {
+    setEmissionRecord((prev) => ({
       ...prev,
-      [locationType]: location,
+      startLocation: location,
+    }));
+  };
+
+  const handleEndLocationChange = (location) => {
+    setEmissionRecord((prev) => ({
+      ...prev,
+      endLocation: location,
     }));
   };
 
   const handleAdd = () => {
-    emissionRecordRecord({
+    setEmissionRecord({
       startLocation: { address: "", lat: 0, lon: 0 },
       endLocation: { address: "", lat: 0, lon: 0 },
       date: "",
@@ -203,13 +152,13 @@ const EmissionPage = () => {
   // Submit form
   const handleAddSubmit = async (e) => {
     e.preventDefault();
-    console.log(emissionRecord);
     try {
+      const token = localStorage.getItem("token") || JWT_ADMIN_SECRET;
       const response = await fetch(`${REACT_APP_API_URL}/emissions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(emissionRecord),
       });
@@ -222,14 +171,13 @@ const EmissionPage = () => {
       window.location.reload();
     } catch (error) {
       console.error("Error submitting record:", error);
-      console.log(`Failed to submit emission record: ${error.message}`);
+      setError(`Failed to submit emission record: ${error.message}`);
     }
   };
 
   // Edit modal handler
   const handleEdit = (record) => {
-    console.log(record);
-    emissionRecordRecord({
+    setEmissionRecord({
       startLocation: {
         address: record.startLocation.address,
         lat: record.startLocation.lat,
@@ -247,27 +195,20 @@ const EmissionPage = () => {
       transportation: record.transportation?._id,
       _id: record?._id,
     });
-    setPositionStart([record.startLocation.lat, record.startLocation.lon]);
-    setMarkerPositionStart([
-      record.startLocation.lat,
-      record.startLocation.lon,
-    ]);
-    setPositionEnd([record.endLocation.lat, record.endLocation.lon]);
-    setMarkerPositionEnd([record.endLocation.lat, record.endLocation.lon]);
     setShowEditModal(true);
   };
 
   const handleUpdateSubmit = async (e) => {
     e.preventDefault();
-    console.log("New record!", emissionRecord);
     try {
+      const token = localStorage.getItem("token") || JWT_ADMIN_SECRET;
       const response = await fetch(
         `${REACT_APP_API_URL}/emissions/${emissionRecord._id}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(emissionRecord),
         }
@@ -277,13 +218,11 @@ const EmissionPage = () => {
         throw new Error(`Error: ${response.status} - ${response.statusText}`);
       }
 
-      console.log(
-        "Emission record updated successfully!",
-        await response.json()
-      );
+      console.log("Emission record updated successfully!");
       window.location.reload();
     } catch (error) {
       console.error("Error submitting updated record:", error);
+      setError(`Failed to update emission record: ${error.message}`);
     }
   };
 
@@ -296,14 +235,14 @@ const EmissionPage = () => {
   // Delete the emission record
   const handleDelete = async () => {
     try {
-      console.log(deleteRecordId);
+      const token = localStorage.getItem("token") || JWT_ADMIN_SECRET;
       const response = await fetch(
         `${REACT_APP_API_URL}/emissions/${deleteRecordId}`,
         {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -316,6 +255,7 @@ const EmissionPage = () => {
       window.location.reload();
     } catch (error) {
       console.error("Error deleting record:", error);
+      setError(`Failed to delete emission record: ${error.message}`);
     }
   };
 
@@ -343,12 +283,19 @@ const EmissionPage = () => {
       </nav>
 
       <div className="container py-5">
+        {error && (
+          <div className="alert alert-danger" role="alert">
+            {error}
+          </div>
+        )}
+
         <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
           <p className="mb-0">Total Records: {emissionRecords.length}</p>
           <button className="btn btn-success" onClick={handleAdd}>
             <FaUserPlus className="me-2" /> Add New Record
           </button>
         </div>
+
         <div className="table-responsive">
           <table className="table table-striped table-bordered table-hover">
             <thead>
@@ -428,148 +375,135 @@ const EmissionPage = () => {
           show={showAddModal}
           onHide={closeAddModal}
           className="custom-scrollbar"
+          size="lg"
         >
           <Modal.Header closeButton>
             <Modal.Title>Add New Emission Record</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form onSubmit={handleAddSubmit}>
-              <Form.Group controlId="startLocation" className="mb-3">
-                <Form.Label>Start Location</Form.Label>
-                <div>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={emissionRecord.startLocation.address}
-                    onChange={(e) => handleInputChange(e, "startLocation")}
-                    placeholder="Enter start location"
-                  />
-                  <MapContainer
-                    center={positionStart}
-                    zoom={13}
-                    style={{ height: "115px", width: "100%" }}
-                    className="mt-2"
-                  >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <Marker position={markerPositionStart}>
-                      <Popup>{emissionRecord.startLocation.address}</Popup>
-                    </Marker>
-                    <MapClickHandler
-                      setPosition={setPositionStart}
-                      setMarkerPosition={setMarkerPositionStart}
-                      setLocation={(location) =>
-                        handleLocationChange(location, "startLocation")
-                      }
+              <Form.Group controlId="startLocation" className="mb-4">
+                <LocationPicker
+                  label="Start Location"
+                  value={emissionRecord.startLocation}
+                  onChange={handleStartLocationChange}
+                  required
+                  mapHeight="200px"
+                  placeholder="Enter or select start location"
+                />
+              </Form.Group>
+
+              <Form.Group controlId="endLocation" className="mb-4">
+                <LocationPicker
+                  label="End Location"
+                  value={emissionRecord.endLocation}
+                  onChange={handleEndLocationChange}
+                  required
+                  mapHeight="200px"
+                  placeholder="Enter or select end location"
+                />
+              </Form.Group>
+
+              <div className="row">
+                <div className="col-md-4">
+                  <Form.Group controlId="date" className="mb-3">
+                    <Form.Label>Date</Form.Label>
+                    <Form.Control
+                      type="date"
+                      value={emissionRecord.date}
+                      onChange={(e) => handleInputChange(e, "date")}
+                      required
                     />
-                  </MapContainer>
+                  </Form.Group>
                 </div>
-              </Form.Group>
 
-              <Form.Group controlId="endLocation" className="mb-3">
-                <Form.Label>End Location</Form.Label>
-                <div>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={emissionRecord.endLocation.address}
-                    onChange={(e) => handleInputChange(e, "endLocation")}
-                    placeholder="Enter end location"
-                  />
-                  <MapContainer
-                    center={positionEnd}
-                    zoom={13}
-                    style={{ height: "115px", width: "100%" }}
-                    className="mt-2"
-                  >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <Marker position={markerPositionEnd}>
-                      <Popup>{emissionRecord.endLocation.address}</Popup>
-                    </Marker>
-                    <MapClickHandler
-                      setPosition={setPositionEnd}
-                      setMarkerPosition={setMarkerPositionEnd}
-                      setLocation={(location) =>
-                        handleLocationChange(location, "endLocation")
-                      }
+                <div className="col-md-4">
+                  <Form.Group controlId="distance" className="mb-3">
+                    <Form.Label>Distance (km)</Form.Label>
+                    <Form.Control
+                      type="number"
+                      disabled
+                      value={emissionRecord.distance}
+                      placeholder="Calculated automatically"
                     />
-                  </MapContainer>
+                    <small className="text-muted">
+                      Calculated automatically from locations
+                    </small>
+                  </Form.Group>
                 </div>
-              </Form.Group>
 
-              <Form.Group controlId="date" className="mb-3">
-                <Form.Label>Date</Form.Label>
-                <Form.Control
-                  type="date"
-                  value={emissionRecord.date}
-                  onChange={(e) => handleInputChange(e, "date")}
-                />
-              </Form.Group>
-
-              {/* <Form.Group controlId="distance" className="mb-3">
-                <Form.Label>Distance</Form.Label>
-                <Form.Control
-                  type="number"
-                  disabled
-                  value={emissionRecord.distance}
-                  placeholder="Distance in km"
-                />
-              </Form.Group> */}
-
-              <Form.Group controlId="co2Used" className="mb-3">
-                <Form.Label>CO2 Used</Form.Label>
-                <Form.Control
-                  type="number"
-                  value={emissionRecord.co2Used}
-                  onChange={(e) => handleInputChange(e, "co2Used")}
-                  placeholder="Enter CO2 used in grams"
-                />
-              </Form.Group>
-              <div>
-                <Form.Group controlId="employee" className="mb-3">
-                  <DynamicSelect
-                    label="Employee"
-                    id="employee"
-                    className="form-select"
-                    modalData={emissionRecord} // or selectedRecord for the edit modal
-                    stateData={employeesState} // Array of employee objects
-                    handleChange={(selected) =>
-                      emissionRecordRecord({
-                        ...emissionRecord,
-                        employee: selected ? selected.value : "", // Set the selected employee ObjectId
-                      })
-                    }
-                    formatData={(employee) => ({
-                      value: employee._id, // Use employee ObjectId for value
-                      label: `${employee.firstName} ${employee.lastName}`,
-                      key: employee._id,
-                    })}
-                    isMulti={false} // Single select
-                  />
-                </Form.Group>
-
-                <Form.Group controlId="transportation" className="mb-3">
-                  <DynamicSelect
-                    label="Transportation"
-                    id="transportation"
-                    modalData={emissionRecord} // or selectedRecord for the edit modal
-                    stateData={carsState} // Array of car objects
-                    handleChange={(selected) =>
-                      emissionRecordRecord({
-                        ...emissionRecord,
-                        transportation: selected ? selected.value : "", // Save selected ID
-                      })
-                    }
-                    formatData={(car) => ({
-                      value: car._id, // Store car _id in value field
-                      label: `${car.name}`,
-                      key: car._id, // Optional key for React list rendering
-                    })}
-                    isMulti={false} // Single select
-                  />
-                </Form.Group>
+                <div className="col-md-4">
+                  <Form.Group controlId="co2Used" className="mb-3">
+                    <Form.Label>CO2 Used (kg)</Form.Label>
+                    <Form.Control
+                      type="number"
+                      value={emissionRecord.co2Used}
+                      onChange={(e) => handleInputChange(e, "co2Used")}
+                      placeholder="Enter CO2 used"
+                      required
+                    />
+                  </Form.Group>
+                </div>
               </div>
+
+              <div className="row">
+                <div className="col-md-6">
+                  <Form.Group controlId="employee" className="mb-3">
+                    <DynamicSelect
+                      label="Employee"
+                      id="employee"
+                      className="form-select"
+                      modalData={emissionRecord}
+                      stateData={employeesState}
+                      handleChange={(selected) =>
+                        setEmissionRecord({
+                          ...emissionRecord,
+                          employee: selected ? selected.value : "",
+                        })
+                      }
+                      formatData={(employee) => ({
+                        value: employee._id,
+                        label: `${employee.firstName} ${employee.lastName}`,
+                        key: employee._id,
+                      })}
+                      isMulti={false}
+                    />
+                  </Form.Group>
+                </div>
+
+                <div className="col-md-6">
+                  <Form.Group controlId="transportation" className="mb-3">
+                    <DynamicSelect
+                      label="Transportation"
+                      id="transportation"
+                      modalData={emissionRecord}
+                      stateData={carsState}
+                      handleChange={(selected) =>
+                        setEmissionRecord({
+                          ...emissionRecord,
+                          transportation: selected ? selected.value : "",
+                        })
+                      }
+                      formatData={(car) => ({
+                        value: car._id,
+                        label: `${car.name}`,
+                        key: car._id,
+                      })}
+                      isMulti={false}
+                    />
+                  </Form.Group>
+                </div>
+              </div>
+
               <div className="d-flex justify-content-end">
-                <Button variant="primary" type="submit" className="mt-3">
+                <Button
+                  variant="secondary"
+                  className="me-2"
+                  onClick={closeAddModal}
+                >
+                  Cancel
+                </Button>
+                <Button variant="primary" type="submit">
                   Save Record
                 </Button>
               </div>
@@ -577,158 +511,147 @@ const EmissionPage = () => {
           </Modal.Body>
         </Modal>
 
+        {/* Edit Modal */}
         <Modal
           show={showEditModal}
           onHide={closeEditModal}
           className="custom-scrollbar"
+          size="lg"
         >
           <Modal.Header closeButton>
             <Modal.Title>Update Record</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form onSubmit={handleUpdateSubmit}>
-              <Form.Group controlId="startLocation" className="mb-3">
-                <Form.Label>Start Location</Form.Label>
-                <div>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={emissionRecord.startLocation.address}
-                    onChange={(e) => handleInputChange(e, "startLocation")}
-                    placeholder="Enter start location"
-                  />
-                  <MapContainer
-                    center={positionStart}
-                    zoom={13}
-                    style={{ height: "115px", width: "100%" }}
-                    className="mt-2"
-                  >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <Marker position={markerPositionStart}>
-                      <Popup>{emissionRecord.startLocation.address}</Popup>
-                    </Marker>
-                    <MapClickHandler
-                      setPosition={setPositionStart}
-                      setMarkerPosition={setMarkerPositionStart}
-                      setLocation={(location) =>
-                        handleLocationChange(location, "startLocation")
-                      }
+              <Form.Group controlId="startLocation" className="mb-4">
+                <LocationPicker
+                  label="Start Location"
+                  value={emissionRecord.startLocation}
+                  onChange={handleStartLocationChange}
+                  required
+                  mapHeight="200px"
+                  placeholder="Enter or select start location"
+                />
+              </Form.Group>
+
+              <Form.Group controlId="endLocation" className="mb-4">
+                <LocationPicker
+                  label="End Location"
+                  value={emissionRecord.endLocation}
+                  onChange={handleEndLocationChange}
+                  required
+                  mapHeight="200px"
+                  placeholder="Enter or select end location"
+                />
+              </Form.Group>
+
+              <div className="row">
+                <div className="col-md-4">
+                  <Form.Group controlId="date" className="mb-3">
+                    <Form.Label>Date</Form.Label>
+                    <Form.Control
+                      type="date"
+                      value={emissionRecord.date}
+                      onChange={(e) => handleInputChange(e, "date")}
+                      required
                     />
-                  </MapContainer>
+                  </Form.Group>
                 </div>
-              </Form.Group>
 
-              <Form.Group controlId="endLocation" className="mb-3">
-                <Form.Label>End Location</Form.Label>
-                <div>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={emissionRecord.endLocation.address}
-                    onChange={(e) => handleInputChange(e, "endLocation")}
-                    placeholder="Enter end location"
-                  />
-                  <MapContainer
-                    center={positionEnd}
-                    zoom={13}
-                    style={{ height: "115px", width: "100%" }}
-                    className="mt-2"
-                  >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <Marker position={markerPositionEnd}>
-                      <Popup>{emissionRecord.endLocation.address}</Popup>
-                    </Marker>
-                    <MapClickHandler
-                      setPosition={setPositionEnd}
-                      setMarkerPosition={setMarkerPositionEnd}
-                      setLocation={(location) =>
-                        handleLocationChange(location, "endLocation")
-                      }
+                <div className="col-md-4">
+                  <Form.Group controlId="distance" className="mb-3">
+                    <Form.Label>Distance (km)</Form.Label>
+                    <Form.Control
+                      type="number"
+                      disabled
+                      value={emissionRecord.distance}
+                      placeholder="Calculated automatically"
                     />
-                  </MapContainer>
+                    <small className="text-muted">
+                      Calculated automatically from locations
+                    </small>
+                  </Form.Group>
                 </div>
-              </Form.Group>
 
-              <Form.Group controlId="date" className="mb-3">
-                <Form.Label>Date</Form.Label>
-                <Form.Control
-                  type="date"
-                  value={emissionRecord.date}
-                  onChange={(e) => handleInputChange(e, "date")}
-                />
-              </Form.Group>
-
-              <Form.Group controlId="distance" className="mb-3">
-                <Form.Label>Distance</Form.Label>
-                <Form.Control
-                  disabled
-                  type="number"
-                  value={emissionRecord.distance}
-                />
-              </Form.Group>
-
-              <Form.Group controlId="co2Used" className="mb-3">
-                <Form.Label>CO2 Used</Form.Label>
-                <Form.Control
-                  type="number"
-                  value={emissionRecord.co2Used}
-                  onChange={(e) => handleInputChange(e, "co2Used")}
-                  placeholder="Enter CO2 used in grams"
-                />
-              </Form.Group>
-              <div>
-                <Form.Group controlId="employee" className="mb-3">
-                  <DynamicSelect
-                    label="Employee"
-                    id="employee"
-                    modalData={emissionRecord} // or selectedRecord for the edit modal
-                    stateData={employeesState} // Array of employee objects
-                    handleChange={(selected) =>
-                      emissionRecordRecord({
-                        ...emissionRecord,
-                        employee: selected ? selected.value : "", // Set the selected employee ObjectId
-                      })
-                    }
-                    formatData={(employee) => ({
-                      value: employee._id, // Use employee ObjectId for value
-                      label: `${employee.firstName} ${employee.lastName}`,
-                      key: employee._id,
-                    })}
-                    isMulti={false} // Single select
-                  />
-                </Form.Group>
-
-                <Form.Group controlId="transportation" className="mb-3">
-                  <DynamicSelect
-                    label="Transportation"
-                    id="transportation"
-                    modalData={emissionRecord} // or selectedRecord for the edit modal
-                    stateData={carsState} // Array of car objects
-                    handleChange={(selected) =>
-                      emissionRecordRecord({
-                        ...emissionRecord,
-                        transportation: selected ? selected.value : "", // Save selected ID
-                      })
-                    }
-                    formatData={(car) => ({
-                      value: car._id, // Store car _id in value field
-                      label: `${car.name}`,
-                      key: car._id, // Optional key for React list rendering
-                    })}
-                    isMulti={false} // Single select
-                  />
-                </Form.Group>
+                <div className="col-md-4">
+                  <Form.Group controlId="co2Used" className="mb-3">
+                    <Form.Label>CO2 Used (kg)</Form.Label>
+                    <Form.Control
+                      type="number"
+                      value={emissionRecord.co2Used}
+                      onChange={(e) => handleInputChange(e, "co2Used")}
+                      placeholder="Enter CO2 used"
+                      required
+                    />
+                  </Form.Group>
+                </div>
               </div>
+
+              <div className="row">
+                <div className="col-md-6">
+                  <Form.Group controlId="employee" className="mb-3">
+                    <DynamicSelect
+                      label="Employee"
+                      id="employee"
+                      modalData={emissionRecord}
+                      stateData={employeesState}
+                      handleChange={(selected) =>
+                        setEmissionRecord({
+                          ...emissionRecord,
+                          employee: selected ? selected.value : "",
+                        })
+                      }
+                      formatData={(employee) => ({
+                        value: employee._id,
+                        label: `${employee.firstName} ${employee.lastName}`,
+                        key: employee._id,
+                      })}
+                      isMulti={false}
+                    />
+                  </Form.Group>
+                </div>
+
+                <div className="col-md-6">
+                  <Form.Group controlId="transportation" className="mb-3">
+                    <DynamicSelect
+                      label="Transportation"
+                      id="transportation"
+                      modalData={emissionRecord}
+                      stateData={carsState}
+                      handleChange={(selected) =>
+                        setEmissionRecord({
+                          ...emissionRecord,
+                          transportation: selected ? selected.value : "",
+                        })
+                      }
+                      formatData={(car) => ({
+                        value: car._id,
+                        label: `${car.name}`,
+                        key: car._id,
+                      })}
+                      isMulti={false}
+                    />
+                  </Form.Group>
+                </div>
+              </div>
+
               <div className="d-flex justify-content-end">
-                <Button variant="primary" type="submit" className="mt-3">
-                  Update
+                <Button
+                  variant="secondary"
+                  className="me-2"
+                  onClick={closeEditModal}
+                >
+                  Cancel
+                </Button>
+                <Button variant="primary" type="submit">
+                  Update Record
                 </Button>
               </div>
             </Form>
           </Modal.Body>
         </Modal>
 
-        {/* // Modal for delete confirmation */}
+        {/* Delete Confirmation Modal */}
         <Modal
           show={showDeleteConfirm}
           onHide={() => setShowDeleteConfirm(false)}

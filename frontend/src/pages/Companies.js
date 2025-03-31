@@ -7,6 +7,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import EmployeeSelect from "../components/EmployeeSelect";
 import CarsSelect from "../components/CarsSelect";
 import DynamicInput from "../components/DynamicInput";
+import LocationPicker from "../components/LocationPicker";
 
 const CompanyPage = () => {
   const [companies, setCompanies] = useState([]);
@@ -74,7 +75,18 @@ const CompanyPage = () => {
 
       setEmployees(employeeData);
       setCars(carData);
-      setModalData(data);
+
+      // Transform the address into location object structure if it's a simple string
+      const updatedData = { ...data };
+      if (typeof updatedData.address === "string" && !updatedData.location) {
+        updatedData.location = {
+          address: updatedData.address || "",
+          lat: updatedData.lat || 0,
+          lon: updatedData.lon || 0,
+        };
+      }
+
+      setModalData(updatedData);
       setShowModal(true);
     } catch (error) {
       setError(error.message);
@@ -88,13 +100,21 @@ const CompanyPage = () => {
       : `${REACT_APP_API_URL}/companies`;
 
     try {
+      // Extract the address from the location object for backward compatibility
+      const submissionData = {
+        ...modalData,
+        address: modalData.location?.address || modalData.address || "",
+        lat: modalData.location?.lat || 0,
+        lon: modalData.location?.lon || 0,
+      };
+
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
         },
-        body: JSON.stringify(modalData),
+        body: JSON.stringify(submissionData),
       });
       if (!response.ok) {
         throw new Error("Error submitting company data");
@@ -135,11 +155,22 @@ const CompanyPage = () => {
   const handleAddCompanyModel = () => {
     setModalData({
       name: "",
-      address: "",
+      location: {
+        address: "",
+        lat: 0,
+        lon: 0,
+      },
       employees: [],
       cars: [],
     });
     setShowModal(true);
+  };
+
+  const handleLocationChange = (location) => {
+    setModalData((prev) => ({
+      ...prev,
+      location,
+    }));
   };
 
   const handleEmployeeChange = (employees) => {
@@ -292,11 +323,11 @@ const CompanyPage = () => {
           tabIndex="-1"
           style={{ display: "block" }}
         >
-          <div className="modal-dialog">
+          <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
-                  {modalData ? "Update Company" : "Add Company"}
+                  {modalData?._id ? "Update Company" : "Add Company"}
                 </h5>
                 <button
                   type="button"
@@ -312,40 +343,18 @@ const CompanyPage = () => {
                     value={modalData?.name}
                     setValue={setModalData}
                   />
-                  {/* <div className="mb-3">
-                    <label htmlFor="name" className="form-label">
-                      Company Name
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      className="form-control"
-                      value={modalData?.name || ""}
-                      onChange={(e) =>
-                        setModalData({ ...modalData, name: e.target.value })
-                      }
+
+                  <div className="mb-4">
+                    <LocationPicker
+                      label="Company Address"
+                      value={modalData?.location}
+                      onChange={handleLocationChange}
+                      required
+                      mapHeight="250px"
+                      placeholder="Enter company address"
                     />
-                  </div> */}
-                  <DynamicInput
-                    label="Address"
-                    id="address"
-                    value={modalData?.address}
-                    setValue={setModalData}
-                  />
-                  {/* <div className="mb-3">
-                    <label htmlFor="address" className="form-label">
-                      Address
-                    </label>
-                    <input
-                      type="text"
-                      id="address"
-                      className="form-control"
-                      value={modalData?.address || ""}
-                      onChange={(e) =>
-                        setModalData({ ...modalData, address: e.target.value })
-                      }
-                    />
-                  </div> */}
+                  </div>
+
                   <EmployeeSelect
                     modalData={modalData}
                     employeesState={employeesState}
@@ -353,48 +362,6 @@ const CompanyPage = () => {
                     theme={theme}
                   />
 
-                  {/* <div className="mb-3">
-                    <label htmlFor="employees" className="form-label">
-                      Employees
-                    </label>
-                    <Select
-                      id="employees"
-                      isMulti
-                      value={modalData?.employees?.map((employee) => ({
-                        value: employee._id ? employee._id : employee.value,
-                        label: `${employee.firstName} ${employee.lastName}`,
-                        key: employee._id ? employee._id : employee.value,
-                      }))}
-                      onChange={handleEmployeeChange}
-                      options={employeesState.map((user) => ({
-                        value: user._id ? user?._id : user?.value,
-                        label: `${user.firstName} ${user.lastName}`,
-                        key: user._id ? user?._id : user?.value,
-                      }))}
-                    />
-                  </div> */}
-
-                  {/* <div className="mb-3">
-                    <label htmlFor="cars" className="form-label">
-                      Cars
-                    </label>
-
-                    <Select
-                      id="cars"
-                      isMulti
-                      value={modalData?.cars?.map((car) => ({
-                        value: car._id ? car._id : car.value,
-                        label: `${car.name}`,
-                        key: car._id ? car._id : car.value,
-                      }))}
-                      onChange={handleCarChange}
-                      options={carsState.map((user) => ({
-                        value: user._id ? user?._id : user?.value,
-                        label: `${user.name}`,
-                        key: user._id ? user?._id : user?.value,
-                      }))}
-                    />
-                  </div> */}
                   <CarsSelect
                     modalData={modalData}
                     carsState={carsState}

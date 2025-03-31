@@ -40,7 +40,9 @@ exports.getVehicleById = async (req, res) => {
 // Update a vehicle by ID
 exports.updateVehicle = async (req, res) => {
   try {
-    const vehicle = await Vehicle.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const vehicle = await Vehicle.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
     if (!vehicle) {
       return res.status(404).json({ message: "Vehicle not found" });
     }
@@ -66,14 +68,9 @@ exports.deleteVehicle = async (req, res) => {
 // 🚗 Mark Vehicle as Favorite (User Feature)
 exports.markFavorite = async (req, res) => {
   try {
-
     const vehicle = await Vehicle.findById(req.params.id);
     if (!vehicle) {
       return res.status(404).json({ message: "Vehicle not found" });
-    }
-
-    if (vehicle.owner) {
-      return res.status(403).json({ message: "Unauthorized!" });
     }
 
     vehicle.isFavorite = !vehicle.isFavorite;
@@ -88,7 +85,6 @@ exports.markFavorite = async (req, res) => {
 // 🚗 Get User-Specific Vehicles
 exports.getUserVehicles = async (req, res) => {
   try {
-
     const vehicles = await Vehicle.find({ owner: req.user._id });
     res.json(vehicles);
   } catch (err) {
