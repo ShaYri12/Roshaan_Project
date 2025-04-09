@@ -19,7 +19,11 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, dotEnv.JWT_ADMIN_SECRET);
-    req.user = decoded;
+    // Ensure the decoded user has the _id field for MongoDB
+    req.user = {
+      _id: decoded.id || decoded._id, // Use either format depending on what's in the token
+      ...decoded,
+    };
     next();
   } catch (err) {
     // Log the error but don't block the request
@@ -48,8 +52,17 @@ authMiddleware.required = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, dotEnv.JWT_ADMIN_SECRET);
-    req.user = decoded;
-    console.log("Token verified for user:", decoded.id, "role:", decoded.role);
+    // Ensure the decoded user has the _id field for MongoDB
+    req.user = {
+      _id: decoded.id || decoded._id, // Use either format depending on what's in the token
+      ...decoded,
+    };
+    console.log(
+      "Token verified for user:",
+      req.user._id,
+      "role:",
+      decoded.role
+    );
     next();
   } catch (err) {
     console.error("Invalid token:", err.message);

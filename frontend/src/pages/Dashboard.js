@@ -23,6 +23,7 @@ const DashboardPage = () => {
   const [emissionsCount, setEmissionsCount] = useState(0);
   const [vehicle, setVehicle] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Define theme-responsive chart colors
   const getChartColors = () => {
@@ -1060,7 +1061,403 @@ const DashboardPage = () => {
     document.body.className = `${newTheme}-theme`;
   };
 
+  // Helper function to prepare chart for PDF export
+  const prepareChartForExport = (chartRef) => {
+    if (!chartRef.current) return;
+
+    // Find toolbar elements and hide them
+    const toolbar = chartRef.current.querySelector(".apexcharts-toolbar");
+    if (toolbar) {
+      toolbar.style.display = "none";
+    }
+
+    // Find tooltip elements and hide them
+    const tooltips = chartRef.current.querySelectorAll(
+      ".apexcharts-tooltip, .apexcharts-xaxistooltip, .apexcharts-yaxistooltip"
+    );
+    tooltips.forEach((tooltip) => {
+      tooltip.style.display = "none";
+      tooltip.style.opacity = "0";
+    });
+
+    // Set chart background to match theme with full opacity
+    chartRef.current.style.background =
+      theme === "dark" ? "#1e293b" : "#ffffff";
+    chartRef.current.style.opacity = "1";
+
+    // URGENT FIX: Force all line charts in light mode to be extremely visible
+    if (theme === "light") {
+      // First, apply special handling for the wrapper elements
+      chartRef.current.classList.add("high-contrast-chart");
+
+      // Apply a custom style directly to the chart container
+      const customStyle = document.createElement("style");
+      customStyle.setAttribute("id", "pdf-export-fixes");
+      customStyle.innerHTML = `
+        .apexcharts-line-series .apexcharts-line {
+          stroke-width: 5px !important;
+          stroke: #000000 !important;
+          stroke-opacity: 1 !important;
+        }
+        .apexcharts-marker {
+          stroke-width: 2px !important;
+          stroke: #000000 !important;
+          r: 5 !important;
+        }
+      `;
+      document.head.appendChild(customStyle);
+
+      // Find all SVG elements and apply extreme visibility enhancements
+      const svgElements = chartRef.current.querySelectorAll("svg");
+      svgElements.forEach((svg) => {
+        // Add CSS class for additional styling
+        svg.classList.add("pdf-export-svg");
+
+        // Apply heavy contrast filter
+        svg.style.filter = "contrast(2) brightness(1.2)";
+
+        // Process all line series paths for maximum visibility
+        const allLinePaths = svg.querySelectorAll(
+          ".apexcharts-line-series path.apexcharts-line"
+        );
+        allLinePaths.forEach((path) => {
+          // Force extremely visible styling for line paths
+          path.style.stroke = "#000000";
+          path.style.strokeWidth = "5px";
+          path.style.strokeOpacity = "1";
+          path.setAttribute("stroke", "#000000");
+          path.setAttribute("stroke-width", "5");
+        });
+
+        // Make markers (dots on line charts) more visible
+        const markers = svg.querySelectorAll(".apexcharts-marker");
+        markers.forEach((marker) => {
+          marker.style.stroke = "#000000";
+          marker.style.fill = "#ffffff";
+          marker.style.r = "5";
+          marker.style.strokeWidth = "2";
+          marker.setAttribute("stroke", "#000000");
+          marker.setAttribute("fill", "#ffffff");
+          marker.setAttribute("r", "5");
+          marker.setAttribute("stroke-width", "2");
+        });
+      });
+    }
+
+    // Special handling for line chart containers in light mode
+    if (theme === "light") {
+      // Check if this is a line chart
+      const isLineChart =
+        chartRef.current.querySelector(".apexcharts-line-series") !== null ||
+        chartRef.current.getAttribute("data-type") === "line";
+
+      if (isLineChart) {
+        // Find all line series containers
+        const lineSeriesContainers = chartRef.current.querySelectorAll(
+          ".apexcharts-line-series"
+        );
+        lineSeriesContainers.forEach((container) => {
+          // Find all line paths within this container
+          const linePaths = container.querySelectorAll("path.apexcharts-line");
+          linePaths.forEach((path) => {
+            // Force black color and thick stroke for all line paths
+            path.style.stroke = "#000000";
+            path.style.strokeWidth = "5px";
+            path.style.strokeOpacity = "1";
+            path.setAttribute("stroke", "#000000");
+            path.setAttribute("stroke-width", "5");
+          });
+        });
+      }
+    }
+
+    // Enhance opacity and contrast of SVG elements for better PDF rendering
+    const svgElements = chartRef.current.querySelectorAll("svg");
+    svgElements.forEach((svg) => {
+      // Boost opacity of all elements
+      svg.style.opacity = "1";
+
+      // Apply heavy contrast filter for light mode
+      if (theme === "light") {
+        svg.style.filter = "contrast(2) brightness(1.2)";
+      } else {
+        svg.style.filter = "contrast(1.2) brightness(1.1)";
+      }
+
+      // Increase contrast of path elements (lines, areas, bars)
+      const paths = svg.querySelectorAll("path");
+      paths.forEach((path) => {
+        const currentFill = path.getAttribute("fill");
+        const currentStroke = path.getAttribute("stroke");
+
+        // Make strokes more visible
+        if (
+          currentStroke &&
+          currentStroke !== "none" &&
+          !currentStroke.includes("transparent")
+        ) {
+          // Handle line chart paths differently for light and dark mode
+          if (theme === "light") {
+            // For light mode, use fixed dark colors for line chart strokes
+            const isLinePath =
+              path.classList.contains("apexcharts-line") ||
+              path.closest(".apexcharts-line-series") !== null;
+
+            if (isLinePath) {
+              // Use a very dark color for line chart strokes in light mode
+              path.style.stroke = "#000000"; // Black color for maximum visibility
+              path.style.strokeWidth = "5px"; // Much thicker lines
+              path.setAttribute("stroke", "#000000");
+              path.setAttribute("stroke-width", "5");
+            } else {
+              // For other elements, apply moderate darkening
+              if (isLightColor(currentStroke)) {
+                path.style.stroke = makeDarker(currentStroke, 70);
+              } else {
+                path.style.stroke = currentStroke;
+              }
+              path.style.strokeWidth =
+                Math.max(parseFloat(path.style.strokeWidth || 1) * 1.5, 2) +
+                "px";
+            }
+          } else {
+            // For dark mode, brighten as before
+            path.style.stroke = makeBrighter(currentStroke, 10);
+            path.style.strokeWidth =
+              Math.max(parseFloat(path.style.strokeWidth || 1) * 1.2, 1.5) +
+              "px";
+          }
+          path.style.strokeOpacity = "1";
+        }
+
+        // Make fills more visible
+        if (
+          currentFill &&
+          currentFill !== "none" &&
+          !currentFill.includes("transparent")
+        ) {
+          if (theme === "light") {
+            if (isLightColor(currentFill)) {
+              path.style.fill = makeDarker(currentFill, 40);
+            }
+          } else {
+            path.style.fill = makeBrighter(currentFill, 10);
+          }
+          path.style.fillOpacity = "1";
+        }
+      });
+
+      // Make the text more visible
+      const textElements = svg.querySelectorAll("text");
+      textElements.forEach((text) => {
+        text.style.fontWeight = "bold";
+        text.style.fontSize = "12px";
+        if (theme === "light") {
+          text.style.fill = "#000000";
+        } else {
+          text.style.fill = "#ffffff";
+        }
+        text.style.fillOpacity = "1";
+      });
+    });
+  };
+
+  // Function to make a color brighter
+  const makeBrighter = (colorStr, percent) => {
+    // Skip if not a valid color string
+    if (!colorStr || typeof colorStr !== "string") return colorStr;
+
+    try {
+      // For hex colors
+      if (colorStr.startsWith("#")) {
+        let r = parseInt(colorStr.slice(1, 3), 16);
+        let g = parseInt(colorStr.slice(3, 5), 16);
+        let b = parseInt(colorStr.slice(5, 7), 16);
+
+        r = Math.min(255, r + (255 - r) * (percent / 100));
+        g = Math.min(255, g + (255 - g) * (percent / 100));
+        b = Math.min(255, b + (255 - b) * (percent / 100));
+
+        return `#${Math.round(r).toString(16).padStart(2, "0")}${Math.round(g)
+          .toString(16)
+          .padStart(2, "0")}${Math.round(b).toString(16).padStart(2, "0")}`;
+      }
+
+      // For rgb colors
+      const rgbMatch = colorStr.match(
+        /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/
+      );
+      if (rgbMatch) {
+        let r = parseInt(rgbMatch[1]);
+        let g = parseInt(rgbMatch[2]);
+        let b = parseInt(rgbMatch[3]);
+        let a = rgbMatch[4] ? parseFloat(rgbMatch[4]) : 1;
+
+        r = Math.min(255, r + (255 - r) * (percent / 100));
+        g = Math.min(255, g + (255 - g) * (percent / 100));
+        b = Math.min(255, b + (255 - b) * (percent / 100));
+
+        return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(
+          b
+        )}, ${a})`;
+      }
+    } catch (e) {
+      console.error("Error making color brighter:", e);
+    }
+
+    // Return original if couldn't process
+    return colorStr;
+  };
+
+  // Function to make a color darker for light mode
+  const makeDarker = (colorStr, percent) => {
+    // Skip if not a valid color string
+    if (!colorStr || typeof colorStr !== "string") return colorStr;
+
+    try {
+      // For hex colors
+      if (colorStr.startsWith("#")) {
+        let r = parseInt(colorStr.slice(1, 3), 16);
+        let g = parseInt(colorStr.slice(3, 5), 16);
+        let b = parseInt(colorStr.slice(5, 7), 16);
+
+        r = Math.max(0, r * (1 - percent / 100));
+        g = Math.max(0, g * (1 - percent / 100));
+        b = Math.max(0, b * (1 - percent / 100));
+
+        return `#${Math.round(r).toString(16).padStart(2, "0")}${Math.round(g)
+          .toString(16)
+          .padStart(2, "0")}${Math.round(b).toString(16).padStart(2, "0")}`;
+      }
+
+      // For rgb colors
+      const rgbMatch = colorStr.match(
+        /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/
+      );
+      if (rgbMatch) {
+        let r = parseInt(rgbMatch[1]);
+        let g = parseInt(rgbMatch[2]);
+        let b = parseInt(rgbMatch[3]);
+        let a = rgbMatch[4] ? parseFloat(rgbMatch[4]) : 1;
+
+        r = Math.max(0, r * (1 - percent / 100));
+        g = Math.max(0, g * (1 - percent / 100));
+        b = Math.max(0, b * (1 - percent / 100));
+
+        return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(
+          b
+        )}, ${a})`;
+      }
+    } catch (e) {
+      console.error("Error making color darker:", e);
+    }
+
+    // Return original if couldn't process
+    return colorStr;
+  };
+
+  // Function to check if a color is light
+  const isLightColor = (colorStr) => {
+    try {
+      let r, g, b;
+
+      if (colorStr.startsWith("#")) {
+        r = parseInt(colorStr.slice(1, 3), 16);
+        g = parseInt(colorStr.slice(3, 5), 16);
+        b = parseInt(colorStr.slice(5, 7), 16);
+      } else {
+        const rgbMatch = colorStr.match(
+          /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/
+        );
+        if (rgbMatch) {
+          r = parseInt(rgbMatch[1]);
+          g = parseInt(rgbMatch[2]);
+          b = parseInt(rgbMatch[3]);
+        } else {
+          return false;
+        }
+      }
+
+      // Calculate perceived brightness using the formula
+      // (0.299*R + 0.587*G + 0.114*B)
+      const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+
+      // Return true if the color is light (brightness > 128)
+      return brightness > 128;
+    } catch (e) {
+      console.error("Error checking if color is light:", e);
+      return false;
+    }
+  };
+
+  // Helper function to reset chart after export
+  const resetChartAfterExport = (chartRef, originalBg) => {
+    if (!chartRef.current) return;
+
+    // Remove custom style element if it exists
+    const customStyle = document.getElementById("pdf-export-fixes");
+    if (customStyle) {
+      customStyle.remove();
+    }
+
+    // Remove high-contrast class
+    chartRef.current.classList.remove("high-contrast-chart");
+
+    // Find and show toolbar again
+    const toolbar = chartRef.current.querySelector(".apexcharts-toolbar");
+    if (toolbar) {
+      toolbar.style.display = "flex";
+    }
+
+    // Reset background
+    chartRef.current.style.background = originalBg;
+    chartRef.current.style.opacity = "1";
+
+    // Reset all SVG styling
+    const svgElements = chartRef.current.querySelectorAll("svg");
+    svgElements.forEach((svg) => {
+      svg.classList.remove("pdf-export-svg");
+      svg.style.filter = "none";
+      svg.style.opacity = "1";
+
+      // Find any duplicate paths created during export and remove them
+      const duplicatePaths = svg.querySelectorAll(".duplicate-path");
+      duplicatePaths.forEach((path) => path.remove());
+
+      // Reset path styling
+      const paths = svg.querySelectorAll("path");
+      paths.forEach((path) => {
+        path.style.stroke = "";
+        path.style.strokeWidth = "";
+        path.style.strokeOpacity = "";
+        path.style.fill = "";
+        path.style.fillOpacity = "";
+      });
+
+      // Reset marker styling
+      const markers = svg.querySelectorAll(".apexcharts-marker");
+      markers.forEach((marker) => {
+        marker.style.stroke = "";
+        marker.style.fill = "";
+        marker.style.r = "";
+        marker.style.strokeWidth = "";
+      });
+
+      // Reset text styling
+      const textElements = svg.querySelectorAll("text");
+      textElements.forEach((text) => {
+        text.style.fontWeight = "";
+        text.style.fontSize = "";
+        text.style.fill = "";
+        text.style.fillOpacity = "";
+      });
+    });
+  };
+
   const downloadAllPDFs = async () => {
+    if (isGeneratingPDF) return; // Prevent multiple clicks
+
+    setIsGeneratingPDF(true);
     const pdf = new jsPDF("portrait", "mm", "a4");
     const charts = [
       { ref: co2ReductionRef, title: "CO₂ Reduction Over Time" },
@@ -1070,43 +1467,358 @@ const DashboardPage = () => {
     ];
 
     try {
+      // Find all tooltips, dropdowns and menu elements that need to be hidden before screenshot
+      const elementsToHide = document.querySelectorAll(
+        ".apexcharts-tooltip, .apexcharts-menu, .apexcharts-menu-open, .apexcharts-toolbar, .apexcharts-xaxistooltip, .apexcharts-yaxistooltip, .apexcharts-zoom-menu"
+      );
+
+      // Store original display values to restore later
+      const originalDisplayStyles = Array.from(elementsToHide).map((el) => {
+        const originalStyle = window.getComputedStyle(el).display;
+        el.style.display = "none";
+        return { element: el, style: originalStyle };
+      });
+
+      // Boost rendering quality before capture
+      const enhanceAllCharts = () => {
+        const chartSvgs = document.querySelectorAll(".apexcharts-svg");
+        chartSvgs.forEach((svg) => {
+          // Improve overall quality
+          svg.style.opacity = "1";
+          svg.style.filter = "contrast(1.05)";
+
+          // Enhance specific elements
+          svg
+            .querySelectorAll(".apexcharts-plot-series path, .apexcharts-area")
+            .forEach((path) => {
+              path.style.opacity = "1";
+            });
+
+          svg
+            .querySelectorAll(
+              ".apexcharts-grid-borders line, .apexcharts-grid line"
+            )
+            .forEach((line) => {
+              line.style.strokeOpacity = "1";
+            });
+
+          svg.querySelectorAll("text").forEach((text) => {
+            text.style.fontWeight = "500";
+            text.style.opacity = "1";
+          });
+        });
+      };
+
+      // Enhance charts right before capture
+      enhanceAllCharts();
+
+      // Correct theme-based background colors for the charts
+      const bgColor = theme === "dark" ? "#1e293b" : "#ffffff";
+
       for (let i = 0; i < charts.length; i++) {
         const { ref, title } = charts[i];
 
         if (!ref.current) continue;
 
+        // Store original background for restoration later
+        const originalBg = ref.current.style.background;
+        const originalClasses = ref.current.className;
+
+        // Prepare the chart for export (hide UI elements, set theme-appropriate background)
+        prepareChartForExport(ref);
+
+        // Temporarily add classes to ensure proper rendering
+        ref.current.classList.add("pdf-export-mode");
+        ref.current.classList.add("high-contrast-chart");
+
+        // Make sure parent containers have proper backgrounds too
+        const chartContainer = ref.current.closest(".chart-container");
+        if (chartContainer) {
+          chartContainer.style.background = bgColor;
+          chartContainer.style.boxShadow = "none";
+        }
+
+        // Wait to ensure the chart is fully rendered with new styles
+        await new Promise((resolve) => setTimeout(resolve, 400));
+
         const canvas = await html2canvas(ref.current, {
-          scale: 2,
+          scale: 3, // Higher scale for better quality
           logging: false,
           useCORS: true,
           allowTaint: true,
-          backgroundColor: theme === "dark" ? "#1e293b" : "#ffffff",
+          backgroundColor: bgColor,
+          removeContainer: false, // Don't destroy the original element
+          imageTimeout: 0, // No timeout
+          letterRendering: true, // Improve text rendering
+          onclone: (clonedDoc, clonedElement) => {
+            // Additional handling for the cloned element to ensure all tooltips are hidden
+            const clonedTooltips = clonedDoc.querySelectorAll(
+              ".apexcharts-tooltip, .apexcharts-menu, .apexcharts-toolbar, .apexcharts-xaxistooltip, .apexcharts-yaxistooltip"
+            );
+            clonedTooltips.forEach((el) => {
+              el.style.display = "none";
+              el.style.opacity = "0";
+              el.style.visibility = "hidden";
+            });
+
+            // Enhance quality of cloned chart for capture
+            const svgs = clonedElement.querySelectorAll("svg");
+            svgs.forEach((svg) => {
+              svg.setAttribute("shape-rendering", "geometricPrecision");
+              svg.setAttribute("text-rendering", "optimizeLegibility");
+
+              // Make paths more visible
+              svg.querySelectorAll("path").forEach((path) => {
+                if (
+                  path.getAttribute("stroke") &&
+                  path.getAttribute("stroke") !== "none"
+                ) {
+                  const currentWidth = parseFloat(
+                    path.getAttribute("stroke-width") || 1
+                  );
+
+                  // Detect line charts - look for specific SVG structure and classes
+                  const isLineChart =
+                    svg.closest(".apexcharts-line") !== null ||
+                    svg.closest("[data-type='line']") !== null ||
+                    clonedElement.querySelector(".apexcharts-line-series") !==
+                      null;
+
+                  if (theme === "light" && isLineChart) {
+                    // For line charts in light mode - most aggressive approach
+                    path.setAttribute("stroke", "#000000"); // Force black stroke for maximum visibility
+                    path.setAttribute("stroke-width", "3.0"); // Very thick lines
+                    path.setAttribute("stroke-opacity", "1");
+                  } else {
+                    // Increase stroke width more for light theme other paths
+                    const strokeMultiplier = theme === "light" ? 2.0 : 1.5;
+                    path.setAttribute(
+                      "stroke-width",
+                      (currentWidth * strokeMultiplier).toString()
+                    );
+                    path.setAttribute("stroke-opacity", "1");
+
+                    // Ensure non-line chart strokes are also visible in light mode
+                    if (theme === "light") {
+                      const currentStroke = path.getAttribute("stroke");
+                      if (currentStroke && isLightColor(currentStroke)) {
+                        // For light-colored strokes in light mode, make them significantly darker
+                        let darkerColor = makeDarker(currentStroke, 70);
+                        path.setAttribute("stroke", darkerColor);
+                      }
+                    }
+                  }
+                }
+                path.setAttribute("fill-opacity", "1");
+              });
+
+              // Enhance grid lines
+              svg.querySelectorAll("line").forEach((line) => {
+                line.setAttribute("stroke-opacity", "1");
+              });
+
+              // Make text clearer
+              svg.querySelectorAll("text").forEach((text) => {
+                text.setAttribute("font-weight", "bold");
+                text.setAttribute("fill-opacity", "1");
+              });
+            });
+          },
         });
 
-        const imgData = canvas.toDataURL("image/png", 1.0);
+        // Reset the chart to its original state
+        resetChartAfterExport(ref, originalBg);
+        ref.current.className = originalClasses;
+
+        // Apply super-aggressive image processing for maximum contrast and brightness
+        // Create a separate canvas for processing to not lose original data
+        const processCanvas = document.createElement("canvas");
+        processCanvas.width = canvas.width;
+        processCanvas.height = canvas.height;
+        const processCtx = processCanvas.getContext("2d");
+
+        // Copy the original image to our processing canvas
+        processCtx.drawImage(canvas, 0, 0);
+
+        // Get image data for processing
+        const imageData = processCtx.getImageData(
+          0,
+          0,
+          processCanvas.width,
+          processCanvas.height
+        );
+        const data = imageData.data;
+
+        // Apply moderate contrast and brightness adjustments (reduced from previous aggressive values)
+        // These more balanced values will keep charts clear without looking unnaturally bright
+        const brightness = theme === "dark" ? 25 : 20; // Increased brightness for light mode
+        const contrast = theme === "dark" ? 40 : 50; // Increased contrast for light mode
+
+        for (let j = 0; j < data.length; j += 4) {
+          // Skip fully transparent pixels
+          if (data[j + 3] < 20) continue;
+
+          // Apply more moderate contrast enhancement
+          data[j] = limitValue(
+            data[j] + brightness + (data[j] - 128) * (contrast / 100),
+            0,
+            255
+          ); // Red
+          data[j + 1] = limitValue(
+            data[j + 1] + brightness + (data[j + 1] - 128) * (contrast / 100),
+            0,
+            255
+          ); // Green
+          data[j + 2] = limitValue(
+            data[j + 2] + brightness + (data[j + 2] - 128) * (contrast / 100),
+            0,
+            255
+          ); // Blue
+
+          // Ensure full opacity for everything
+          data[j + 3] = 255;
+        }
+
+        // Put the enhanced data back
+        processCtx.putImageData(imageData, 0, 0);
+
+        // Special handling for light theme line charts: detect and enhance line chart strokes
+        if (
+          theme === "light" &&
+          (title.includes("Reduction") || title.includes("Trend"))
+        ) {
+          // For known line charts, get images for further processing
+          const lineData = processCtx.getImageData(
+            0,
+            0,
+            processCanvas.width,
+            processCanvas.height
+          );
+          const linePixels = lineData.data;
+
+          // Process for line chart - enhance dark pixels (likely the lines)
+          for (let j = 0; j < linePixels.length; j += 4) {
+            // Skip fully transparent pixels
+            if (linePixels[j + 3] < 20) continue;
+
+            // Check if this is a fairly dark pixel (likely a line or axis)
+            // Calculate grayscale value
+            const avg =
+              (linePixels[j] + linePixels[j + 1] + linePixels[j + 2]) / 3;
+
+            // If this is a dark pixel (likely part of a line)
+            if (avg < 100) {
+              // Make it completely black for maximum visibility
+              linePixels[j] = 0; // R
+              linePixels[j + 1] = 0; // G
+              linePixels[j + 2] = 0; // B
+              linePixels[j + 3] = 255; // A - fully opaque
+            }
+          }
+
+          // Apply this enhanced line processing
+          processCtx.putImageData(lineData, 0, 0);
+        }
+
+        // Apply additional image enhancements using composite operations with more subtle settings
+
+        // Create the final canvas for maximum quality
+        const finalCanvas = document.createElement("canvas");
+        finalCanvas.width = canvas.width;
+        finalCanvas.height = canvas.height;
+        const finalCtx = finalCanvas.getContext("2d");
+
+        // First draw the processed image
+        finalCtx.drawImage(processCanvas, 0, 0);
+
+        // Apply multiple enhancement layers with reduced intensity
+
+        // 1. Apply overlay blend for increased contrast (adjusted based on theme)
+        finalCtx.globalCompositeOperation = "overlay";
+        finalCtx.globalAlpha = theme === "light" ? 0.25 : 0.15; // Stronger overlay for light mode
+        finalCtx.drawImage(processCanvas, 0, 0);
+
+        // 2. Sharpen by drawing the image slightly offset (reduced alpha from 0.6 to 0.4)
+        finalCtx.globalCompositeOperation = "source-over";
+        finalCtx.globalAlpha = theme === "light" ? 0.5 : 0.4; // Higher sharpening for light mode
+        finalCtx.drawImage(
+          processCanvas,
+          0.5,
+          0.5,
+          canvas.width - 1,
+          canvas.height - 1
+        );
+
+        // 3. Reset to normal drawing
+        finalCtx.globalCompositeOperation = "source-over";
+        finalCtx.globalAlpha = 1.0;
+
+        // 4. Add a slight brightness or darkness boost layer based on theme
+        if (theme === "dark") {
+          finalCtx.fillStyle = "rgba(255,255,255,0.02)";
+          finalCtx.fillRect(0, 0, canvas.width, canvas.height);
+        } else {
+          // For light theme, add a stronger darkening layer to improve contrast
+          finalCtx.fillStyle = "rgba(0,0,0,0.05)";
+          finalCtx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Get final image data with maximum quality
+        const imgData = finalCanvas.toDataURL("image/png", 1.0);
+
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
         if (i !== 0) pdf.addPage();
 
-        // Add title
+        // Add title with proper contrast
         pdf.setFontSize(16);
-        pdf.setTextColor(theme === "dark" ? 200 : 50);
+        pdf.setTextColor(theme === "dark" ? 255 : 0); // Maximum contrast for text
         pdf.text(title, 10, 20);
 
         // Add date
         pdf.setFontSize(10);
-        pdf.setTextColor(100);
+        pdf.setTextColor(theme === "dark" ? 220 : 60);
         pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, 10, 28);
 
-        // Add image
+        // Add image with proper spacing
         pdf.addImage(imgData, "PNG", 10, 35, pdfWidth - 20, pdfHeight - 20);
       }
+
+      // Restore original display styles
+      originalDisplayStyles.forEach(({ element, style }) => {
+        element.style.display = style;
+      });
 
       pdf.save("All_CO2_Emissions_Charts.pdf");
     } catch (error) {
       console.error("Error generating PDFs:", error);
+
+      // Make sure to restore any elements that might still be hidden
+      document
+        .querySelectorAll(
+          ".apexcharts-tooltip, .apexcharts-menu, .apexcharts-toolbar"
+        )
+        .forEach((el) => {
+          el.style.display = "";
+        });
+
+      // Ensure all charts are reset
+      charts.forEach(({ ref }) => {
+        if (ref.current) {
+          ref.current.classList.remove("pdf-export-mode");
+          ref.current.classList.remove("high-contrast-chart");
+          resetChartAfterExport(ref);
+        }
+      });
+    } finally {
+      setIsGeneratingPDF(false);
     }
+  };
+
+  // Helper function to limit a value between min and max
+  const limitValue = (value, min, max) => {
+    return Math.min(Math.max(value, min), max);
   };
 
   const dateFormat = (date) => {
@@ -1317,8 +2029,22 @@ const DashboardPage = () => {
               <button
                 onClick={downloadAllPDFs}
                 className="btn btn-info float-end mx-3 mt-3"
+                disabled={isGeneratingPDF}
               >
-                <i className="fas fa-file-pdf"></i> Download All Graphs
+                {isGeneratingPDF ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-file-pdf"></i> Download All Graphs
+                  </>
+                )}
               </button>
             </div>
           </div>

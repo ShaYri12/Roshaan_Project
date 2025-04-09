@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { OPENAI_API_KEY } from "../../env";
+import { REACT_APP_API_URL } from "../../env";
 import Sidebar from "../../components/Sidebar";
 
 // Helper function to generate mock invoice content based on type and provider
@@ -113,12 +113,10 @@ const InvoicesPage = () => {
   const [invoiceType, setInvoiceType] = useState("energy");
   const [calculatingEmissions, setCalculatingEmissions] = useState(false);
   const [calculationResult, setCalculationResult] = useState(null);
-  const [invoiceDate, setInvoiceDate] = useState("");
-  const [invoiceNumber, setInvoiceNumber] = useState("");
-  const [provider, setProvider] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [error, setError] = useState(null);
+  const [processingStage, setProcessingStage] = useState("");
 
   const fileInputRef = useRef(null);
 
@@ -146,64 +144,27 @@ const InvoicesPage = () => {
       setIsLoading(true);
       try {
         const token = localStorage.getItem("token");
-        /*
         const response = await fetch(`${REACT_APP_API_URL}/invoices`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
+          credentials: "include",
         });
-        
+
         if (response.ok) {
           const data = await response.json();
-          setInvoices(data);
+          setInvoices(data.data || []);
+        } else {
+          console.error("Failed to fetch invoices");
+          setInvoices([]);
         }
-        */
-
-        // Sample data (replace with actual API call in production)
-        setTimeout(() => {
-          const sampleInvoices = [
-            {
-              id: 1,
-              fileName: "energy-invoice-2023.pdf",
-              uploadDate: "2023-05-15T10:30:00Z",
-              invoiceDate: "2023-05-01",
-              invoiceNumber: "INV-2023-001",
-              type: "energy",
-              provider: "EnergyCorp",
-              co2Emissions: 125.5,
-              filePath: "/uploads/invoices/energy-invoice-2023.pdf",
-            },
-            {
-              id: 2,
-              fileName: "water-bill-q2.pdf",
-              uploadDate: "2023-06-10T14:15:00Z",
-              invoiceDate: "2023-06-01",
-              invoiceNumber: "WTR-2023-Q2",
-              type: "water",
-              provider: "CityWaters",
-              co2Emissions: 35.2,
-              filePath: "/uploads/invoices/water-bill-q2.pdf",
-            },
-            {
-              id: 3,
-              fileName: "gas-invoice-july.pdf",
-              uploadDate: "2023-08-05T09:45:00Z",
-              invoiceDate: "2023-07-28",
-              invoiceNumber: "GAS-2023-07",
-              type: "gas",
-              provider: "NaturalGas Inc",
-              co2Emissions: 78.3,
-              filePath: "/uploads/invoices/gas-invoice-july.pdf",
-            },
-          ];
-          setInvoices(sampleInvoices);
-          setIsLoading(false);
-        }, 1000);
+        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching invoices:", error);
         setIsLoading(false);
+        setInvoices([]);
       }
     };
 
@@ -253,9 +214,6 @@ const InvoicesPage = () => {
     setFilePreview(null);
     setInvoiceType("energy");
     setCalculationResult(null);
-    setInvoiceDate("");
-    setInvoiceNumber("");
-    setProvider("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -267,167 +225,173 @@ const InvoicesPage = () => {
       return;
     }
 
-    if (!invoiceDate || !invoiceNumber || !provider) {
-      setError("Please fill in all required fields");
-      return;
-    }
-
     setIsUploading(true);
+    setProcessingStage("uploading");
     setError(null);
 
     try {
       const formData = new FormData();
       formData.append("file", selectedFile);
       formData.append("type", invoiceType);
-      formData.append("invoiceDate", invoiceDate);
-      formData.append("invoiceNumber", invoiceNumber);
-      formData.append("provider", provider);
 
-      // In a real app, upload the file to your server
-      /*
       const token = localStorage.getItem("token");
-      const response = await axios.post(`${REACT_APP_API_URL}/invoices/upload`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      
-      if (response.status === 200) {
-        // After successful upload, start emission calculation
-        calculateEmissions(response.data.fileId);
-      }
-      */
 
-      // Simulate upload success and proceed to emission calculation
-      setTimeout(() => {
-        setIsUploading(false);
-        calculateEmissions("temp-file-id-" + Date.now());
-      }, 1500);
+      setProcessingStage("extracting");
+
+      const response = await axios.post(
+        `${REACT_APP_API_URL}/invoices/upload`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+          withCredentials: true,
+        }
+      );
+
+      setIsUploading(false);
+
+      if (response.status === 201) {
+        // Processing was successful, show results
+        setProcessingStage("analyzing");
+        setCalculatingEmissions(true);
+
+        // The API already calculated the emissions, so we can just display the result
+        const result = {
+          success: true,
+          emissions: response.data.invoice.co2Emissions,
+          details: {
+            consumption:
+              response.data.invoice.consumption +
+              " " +
+              response.data.invoice.consumptionUnit,
+            period: "Based on invoice",
+            emissionFactor: response.data.invoice.emissionFactor,
+            calculations: response.data.analysis,
+          },
+        };
+
+        setCalculationResult(result);
+
+        // Add the new invoice to the list if it's not already there
+        setInvoices((prev) => {
+          const newInvoice = {
+            id: response.data.invoice.id,
+            fileName: response.data.invoice.fileName,
+            originalName: response.data.invoice.originalName,
+            uploadDate: response.data.invoice.createdAt,
+            invoiceDate: response.data.invoice.invoiceDate,
+            invoiceNumber: response.data.invoice.invoiceNumber,
+            type: response.data.invoice.type,
+            provider: response.data.invoice.provider,
+            co2Emissions: response.data.invoice.co2Emissions,
+            aiAnalysis: response.data.analysis,
+          };
+
+          // Check if we already have this invoice (by ID)
+          const exists = prev.some((inv) => inv.id === newInvoice.id);
+
+          if (exists) {
+            return prev;
+          } else {
+            return [newInvoice, ...prev];
+          }
+        });
+
+        setCalculatingEmissions(false);
+        setProcessingStage("");
+      } else {
+        throw new Error("Upload failed");
+      }
     } catch (error) {
       console.error("Error uploading file:", error);
       setIsUploading(false);
-      setError("Failed to upload file. Please try again.");
-    }
-  };
-
-  const calculateEmissions = async (fileId) => {
-    setCalculatingEmissions(true);
-
-    try {
-      // Get the invoice content (in a real system, this would be OCR text from the uploaded file)
-      // Here we're simulating invoice content based on the invoice type
-      const invoiceContent = generateMockInvoiceContent(invoiceType, provider);
-
-      // Call OpenAI API to calculate emissions
-      const openaiResponse = await axios.post(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          model: "gpt-3.5-turbo",
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are an assistant that calculates CO2 emissions from invoice data. Provide calculations and explanations.",
-            },
-            {
-              role: "user",
-              content: `Calculate the CO2 emissions based on the invoice below:\n\n${invoiceContent}\n\nProvide the total CO2 emissions in kg, and a breakdown of calculations.`,
-            },
-          ],
-          temperature: 0.7,
-          max_tokens: 500,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
-          },
-        }
-      );
-
-      // Process the OpenAI response
-      const aiResponse = openaiResponse.data.choices[0].message.content;
-
-      // Extract emissions value using regex (this is a simple example)
-      let emissionsValue = 0;
-      const emissionsMatch = aiResponse.match(
-        /(\d+(\.\d+)?)(\s*)(kg|kilograms)/i
-      );
-      if (emissionsMatch) {
-        emissionsValue = parseFloat(emissionsMatch[1]);
-      } else {
-        // If no specific value found, generate a random one (for demo purposes)
-        emissionsValue = parseFloat((Math.random() * 100 + 20).toFixed(2));
-      }
-
-      // Set calculation result
-      const simulatedResult = {
-        success: true,
-        emissions: emissionsValue,
-        details: {
-          consumption: calculateConsumptionByType(invoiceType),
-          period: "1 month",
-          emissionFactor: getEmissionFactorByType(invoiceType),
-          calculations: aiResponse,
-        },
-      };
-
-      setCalculationResult(simulatedResult);
-
-      // Add the new invoice to the list
-      const newInvoice = {
-        id: Date.now(),
-        fileName: selectedFile.name,
-        uploadDate: new Date().toISOString(),
-        invoiceDate: invoiceDate,
-        invoiceNumber: invoiceNumber,
-        type: invoiceType,
-        provider: provider,
-        co2Emissions: simulatedResult.emissions,
-        filePath: `/uploads/invoices/${selectedFile.name}`,
-        aiAnalysis: aiResponse,
-      };
-
-      setInvoices((prev) => [newInvoice, ...prev]);
       setCalculatingEmissions(false);
-    } catch (error) {
-      console.error("Error calculating emissions:", error);
-      setCalculatingEmissions(false);
+      setProcessingStage("");
 
-      // Provide more specific error messages based on error type
+      // Handle different types of errors
       if (error.response) {
-        // The request was made and the server responded with a status code outside the range of 2xx
+        // The request was made and the server responded with a status code outside 2xx range
         if (error.response.status === 401) {
+          setError("Authentication error. Please log in again.");
+        } else if (error.response.status === 413) {
+          setError("File too large. Maximum size is 10MB.");
+        } else if (error.response.status === 415) {
           setError(
-            "Authentication failed with the AI service. Please check your API key."
-          );
-        } else if (error.response.status === 429) {
-          setError(
-            "Rate limit exceeded for the AI service. Please try again later."
+            "Unsupported file format. Please upload PDF or image files only."
           );
         } else {
-          setError(
-            `API error: ${error.response.status} - ${
-              error.response.data?.error?.message || "Unknown error"
-            }`
-          );
+          const errorMsg =
+            error.response.data?.message || "Server error. Please try again.";
+
+          // Special handling for OCR and PDF extraction errors
+          if (
+            errorMsg.includes("OCR processing failed") ||
+            errorMsg.includes("Failed to extract text from PDF")
+          ) {
+            setError(
+              <div>
+                <strong>Text extraction error:</strong>
+                <p>{errorMsg}</p>
+                <ul className="mt-2 small">
+                  <li>Make sure your document is not password protected</li>
+                  <li>
+                    Try converting image-based PDFs to text-based PDFs first
+                  </li>
+                  <li>
+                    For better results, choose "scan to text" (OCR) when
+                    scanning documents
+                  </li>
+                </ul>
+              </div>
+            );
+          } else {
+            setError(errorMsg);
+          }
         }
       } else if (error.request) {
         // The request was made but no response was received
-        setError(
-          "No response from the AI service. Please check your network connection."
-        );
+        setError("Network error. Please check your connection and try again.");
       } else {
         // Something happened in setting up the request
-        setError("Failed to calculate emissions. Please try again.");
+        setError("Failed to upload file. Please try again later.");
       }
     }
   };
 
-  const handleViewInvoice = (invoice) => {
-    setSelectedInvoice(invoice);
-    setShowModal(true);
+  const handleViewInvoice = async (invoice) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${REACT_APP_API_URL}/invoices/${invoice.id}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedInvoice({
+          ...invoice,
+          aiAnalysis: data.data.aiAnalysis,
+          consumption: data.data.consumption,
+          consumptionUnit: data.data.consumptionUnit,
+          emissionFactor: data.data.emissionFactor,
+        });
+        setShowModal(true);
+      } else {
+        setError("Failed to fetch invoice details");
+      }
+    } catch (error) {
+      console.error("Error fetching invoice details:", error);
+      setError("Failed to fetch invoice details");
+    }
   };
 
   const closeModal = () => {
@@ -460,10 +424,78 @@ const InvoicesPage = () => {
     return classes[type] || "bg-secondary";
   };
 
-  const downloadInvoice = (invoice) => {
-    // In a real app, this would download the file from your server
-    // For demo purposes, we'll just show an alert
-    alert(`Downloading invoice: ${invoice.fileName}`);
+  const downloadInvoice = async (invoice) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      // Create a download link
+      const response = await fetch(
+        `${REACT_APP_API_URL}/invoices/${invoice.id}/download`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        // Create a blob from the response
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        // Create a temporary link element and trigger download
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = invoice.originalName || invoice.fileName;
+        document.body.appendChild(a);
+        a.click();
+
+        // Clean up
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        setError("Failed to download invoice");
+      }
+    } catch (error) {
+      console.error("Error downloading invoice:", error);
+      setError("Failed to download invoice");
+    }
+  };
+
+  const handleDeleteInvoice = async (invoice) => {
+    if (window.confirm("Are you sure you want to delete this invoice?")) {
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          `${REACT_APP_API_URL}/invoices/${invoice.id}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            credentials: "include",
+          }
+        );
+
+        if (response.ok) {
+          // Remove the deleted invoice from the state
+          setInvoices((prev) => prev.filter((inv) => inv.id !== invoice.id));
+          setError(null);
+        } else {
+          const errorData = await response.json();
+          setError(errorData.message || "Failed to delete invoice");
+        }
+      } catch (error) {
+        console.error("Error deleting invoice:", error);
+        setError("Network error while deleting invoice");
+      } finally {
+        setIsLoading(false);
+      }
+    }
   };
 
   return (
@@ -483,9 +515,54 @@ const InvoicesPage = () => {
 
           <div className="row mb-4 row-gap-4">
             <div className="col-lg-4">
-              <div className={`bg-${theme} border-0 shadow-sm`}>
+              <div className={`card p-0 m-0 bg-${theme} border-0 shadow-sm`}>
                 <div className="card-body">
                   <h5 className="card-title mb-3">Upload New Invoice</h5>
+
+                  <div className="mb-3">
+                    <button
+                      className="btn btn-link p-0 text-decoration-none text-muted"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#helpCollapse"
+                      aria-expanded="false"
+                      aria-controls="helpCollapse"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const helpElement =
+                          document.getElementById("helpCollapse");
+                        if (helpElement) {
+                          helpElement.classList.toggle("show");
+                        }
+                      }}
+                    >
+                      <i className="fas fa-question-circle me-1"></i> Need help
+                      with uploading?
+                    </button>
+                    <div className="collapse" id="helpCollapse">
+                      <div className="card card-body mt-2 bg-light">
+                        <h6>Supported File Types:</h6>
+                        <ul className="small mb-2">
+                          <li>PDF documents (preferred)</li>
+                          <li>Images (JPG, PNG)</li>
+                        </ul>
+                        <h6>Best Practices:</h6>
+                        <ul className="small mb-0">
+                          <li>
+                            Ensure the invoice is clearly visible and not blurry
+                          </li>
+                          <li>Make sure consumption data is visible</li>
+                          <li>
+                            Invoice should include provider details and dates
+                          </li>
+                          <li>
+                            For energy invoices, kWh usage should be clearly
+                            visible
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
 
                   {error && (
                     <div className="alert alert-danger" role="alert">
@@ -510,71 +587,6 @@ const InvoicesPage = () => {
                     </div>
                   ) : (
                     <>
-                      <div className="form-group mb-3">
-                        <label htmlFor="invoiceType" className="form-label">
-                          Invoice Type
-                        </label>
-                        <select
-                          id="invoiceType"
-                          className="form-select"
-                          value={invoiceType}
-                          onChange={(e) => setInvoiceType(e.target.value)}
-                          disabled={isUploading || calculatingEmissions}
-                        >
-                          <option value="energy">Energy</option>
-                          <option value="water">Water</option>
-                          <option value="gas">Gas</option>
-                          <option value="other">Other</option>
-                        </select>
-                      </div>
-
-                      <div className="form-group mb-3">
-                        <label htmlFor="invoiceDate" className="form-label">
-                          Invoice Date
-                        </label>
-                        <input
-                          type="date"
-                          id="invoiceDate"
-                          className="form-control"
-                          value={invoiceDate}
-                          onChange={(e) => setInvoiceDate(e.target.value)}
-                          disabled={isUploading || calculatingEmissions}
-                          required
-                        />
-                      </div>
-
-                      <div className="form-group mb-3">
-                        <label htmlFor="invoiceNumber" className="form-label">
-                          Invoice Number
-                        </label>
-                        <input
-                          type="text"
-                          id="invoiceNumber"
-                          className="form-control"
-                          value={invoiceNumber}
-                          onChange={(e) => setInvoiceNumber(e.target.value)}
-                          disabled={isUploading || calculatingEmissions}
-                          placeholder="e.g. INV-2023-001"
-                          required
-                        />
-                      </div>
-
-                      <div className="form-group mb-3">
-                        <label htmlFor="provider" className="form-label">
-                          Provider/Supplier
-                        </label>
-                        <input
-                          type="text"
-                          id="provider"
-                          className="form-control"
-                          value={provider}
-                          onChange={(e) => setProvider(e.target.value)}
-                          disabled={isUploading || calculatingEmissions}
-                          placeholder="e.g. Energy Company"
-                          required
-                        />
-                      </div>
-
                       <div className="mb-3">
                         <label className="form-label d-block">
                           Invoice File
@@ -630,12 +642,7 @@ const InvoicesPage = () => {
                         className="btn btn-primary w-100"
                         onClick={handleUpload}
                         disabled={
-                          !selectedFile ||
-                          isUploading ||
-                          calculatingEmissions ||
-                          !invoiceDate ||
-                          !invoiceNumber ||
-                          !provider
+                          !selectedFile || isUploading || calculatingEmissions
                         }
                       >
                         {isUploading ? (
@@ -645,7 +652,9 @@ const InvoicesPage = () => {
                               role="status"
                               aria-hidden="true"
                             ></span>
-                            Uploading...
+                            {processingStage === "uploading"
+                              ? "Uploading..."
+                              : "Processing..."}
                           </>
                         ) : calculatingEmissions ? (
                           <>
@@ -658,19 +667,52 @@ const InvoicesPage = () => {
                           </>
                         ) : (
                           <>
-                            <i className="fas fa-cloud-upload-alt me-2"></i>
-                            Upload & Calculate Emissions
+                            <i className="fas fa-magic me-2"></i>
+                            Scan Invoice & Calculate Emissions
                           </>
                         )}
                       </button>
+
+                      {isUploading && (
+                        <div className="mt-3 text-center">
+                          <div className="alert alert-info">
+                            <small>
+                              {processingStage === "uploading" && (
+                                <>
+                                  <i className="fas fa-file-upload me-2"></i>
+                                  Uploading your invoice...
+                                </>
+                              )}
+                              {processingStage === "extracting" && (
+                                <>
+                                  <i className="fas fa-file-alt me-2"></i>
+                                  Extracting invoice data using OCR...
+                                </>
+                              )}
+                            </small>
+                          </div>
+                        </div>
+                      )}
+
+                      {calculatingEmissions && (
+                        <div className="mt-3 text-center">
+                          <div className="alert alert-info">
+                            <small>
+                              <i className="fas fa-robot me-2"></i>
+                              AI is analyzing your invoice and calculating
+                              emissions. This may take a moment...
+                            </small>
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
               </div>
             </div>
 
-            <div className="col-lg-8">
-              <div className={`bg-${theme} border-0 shadow-sm`}>
+            <div className="col-lg-12">
+              <div className={`card p-0 m-0 bg-${theme} border-0 shadow-sm`}>
                 <div className="card-body">
                   <h5 className="card-title mb-3">Saved Invoices</h5>
 
@@ -704,15 +746,30 @@ const InvoicesPage = () => {
                         <tbody>
                           {invoices.map((invoice) => (
                             <tr key={invoice.id}>
-                              <td>{invoice.fileName}</td>
                               <td>
-                                <span
-                                  className={`badge ${getInvoiceTypeBadgeClass(
-                                    invoice.type
-                                  )}`}
-                                >
-                                  {getInvoiceTypeLabel(invoice.type)}
-                                </span>
+                                {invoice.originalName || invoice.fileName}
+                              </td>
+                              <td>
+                                {invoice.emissionTypes ? (
+                                  invoice.emissionTypes.map((type, index) => (
+                                    <span
+                                      key={index}
+                                      className={`badge ${getInvoiceTypeBadgeClass(
+                                        type
+                                      )} me-1`}
+                                    >
+                                      {getInvoiceTypeLabel(type)}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span
+                                    className={`badge ${getInvoiceTypeBadgeClass(
+                                      invoice.type
+                                    )}`}
+                                  >
+                                    {getInvoiceTypeLabel(invoice.type)}
+                                  </span>
+                                )}
                               </td>
                               <td>{formatDate(invoice.invoiceDate)}</td>
                               <td>{invoice.provider}</td>
@@ -725,10 +782,10 @@ const InvoicesPage = () => {
                                   <i className="fas fa-eye"></i>
                                 </button>
                                 <button
-                                  className="btn btn-sm btn-outline-secondary"
-                                  onClick={() => downloadInvoice(invoice)}
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={() => handleDeleteInvoice(invoice)}
                                 >
-                                  <i className="fas fa-download"></i>
+                                  <i className="fas fa-trash"></i>
                                 </button>
                               </td>
                             </tr>
@@ -745,7 +802,7 @@ const InvoicesPage = () => {
           {/* How It Works Section */}
           <div className="row mb-5">
             <div className="col-12">
-              <div className={`card bg-${theme} border-0 shadow-sm`}>
+              <div className={`card p-0 m-0 bg-${theme} border-0 shadow-sm`}>
                 <div className="card-body">
                   <h5 className="card-title">How It Works</h5>
                   <div className="row mt-3">
@@ -822,7 +879,10 @@ const InvoicesPage = () => {
                           <tbody>
                             <tr>
                               <th>File Name</th>
-                              <td>{selectedInvoice.fileName}</td>
+                              <td>
+                                {selectedInvoice.originalName ||
+                                  selectedInvoice.fileName}
+                              </td>
                             </tr>
                             <tr>
                               <th>Invoice Number</th>
@@ -843,15 +903,45 @@ const InvoicesPage = () => {
                             <tr>
                               <th>Type</th>
                               <td>
-                                <span
-                                  className={`badge ${getInvoiceTypeBadgeClass(
-                                    selectedInvoice.type
-                                  )}`}
-                                >
-                                  {getInvoiceTypeLabel(selectedInvoice.type)}
-                                </span>
+                                {selectedInvoice.emissionTypes ? (
+                                  selectedInvoice.emissionTypes.map(
+                                    (type, index) => (
+                                      <span
+                                        key={index}
+                                        className={`badge ${getInvoiceTypeBadgeClass(
+                                          type
+                                        )} me-1`}
+                                      >
+                                        {getInvoiceTypeLabel(type)}
+                                      </span>
+                                    )
+                                  )
+                                ) : (
+                                  <span
+                                    className={`badge ${getInvoiceTypeBadgeClass(
+                                      selectedInvoice.type
+                                    )}`}
+                                  >
+                                    {getInvoiceTypeLabel(selectedInvoice.type)}
+                                  </span>
+                                )}
                               </td>
                             </tr>
+                            {selectedInvoice.consumption && (
+                              <tr>
+                                <th>Consumption</th>
+                                <td>
+                                  {selectedInvoice.consumption}{" "}
+                                  {selectedInvoice.consumptionUnit}
+                                </td>
+                              </tr>
+                            )}
+                            {selectedInvoice.emissionFactor && (
+                              <tr>
+                                <th>Emission Factor</th>
+                                <td>{selectedInvoice.emissionFactor}</td>
+                              </tr>
+                            )}
                           </tbody>
                         </table>
                       </div>
@@ -885,29 +975,39 @@ const InvoicesPage = () => {
                             </div>
                           </div>
 
-                          <div className="mt-3">
-                            <p className="mb-1">
-                              Environmental Impact Equivalent:
-                            </p>
-                            <p className="text-muted small">
-                              {(selectedInvoice.co2Emissions / 8.5).toFixed(1)}{" "}
-                              trees needed for a month to absorb this CO₂
-                            </p>
-                          </div>
+                          {/* Display per-type emissions if available */}
+                          {selectedInvoice.emissionBreakdown && (
+                            <div className="mt-4">
+                              <h6>Emissions Breakdown</h6>
+                              <table className="table table-sm">
+                                <thead>
+                                  <tr>
+                                    <th>Type</th>
+                                    <th>Emissions</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {Object.entries(
+                                    selectedInvoice.emissionBreakdown
+                                  ).map(([type, value], index) => (
+                                    <tr key={index}>
+                                      <td>
+                                        <span
+                                          className={`badge ${getInvoiceTypeBadgeClass(
+                                            type
+                                          )}`}
+                                        >
+                                          {getInvoiceTypeLabel(type)}
+                                        </span>
+                                      </td>
+                                      <td>{value} kg CO₂</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="row mt-3">
-                    <div className="col-12">
-                      <h6>Invoice Preview</h6>
-                      <div className="border rounded p-3 text-center">
-                        <i className="fas fa-file-pdf fa-4x text-muted"></i>
-                        <p className="text-muted mt-2">
-                          Preview not available. Click the download button to
-                          view the full invoice.
-                        </p>
                       </div>
                     </div>
                   </div>
@@ -954,6 +1054,16 @@ const InvoicesPage = () => {
                   >
                     <i className="fas fa-download me-2"></i>
                     Download Invoice
+                  </button>
+                  <button
+                    className="btn btn-outline-danger me-auto"
+                    onClick={() => {
+                      closeModal();
+                      handleDeleteInvoice(selectedInvoice);
+                    }}
+                  >
+                    <i className="fas fa-trash me-2"></i>
+                    Delete Invoice
                   </button>
                   <button className="btn btn-primary" onClick={closeModal}>
                     Close

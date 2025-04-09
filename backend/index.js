@@ -22,18 +22,19 @@ const userEmissionRoutes = require("./routes/userEmissionRoutes");
 const productRoutes = require("./routes/productRoutes");
 const yearlyReportRoutes = require("./routes/yearlyReportRoutes");
 const locationRoutes = require("./routes/locationRoutes");
+const invoiceRoutes = require("./routes/InvoiceRoutes");
 
 const energyEmissionRoutes = require("./routes/energyEmissions");
 const transportEmissionRoutes = require("./routes/transportEmission");
 
 // Middleware
-app.use(cors());
-// OR, Allow specific origins
+// Setup CORS properly for credentials
 app.use(
   cors({
-    origin: dotEnv.CORS_ORIGIN || "http://localhost:3000", // Replace with your React frontend URL
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: dotEnv.CORS_ORIGIN || "http://localhost:3001", // Use the configured origin or default to localhost:3001
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true, // Allow cookies and authentication headers
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -55,6 +56,7 @@ app.use("/api/emission-types", emissionTypeRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/yearly-reports", yearlyReportRoutes);
 app.use("/api/locations", locationRoutes);
+app.use("/api/invoices", invoiceRoutes);
 
 app.use("/api/energy-emissions", energyEmissionRoutes);
 app.use("/api/transport-emissions", transportEmissionRoutes);

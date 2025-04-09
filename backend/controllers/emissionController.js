@@ -145,16 +145,31 @@ const getEmissionRecords = async (req, res) => {
   try {
     const { employeeId, companyId, global } = req.query;
 
+    // Handle global parameter - this could be a security concern, so we can add additional checks
+    if (global === "true") {
+      // For global access, we might want to implement rate limiting or additional authorization
+      console.log("Global emissions access requested");
+
+      const records = await EmissionRecord.find({})
+        .populate("employee")
+        .populate("transportation");
+
+      return res.status(200).json(records);
+    }
+
+    // For non-global requests, we might want to limit by authenticated user
     let query = {};
-    if (global) {
-      query = {}; // Fetch all records globally
-    } else {
-      if (employeeId && mongoose.Types.ObjectId.isValid(employeeId)) {
-        query.employee = employeeId;
-      }
-      if (companyId && mongoose.Types.ObjectId.isValid(companyId)) {
-        query["employee.company"] = companyId; // Assuming this field exists
-      }
+
+    if (employeeId && mongoose.Types.ObjectId.isValid(employeeId)) {
+      // If specific employee ID is provided, fetch their records
+      query.employee = employeeId;
+    } else if (req.user && req.user._id) {
+      // If no specific employee ID, default to the authenticated user
+      query.employee = req.user._id;
+    }
+
+    if (companyId && mongoose.Types.ObjectId.isValid(companyId)) {
+      query["employee.company"] = companyId;
     }
 
     const records = await EmissionRecord.find(query)
@@ -163,8 +178,11 @@ const getEmissionRecords = async (req, res) => {
 
     res.status(200).json(records);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error fetching emission records", error });
+    console.error("Error fetching emission records:", error);
+    res.status(500).json({
+      message: "Error fetching emission records",
+      error: error.message,
+    });
   }
 };
 

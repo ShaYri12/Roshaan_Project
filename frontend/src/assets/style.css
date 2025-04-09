@@ -1582,3 +1582,112 @@ h4 {
 .light-theme .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #999;
 }
+
+/* PDF Export Specific Styles */
+.pdf-export-mode {
+  border-radius: 0 !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+  display: block !important;
+  opacity: 1 !important;
+  filter: brightness(1.05) !important;
+}
+
+.pdf-export-mode .apexcharts-toolbar,
+.pdf-export-mode .apexcharts-menu,
+.pdf-export-mode .apexcharts-tooltip,
+.pdf-export-mode .apexcharts-xaxistooltip,
+.pdf-export-mode .apexcharts-yaxistooltip,
+.pdf-export-mode .apexcharts-zoom-menu {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.pdf-export-mode .apexcharts-legend {
+  opacity: 1 !important;
+}
+
+.pdf-export-mode .apexcharts-text,
+.pdf-export-mode .apexcharts-title-text,
+.pdf-export-mode .apexcharts-legend-text {
+  font-weight: 600 !important;
+  fill-opacity: 1 !important;
+}
+
+.dark-theme .pdf-export-mode text {
+  fill: #e9ecef !important;
+}
+
+.light-theme .pdf-export-mode text {
+  fill: #212529 !important;
+}
+
+/* Additional styles for high contrast in PDF */
+.high-contrast-chart {
+  isolation: isolate !important;
+}
+
+.high-contrast-chart .apexcharts-svg {
+  filter: contrast(1.15) brightness(1.05) !important;
+  opacity: 1 !important;
+}
+
+.high-contrast-chart .apexcharts-grid-borders line,
+.high-contrast-chart .apexcharts-grid line,
+.high-contrast-chart .apexcharts-xaxis line,
+.high-contrast-chart .apexcharts-yaxis line {
+  stroke-opacity: 1 !important;
+  stroke-width: 1.2px !important;
+}
+
+.high-contrast-chart .apexcharts-text {
+  font-weight: 600 !important;
+  fill-opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+.high-contrast-chart .apexcharts-series-markers,
+.high-contrast-chart .apexcharts-plot-series,
+.high-contrast-chart .apexcharts-bar-series,
+.high-contrast-chart .apexcharts-pie-series,
+.high-contrast-chart .apexcharts-line-series {
+  filter: contrast(1.1) brightness(1.05) !important;
+}
+
+.high-contrast-chart .apexcharts-plot-series path,
+.high-contrast-chart .apexcharts-area {
+  opacity: 1 !important;
+  fill-opacity: 1 !important;
+  stroke-opacity: 1 !important;
+  stroke-width: 2px !important;
+}
+
+.high-contrast-chart .apexcharts-datalabel,
+.high-contrast-chart .apexcharts-datalabel-label,
+.high-contrast-chart .apexcharts-datalabel-value {
+  font-weight: 600 !important;
+  fill-opacity: 1 !important;
+}
+
+/* Make sure lines are visible but not too thick */
+.high-contrast-chart .apexcharts-series-highlight line,
+.high-contrast-chart .apexcharts-series line {
+  stroke-width: 2px !important;
+}
+
+/* Make pie slices clearly visible but not overly sharp */
+.high-contrast-chart .apexcharts-pie-series path {
+  stroke-width: 1.5px !important;
+  stroke: #fff !important;
+}
+
+/* Make sure bar charts are fully opaque */
+.high-contrast-chart .apexcharts-bar-series .apexcharts-bar {
+  fill-opacity: 1 !important;
+}
+
+/* Ensure area charts have good opacity without being too saturated */
+.high-contrast-chart .apexcharts-area-series .apexcharts-area {
+  fill-opacity: 0.8 !important;
+}
