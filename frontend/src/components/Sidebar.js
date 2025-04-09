@@ -3,7 +3,7 @@ import { CiLogout } from "react-icons/ci";
 import { FaBars, FaShippingFast, FaCog, FaBuilding } from "react-icons/fa";
 import { MdTravelExplore } from "react-icons/md";
 import { BsCloudHaze2Fill } from "react-icons/bs";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const Sidebar = ({
   userData,
@@ -14,10 +14,13 @@ const Sidebar = ({
   setIsSidebarOpen,
 }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [expandedItem, setExpandedItem] = useState(null);
+  const [unauthorizedMessage, setUnauthorizedMessage] = useState(null);
 
   // Determine if user is admin
   const isAdmin = userData?.role === "admin";
+  const isEmployee = userData?.role === "employee";
 
   // Check if a path is active
   const isActive = (path) => location.pathname === path;
@@ -31,6 +34,41 @@ const Sidebar = ({
       setExpandedItem(itemName);
     }
   };
+
+  // Enhanced link handler to prevent unauthorized navigation
+  const handleNavigation =
+    (path, requiresAdmin = false, requiresEmployee = false) =>
+    (e) => {
+      // Clear any previous unauthorized message
+      setUnauthorizedMessage(null);
+
+      // Check access permissions
+      if (requiresAdmin && !isAdmin) {
+        e.preventDefault();
+        setUnauthorizedMessage(
+          "You don't have permission to access the admin area"
+        );
+        setTimeout(() => setUnauthorizedMessage(null), 3000);
+        return;
+      }
+
+      if (requiresEmployee && !isEmployee) {
+        e.preventDefault();
+        setUnauthorizedMessage(
+          "You don't have permission to access the employee area"
+        );
+        setTimeout(() => setUnauthorizedMessage(null), 3000);
+        return;
+      }
+
+      // Navigation is allowed
+      navigate(path);
+
+      // Close sidebar on mobile after navigation
+      if (window.innerWidth <= 768) {
+        setIsSidebarOpen(false);
+      }
+    };
 
   // Close sidebar on mobile devices when the component mounts
   useEffect(() => {
@@ -54,6 +92,15 @@ const Sidebar = ({
       >
         <FaBars />
       </button>
+
+      {/* Unauthorized Message Alert */}
+      {unauthorizedMessage && (
+        <div className="unauthorized-alert">
+          <div className="alert alert-danger" role="alert">
+            {unauthorizedMessage}
+          </div>
+        </div>
+      )}
 
       <div className={`sidebar ${isSidebarOpen ? "open" : "closed"}`}>
         <div className="sidebar-header">
@@ -131,6 +178,7 @@ const Sidebar = ({
                         className={`submenu-item px-3 py-2 d-block ${
                           isActive("/transport-emissions") ? "active" : ""
                         }`}
+                        onClick={handleNavigation("/transport-emissions", true)}
                       >
                         Transport Emissions
                       </Link>
@@ -139,6 +187,7 @@ const Sidebar = ({
                         className={`submenu-item px-3 py-2 d-block ${
                           isActive("/vehicles") ? "active" : ""
                         }`}
+                        onClick={handleNavigation("/vehicles", true)}
                       >
                         Vehicles
                       </Link>
@@ -185,6 +234,7 @@ const Sidebar = ({
                         className={`submenu-item px-3 py-2 d-block ${
                           isActive("/emissions") ? "active" : ""
                         }`}
+                        onClick={handleNavigation("/emissions", true)}
                       >
                         Emissions
                       </Link>
@@ -193,6 +243,7 @@ const Sidebar = ({
                         className={`submenu-item px-3 py-2 d-block ${
                           isActive("/emission-types") ? "active" : ""
                         }`}
+                        onClick={handleNavigation("/emission-types", true)}
                       >
                         Emission Types
                       </Link>
@@ -201,6 +252,7 @@ const Sidebar = ({
                         className={`submenu-item px-3 py-2 d-block ${
                           isActive("/energy-emissions") ? "active" : ""
                         }`}
+                        onClick={handleNavigation("/energy-emissions", true)}
                       >
                         Energy Emissions
                       </Link>
@@ -245,6 +297,7 @@ const Sidebar = ({
                         className={`submenu-item px-3 py-2 d-block ${
                           isActive("/products") ? "active" : ""
                         }`}
+                        onClick={handleNavigation("/products", true)}
                       >
                         Products
                       </Link>
@@ -328,6 +381,7 @@ const Sidebar = ({
                         className={`submenu-item px-3 py-2 d-block ${
                           isActive("/companies") ? "active" : ""
                         }`}
+                        onClick={handleNavigation("/companies", true)}
                       >
                         Company Locations
                       </Link>
@@ -336,6 +390,7 @@ const Sidebar = ({
                         className={`submenu-item px-3 py-2 d-block ${
                           isActive("/employees") ? "active" : ""
                         }`}
+                        onClick={handleNavigation("/employees", true)}
                       >
                         Employees
                       </Link>
@@ -344,6 +399,7 @@ const Sidebar = ({
                         className={`submenu-item px-3 py-2 d-block ${
                           isActive("/yearly-reports") ? "active" : ""
                         }`}
+                        onClick={handleNavigation("/yearly-reports", true)}
                       >
                         Yearly Reports
                       </Link>
@@ -352,6 +408,7 @@ const Sidebar = ({
                         className={`submenu-item px-3 py-2 d-block ${
                           isActive("/invoices") ? "active" : ""
                         }`}
+                        onClick={handleNavigation("/invoices", true)}
                       >
                         Invoices
                       </Link>
@@ -360,6 +417,7 @@ const Sidebar = ({
                         className={`submenu-item px-3 py-2 d-block ${
                           isActive("/license-plate") ? "active" : ""
                         }`}
+                        onClick={handleNavigation("/license-plate", true)}
                       >
                         License Plate CO₂
                       </Link>
@@ -368,6 +426,7 @@ const Sidebar = ({
                         className={`submenu-item px-3 py-2 d-block ${
                           isActive("/dashboard") ? "active" : ""
                         }`}
+                        onClick={handleNavigation("/dashboard", true)}
                       >
                         Dashboard
                       </Link>
@@ -414,6 +473,11 @@ const Sidebar = ({
                         className={`submenu-item px-3 py-2 d-block ${
                           isActive("/user-dashboard") ? "active" : ""
                         }`}
+                        onClick={handleNavigation(
+                          "/user-dashboard",
+                          false,
+                          true
+                        )}
                       >
                         <i className="fas fa-tachometer-alt me-2"></i>
                         My Dashboard

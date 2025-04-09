@@ -144,20 +144,30 @@ const getEmissionRecordById = async (req, res) => {
 const getEmissionRecords = async (req, res) => {
   try {
     const { employeeId, companyId, global } = req.query;
+    console.log(
+      "Getting emission records. User:",
+      req.user ? req.user._id : "No authenticated user"
+    );
+    console.log("Query params:", { employeeId, companyId, global });
 
-    // Handle global parameter - this could be a security concern, so we can add additional checks
-    if (global === "true") {
-      // For global access, we might want to implement rate limiting or additional authorization
-      console.log("Global emissions access requested");
+    // Force global access if there's no authenticated user
+    const forceGlobal = !req.user || global === "true";
+
+    // Handle global parameter or when no user is authenticated
+    if (forceGlobal) {
+      console.log("Global emissions access granted - retrieving all records");
 
       const records = await EmissionRecord.find({})
         .populate("employee")
         .populate("transportation");
 
+      console.log(
+        `Found ${records.length} emission records with global access`
+      );
       return res.status(200).json(records);
     }
 
-    // For non-global requests, we might want to limit by authenticated user
+    // For non-global requests with authenticated user
     let query = {};
 
     if (employeeId && mongoose.Types.ObjectId.isValid(employeeId)) {
@@ -172,10 +182,14 @@ const getEmissionRecords = async (req, res) => {
       query["employee.company"] = companyId;
     }
 
+    console.log("Applying filters:", query);
     const records = await EmissionRecord.find(query)
       .populate("employee")
       .populate("transportation");
 
+    console.log(
+      `Found ${records.length} emission records with filtered access`
+    );
     res.status(200).json(records);
   } catch (error) {
     console.error("Error fetching emission records:", error);

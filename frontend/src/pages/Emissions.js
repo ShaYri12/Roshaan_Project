@@ -6,6 +6,7 @@ import { FaChartLine, FaHome, FaUserPlus } from "react-icons/fa";
 import DynamicSelect from "../components/DynamicSelect";
 import LocationPicker from "../components/LocationPicker";
 import { isRecordEditable, formatDecimal } from "../utils/dateUtils";
+import { authenticatedFetch } from "../utils/axiosConfig";
 
 const EmissionPage = () => {
   const [emissionRecords, setEmissionRecords] = useState([]);
@@ -27,47 +28,106 @@ const EmissionPage = () => {
   const [carsState, setCarsState] = useState([]);
   const navigate = useNavigate();
 
+  // Check authentication on load
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.log("No token found in Emissions page, redirecting to login");
+          navigate("/");
+          return;
+        }
+
+        try {
+          // Validate token
+          const response = await authenticatedFetch(
+            `${REACT_APP_API_URL}/auth/validate-token`,
+            {
+              method: "GET",
+            }
+          );
+          if (!response.ok) {
+            // Failed validation, redirect to login
+            localStorage.removeItem("token");
+            localStorage.removeItem("userObj");
+            localStorage.removeItem("userData");
+            navigate("/");
+          }
+        } catch (validationError) {
+          console.error("Token validation error:", validationError);
+          localStorage.removeItem("token");
+          localStorage.removeItem("userObj");
+          localStorage.removeItem("userData");
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Authentication check error:", error);
+        setError("Authentication failed. Please log in again.");
+        navigate("/");
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
+
   // Fetch all emission records, employees, and cars
   useEffect(() => {
     const fetchEmissions = async () => {
       try {
-        const token = localStorage.getItem("token") || JWT_ADMIN_SECRET;
+        console.log("Fetching emissions data...");
+        // Store JWT_ADMIN_SECRET in localStorage for axiosConfig to use
+        localStorage.setItem("JWT_ADMIN_SECRET", JWT_ADMIN_SECRET);
+
+        // Use Promise.all with authenticatedFetch instead
         const [emissionsRes, employeesRes, carsRes] = await Promise.all([
-          fetch(`${REACT_APP_API_URL}/emissions`, {
+          authenticatedFetch(`${REACT_APP_API_URL}/emissions?global=true`, {
             method: "GET",
             headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
+              // Include JWT_ADMIN_SECRET as a fallback
+              ...(JWT_ADMIN_SECRET && !localStorage.getItem("token")
+                ? { Authorization: `Bearer ${JWT_ADMIN_SECRET}` }
+                : {}),
             },
           }),
-          fetch(`${REACT_APP_API_URL}/employees`, {
+          authenticatedFetch(`${REACT_APP_API_URL}/employees`, {
             method: "GET",
             headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
+              ...(JWT_ADMIN_SECRET && !localStorage.getItem("token")
+                ? { Authorization: `Bearer ${JWT_ADMIN_SECRET}` }
+                : {}),
             },
           }),
-          fetch(`${REACT_APP_API_URL}/transportations`, {
+          authenticatedFetch(`${REACT_APP_API_URL}/transportations`, {
             method: "GET",
             headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
+              ...(JWT_ADMIN_SECRET && !localStorage.getItem("token")
+                ? { Authorization: `Bearer ${JWT_ADMIN_SECRET}` }
+                : {}),
             },
           }),
         ]);
-        if (!emissionsRes.ok || !employeesRes.ok || !carsRes.ok) {
-          throw new Error("Failed to fetch data");
-        }
+
+        console.log("Emissions API response status:", emissionsRes.status);
+        console.log("Employees API response status:", employeesRes.status);
+        console.log("Transportations API response status:", carsRes.status);
+
         const [emissionsData, employeesData, carsData] = await Promise.all([
           emissionsRes.json(),
           employeesRes.json(),
           carsRes.json(),
         ]);
+
+        console.log("Emissions data length:", emissionsData.length);
+        console.log("Employees data length:", employeesData.length);
+        console.log("Cars data length:", carsData.length);
+
         setEmissionRecords(emissionsData);
         setEmployeesState(employeesData);
         setCarsState(carsData);
       } catch (error) {
-        setError(error.message);
+        console.error("Error fetching data:", error);
+        setError(`Failed to fetch data: ${error.message}`);
       }
     };
     fetchEmissions();
@@ -153,19 +213,18 @@ const EmissionPage = () => {
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("token") || JWT_ADMIN_SECRET;
-      const response = await fetch(`${REACT_APP_API_URL}/emissions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(emissionRecord),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status} - ${response.statusText}`);
-      }
+      const response = await authenticatedFetch(
+        `${REACT_APP_API_URL}/emissions`,
+        {
+          method: "POST",
+          body: JSON.stringify(emissionRecord),
+          headers: {
+            ...(JWT_ADMIN_SECRET && !localStorage.getItem("token")
+              ? { Authorization: `Bearer ${JWT_ADMIN_SECRET}` }
+              : {}),
+          },
+        }
+      );
 
       console.log("Emission record created successfully!");
       window.location.reload();
@@ -198,25 +257,22 @@ const EmissionPage = () => {
     setShowEditModal(true);
   };
 
+  // Update record
   const handleUpdateSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("token") || JWT_ADMIN_SECRET;
-      const response = await fetch(
+      const response = await authenticatedFetch(
         `${REACT_APP_API_URL}/emissions/${emissionRecord._id}`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
           body: JSON.stringify(emissionRecord),
+          headers: {
+            ...(JWT_ADMIN_SECRET && !localStorage.getItem("token")
+              ? { Authorization: `Bearer ${JWT_ADMIN_SECRET}` }
+              : {}),
+          },
         }
       );
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status} - ${response.statusText}`);
-      }
 
       console.log("Emission record updated successfully!");
       window.location.reload();
@@ -235,21 +291,17 @@ const EmissionPage = () => {
   // Delete the emission record
   const handleDelete = async () => {
     try {
-      const token = localStorage.getItem("token") || JWT_ADMIN_SECRET;
-      const response = await fetch(
+      const response = await authenticatedFetch(
         `${REACT_APP_API_URL}/emissions/${deleteRecordId}`,
         {
           method: "DELETE",
           headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            ...(JWT_ADMIN_SECRET && !localStorage.getItem("token")
+              ? { Authorization: `Bearer ${JWT_ADMIN_SECRET}` }
+              : {}),
           },
         }
       );
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status} - ${response.statusText}`);
-      }
 
       console.log("Emission record deleted successfully!");
       window.location.reload();

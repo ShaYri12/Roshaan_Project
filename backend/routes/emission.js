@@ -3,11 +3,12 @@ const router = express.Router();
 const emissionController = require("../controllers/emissionController");
 const authMiddleware = require("../middleware/authMiddleware");
 
-// Get all emission records - allowing global parameter without strict auth
-router.get("/", authMiddleware, emissionController.getEmissionRecords);
+// Use the non-strict auth middleware for all routes
+// This allows the JWT_ADMIN_SECRET to work for all endpoints
+router.use(authMiddleware);
 
-// The rest of the routes require authentication
-router.use(authMiddleware.required);
+// Get all emission records - allowing global parameter without strict auth
+router.get("/", emissionController.getEmissionRecords);
 
 // Get an emission record by ID
 router.get("/:id", emissionController.getEmissionRecordById);

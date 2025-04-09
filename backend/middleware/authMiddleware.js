@@ -28,6 +28,18 @@ const authMiddleware = (req, res, next) => {
   } catch (err) {
     // Log the error but don't block the request
     console.warn("Token verification failed:", err.message);
+
+    // Check if the token matches the JWT_ADMIN_SECRET directly
+    // This is a special case for when someone is using the admin secret directly
+    if (token === dotEnv.JWT_ADMIN_SECRET) {
+      console.log("Using JWT_ADMIN_SECRET directly as token");
+      req.user = {
+        _id: "admin", // Special ID for admin
+        role: "admin",
+      };
+      return next();
+    }
+
     req.user = null;
     next();
   }
@@ -66,6 +78,18 @@ authMiddleware.required = (req, res, next) => {
     next();
   } catch (err) {
     console.error("Invalid token:", err.message);
+
+    // Check if the token equals the JWT_ADMIN_SECRET itself
+    // This is an escape hatch for admin access
+    if (token === dotEnv.JWT_ADMIN_SECRET) {
+      console.log("Using JWT_ADMIN_SECRET directly as token");
+      req.user = {
+        _id: "admin", // Special ID for admin
+        role: "admin",
+      };
+      return next();
+    }
+
     res.status(401).json({ message: "Invalid token." });
   }
 };

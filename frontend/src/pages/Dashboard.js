@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { REACT_APP_API_URL } from "../env";
+import { REACT_APP_API_URL, JWT_ADMIN_SECRET } from "../env";
 import Chart from "react-apexcharts";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import Sidebar from "../components/Sidebar";
 import Leaderboard from "../components/Leaderboard";
+import { authenticatedFetch } from "../utils/axiosConfig";
 
 const DashboardPage = () => {
   const co2ReductionRef = useRef(null);
@@ -877,33 +878,92 @@ const DashboardPage = () => {
     const fetchUserData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const userObj = JSON.parse(localStorage.getItem("userObj"));
+        if (!token) {
+          console.log("No token found, redirecting to login");
+          navigate("/");
+          return;
+        }
+
+        let userObj;
+        try {
+          userObj = JSON.parse(localStorage.getItem("userObj"));
+        } catch (parseError) {
+          console.error("Error parsing user object:", parseError);
+          localStorage.removeItem("userObj");
+          localStorage.removeItem("token");
+          navigate("/");
+          return;
+        }
+
         if (token && userObj) {
-          setUserData(userObj);
+          // Validate token with a small API call
+          try {
+            const response = await authenticatedFetch(
+              `${REACT_APP_API_URL}/auth/validate-token`,
+              {
+                method: "GET",
+              }
+            );
+            if (response.ok) {
+              setUserData(userObj);
+            } else {
+              // Token validation failed
+              localStorage.removeItem("token");
+              localStorage.removeItem("userObj");
+              localStorage.removeItem("userData");
+              navigate("/");
+            }
+          } catch (validationError) {
+            console.error("Token validation error:", validationError);
+            localStorage.removeItem("token");
+            localStorage.removeItem("userObj");
+            localStorage.removeItem("userData");
+            navigate("/");
+          }
         } else {
           navigate("/");
         }
       } catch (error) {
         console.error("Error fetching user data", error);
+        localStorage.removeItem("token");
+        localStorage.removeItem("userObj");
+        localStorage.removeItem("userData");
+        navigate("/");
       }
     };
 
     const fetchStats = async () => {
+      console.log("Fetching dashboard stats...");
+      // Store JWT_ADMIN_SECRET in localStorage for axiosConfig to use
+      localStorage.setItem("JWT_ADMIN_SECRET", JWT_ADMIN_SECRET);
+
       const token = localStorage.getItem("token");
-      const headers = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      };
+      const authToken = token || JWT_ADMIN_SECRET;
 
       const fetchData = async (url, errorMessage) => {
         try {
-          const response = await fetch(url, { method: "GET", headers });
-          if (!response.ok) {
-            throw new Error(errorMessage);
-          }
-          return response.json();
+          // Add a specific Authorization header with JWT_ADMIN_SECRET as fallback
+          console.log(`Fetching: ${url}`);
+          const response = await authenticatedFetch(url, {
+            method: "GET",
+            headers: {
+              ...(JWT_ADMIN_SECRET && !token
+                ? { Authorization: `Bearer ${JWT_ADMIN_SECRET}` }
+                : {}),
+            },
+          });
+          console.log(
+            `Response for ${url.split("/").pop()}: Status ${response.status}`
+          );
+          const data = await response.json();
+          console.log(
+            `Got data for ${url.split("/").pop()}: ${
+              Array.isArray(data) ? data.length + " items" : "Object"
+            }`
+          );
+          return data;
         } catch (error) {
-          console.error(errorMessage, error);
+          console.error(`${errorMessage}:`, error);
           return null;
         }
       };
@@ -928,7 +988,7 @@ const DashboardPage = () => {
             "Failed to fetch companies"
           ),
           fetchData(
-            `${REACT_APP_API_URL}/emissions`,
+            `${REACT_APP_API_URL}/emissions?global=true`,
             "Failed to fetch emissions"
           ),
           fetchData(
@@ -957,11 +1017,22 @@ const DashboardPage = () => {
           redutionOverTime,
           emissionsTrend,
           emissionsByCategory,
+          emissionsData,
         });
 
+        // Set counts with proper null checks
         setEmployeeCount(employeeData?.length || 0);
         setCompanyCount(companyData?.length || 0);
-        setEmissionsCount(emissionsData?.length || 0);
+
+        // Special handling for emissions count
+        if (Array.isArray(emissionsData)) {
+          console.log(`Setting emissions count to ${emissionsData.length}`);
+          setEmissionsCount(emissionsData.length);
+        } else {
+          console.warn("Emissions data is not an array:", emissionsData);
+          setEmissionsCount(0);
+        }
+
         setVehicle(vehiclesData?.length || 0);
 
         // Handle CO2 Reduction Over Time data

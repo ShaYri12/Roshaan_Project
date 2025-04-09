@@ -176,3 +176,25 @@ exports.login = async (req, res) => {
 //     res.status(500).json({ message: "Server error", error: err.message });
 //   }
 // };
+
+// Add new validateToken endpoint
+exports.validateToken = async (req, res) => {
+  // The authMiddleware.required has already verified the token
+  // If execution reaches here, token is valid
+  try {
+    // Return the decoded user from the token
+    return res.status(200).json({
+      valid: true,
+      user: {
+        id: req.user._id,
+        role: req.user.role,
+      },
+    });
+  } catch (err) {
+    console.error("Token validation error:", err);
+    return res.status(401).json({
+      valid: false,
+      message: "Token validation failed",
+    });
+  }
+};

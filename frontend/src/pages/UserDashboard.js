@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -585,39 +585,17 @@ const DashboardPage = () => {
     document.body.className = `${newTheme}-theme`; // Apply theme class to body
   };
 
-  useEffect(() => {
-    document.body.className = `${theme}-theme`;
+  // Use useCallback to memoize these functions
+  const handleVehicleModalCallback = useCallback(() => {
+    regVehicle(true);
+  }, []);
 
-    // Add event listeners for modal triggers
-    const handleTransportModal = () => handleAddNewTransport();
-    const handleWorkTransportModal = () => handleAddNewWorkTransport();
-    const handleVehicleModal = () => regVehicle(true);
-    const handleOtherResourceModal = () => handleAddOtherResource();
-    const handleProfileModal = () => setIsProfileModalVisible(true);
+  const handleProfileModalCallback = useCallback(() => {
+    setIsProfileModalVisible(true);
+  }, []);
 
-    window.addEventListener("openTransportModal", handleTransportModal);
-    window.addEventListener("openWorkTransportModal", handleWorkTransportModal);
-    window.addEventListener("openVehicleModal", handleVehicleModal);
-    window.addEventListener("openOtherResourceModal", handleOtherResourceModal);
-    window.addEventListener("openProfileModal", handleProfileModal);
-
-    // Cleanup event listeners
-    return () => {
-      window.removeEventListener("openTransportModal", handleTransportModal);
-      window.removeEventListener(
-        "openWorkTransportModal",
-        handleWorkTransportModal
-      );
-      window.removeEventListener("openVehicleModal", handleVehicleModal);
-      window.removeEventListener(
-        "openOtherResourceModal",
-        handleOtherResourceModal
-      );
-      window.removeEventListener("openProfileModal", handleProfileModal);
-    };
-  }, [theme]);
-
-  const handleAddNewTransport = () => {
+  // Since these handlers have dependencies, include them in the dependency array
+  const handleAddNewTransportCallback = useCallback(() => {
     const userObj = JSON.parse(localStorage.getItem("userObj")); // Parse the stored JSON object
 
     if (!userObj) {
@@ -631,8 +609,13 @@ const DashboardPage = () => {
       employeeId: employeeId ? employeeId : userObj._id,
     }));
     setIsTransportationModalVisible(true);
-  };
-  const handleAddNewWorkTransport = () => {
+  }, [
+    employeeId,
+    setEmployeeTransportationData,
+    setIsTransportationModalVisible,
+  ]);
+
+  const handleAddNewWorkTransportCallback = useCallback(() => {
     const userObj = JSON.parse(localStorage.getItem("userObj")); // Parse the stored JSON object
 
     if (!userObj) {
@@ -643,15 +626,80 @@ const DashboardPage = () => {
       employeeId: userObj?._id,
     }));
     setIsWorkTransportationModalVisible(true);
+  }, [setEmployeeWorkTransportationData, setIsWorkTransportationModalVisible]);
+
+  const handleAddOtherResourceCallback = useCallback(() => {
+    setIsOtherResourcesModalVisible(true);
+  }, []);
+
+  // The useEffect for theme and event listeners
+  useEffect(() => {
+    document.body.className = `${theme}-theme`;
+
+    // Add event listeners for modal triggers using the memoized callbacks
+    window.addEventListener(
+      "openTransportModal",
+      handleAddNewTransportCallback
+    );
+    window.addEventListener(
+      "openWorkTransportModal",
+      handleAddNewWorkTransportCallback
+    );
+    window.addEventListener("openVehicleModal", handleVehicleModalCallback);
+    window.addEventListener(
+      "openOtherResourceModal",
+      handleAddOtherResourceCallback
+    );
+    window.addEventListener("openProfileModal", handleProfileModalCallback);
+
+    // Cleanup event listeners
+    return () => {
+      window.removeEventListener(
+        "openTransportModal",
+        handleAddNewTransportCallback
+      );
+      window.removeEventListener(
+        "openWorkTransportModal",
+        handleAddNewWorkTransportCallback
+      );
+      window.removeEventListener(
+        "openVehicleModal",
+        handleVehicleModalCallback
+      );
+      window.removeEventListener(
+        "openOtherResourceModal",
+        handleAddOtherResourceCallback
+      );
+      window.removeEventListener(
+        "openProfileModal",
+        handleProfileModalCallback
+      );
+    };
+  }, [
+    theme,
+    handleAddNewTransportCallback,
+    handleAddNewWorkTransportCallback,
+    handleVehicleModalCallback,
+    handleAddOtherResourceCallback,
+    handleProfileModalCallback,
+  ]);
+
+  // Ensure you continue to have these functions defined for direct calls in your component
+  const handleAddNewTransport = () => {
+    handleAddNewTransportCallback();
+  };
+
+  const handleAddNewWorkTransport = () => {
+    handleAddNewWorkTransportCallback();
+  };
+
+  const handleAddOtherResource = () => {
+    handleAddOtherResourceCallback();
   };
 
   const handleProfileUpdate = (updatedData) => {
     localStorage.setItem("userObj", JSON.stringify(updatedData));
     window.location.reload();
-  };
-
-  const handleAddOtherResource = () => {
-    setIsOtherResourcesModalVisible(true);
   };
 
   const handleNewResourceChange = (e) => {

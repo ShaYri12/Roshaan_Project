@@ -1691,3 +1691,45 @@ h4 {
 .high-contrast-chart .apexcharts-area-series .apexcharts-area {
   fill-opacity: 0.8 !important;
 }
+
+/* Unauthorized Access Alert */
+.unauthorized-alert {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  width: 80%;
+  max-width: 500px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+  animation: slideDown 0.3s ease-out forwards;
+}
+
+.unauthorized-alert .alert {
+  margin-bottom: 0;
+  padding: 12px 20px;
+  border-radius: 0;
+  text-align: center;
+  border-left: 5px solid #dc3545;
+  font-weight: 500;
+}
+
+@keyframes slideDown {
+  0% {
+    transform: translate(-50%, -100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+/* Dark theme for unauthorized alert */
+.dark-theme .unauthorized-alert .alert-danger {
+  background-color: #5c2933;
+  color: #f8d7da;
+  border-color: #842029;
+}

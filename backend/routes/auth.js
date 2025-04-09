@@ -9,6 +9,13 @@ router.post("/register", authController.register);
 // Login an existing user
 router.post("/", authController.login);
 
+// Validate token
+router.get(
+  "/validate-token",
+  authMiddleware.required,
+  authController.validateToken
+);
+
 // Get current user information
 router.get("/me", authMiddleware.required, async (req, res) => {
   try {

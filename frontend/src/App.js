@@ -16,6 +16,7 @@ import YearlyReportsPage from "./pages/YearlyReports";
 import InvoicesPage from "./pages/Invoices";
 import ProductsPage from "./pages/Products";
 import LicensePlatePage from "./pages/LicensePlate";
+import { AdminRoute, EmployeeRoute, AuthRoute } from "./utils/RouteProtection";
 import "./assets/style.css";
 
 const App = () => {
@@ -28,23 +29,135 @@ const App = () => {
   return (
     <div className="app-container">
       <Routes>
+        {/* Public routes - no authentication required */}
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Registration />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/user-dashboard" element={<UserDashboard />} />
-        <Route path="/employees" element={<Employees />} />
-        <Route path="/employee-details/:id" element={<UserDashboard />} />
-        <Route path="/companies" element={<Companies />} />
-        <Route path="/emissions" element={<Emissions />} />
-        <Route path="/emission-types" element={<EmissionTypesPage />} />
-        <Route path="/energy-emissions" element={<EnergyEmissions />} />
-        <Route path="/transport-emissions" element={<TransportEmissions />} />
-        <Route path="/vehicles" element={<VehiclePage />} />
-        <Route path="/vehicle-register" element={<VehicleRegisterPage />} />
-        <Route path="/yearly-reports" element={<YearlyReportsPage />} />
-        <Route path="/invoices" element={<InvoicesPage />} />
-        <Route path="/products" element={<ProductsPage />} />
-        <Route path="/license-plate" element={<LicensePlatePage />} />
+
+        {/* Admin-only routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <AdminRoute>
+              <Dashboard />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/employees"
+          element={
+            <AdminRoute>
+              <Employees />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/companies"
+          element={
+            <AdminRoute>
+              <Companies />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/emissions"
+          element={
+            <AdminRoute>
+              <Emissions />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/emission-types"
+          element={
+            <AdminRoute>
+              <EmissionTypesPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/energy-emissions"
+          element={
+            <AdminRoute>
+              <EnergyEmissions />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/vehicles"
+          element={
+            <AdminRoute>
+              <VehiclePage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/yearly-reports"
+          element={
+            <AdminRoute>
+              <YearlyReportsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/invoices"
+          element={
+            <AdminRoute>
+              <InvoicesPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/products"
+          element={
+            <AdminRoute>
+              <ProductsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/license-plate"
+          element={
+            <AdminRoute>
+              <LicensePlatePage />
+            </AdminRoute>
+          }
+        />
+
+        {/* Employee-only routes */}
+        <Route
+          path="/user-dashboard"
+          element={
+            <EmployeeRoute>
+              <UserDashboard />
+            </EmployeeRoute>
+          }
+        />
+        <Route
+          path="/transport-emissions"
+          element={
+            <EmployeeRoute>
+              <TransportEmissions />
+            </EmployeeRoute>
+          }
+        />
+        <Route
+          path="/vehicle-register"
+          element={
+            <EmployeeRoute>
+              <VehicleRegisterPage />
+            </EmployeeRoute>
+          }
+        />
+
+        {/* Special case - admin viewing employee details */}
+        <Route
+          path="/employee-details/:id"
+          element={
+            <AdminRoute>
+              <UserDashboard />
+            </AdminRoute>
+          }
+        />
       </Routes>
     </div>
   );
