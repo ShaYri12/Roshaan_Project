@@ -103,7 +103,7 @@ const Sidebar = ({
       )}
 
       <div className={`sidebar ${isSidebarOpen ? "open" : "closed"}`}>
-        <div className="sidebar-header">
+        <div className="sidebar-header d-md-flex align-items-center justify-content-between">
           <button
             className={`btn btn-link sidebar-toggle d-none d-md-flex align-items-center justify-content-center ${
               isSidebarOpen ? "" : "sidebar-toggled"
@@ -117,6 +117,7 @@ const Sidebar = ({
               isSidebarOpen ? "" : "d-none"
             }`}
           >
+            {/*
             <span
               className="d-block"
               style={{ fontSize: "1.2rem", fontWeight: "bold" }}
@@ -132,6 +133,24 @@ const Sidebar = ({
             >
               It's a great day to be productive! ✨
             </span>
+            */}
+            <div className="sidebar-header-logo">
+              {theme === "light" ? (
+                <img
+                  src="/logo-black.png"
+                  alt="Logo"
+                  width={128}
+                  height={71.41}
+                />
+              ) : (
+                <img
+                  src="/logo-white.png"
+                  alt="Logo"
+                  width={128}
+                  height={71.41}
+                />
+              )}
+            </div>
           </div>
         </div>
 

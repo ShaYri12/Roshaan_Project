@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { REACT_APP_API_URL, JWT_ADMIN_SECRET } from "../../env";
 import Chart from "react-apexcharts";
 import jsPDF from "jspdf";
@@ -23,9 +22,21 @@ const YearlyReportsPage = () => {
   const [reportToDelete, setReportToDelete] = useState(null);
 
   const reportRef = useRef(null);
+  const reportSectionRef = useRef(null);
+
+  // Apply smooth scrolling behavior to the document
+  useEffect(() => {
+    // Add CSS scroll behavior for smooth scrolling throughout the app
+    document.documentElement.style.scrollBehavior = "smooth";
+
+    // Clean up when component unmounts
+    return () => {
+      document.documentElement.style.scrollBehavior = "";
+    };
+  }, []);
 
   // Chart options for CO2 emissions by category
-  const getChartColors = () => {
+  const getChartColors = useCallback(() => {
     return theme === "dark"
       ? {
           titleColor: "#e9ecef",
@@ -45,9 +56,9 @@ const YearlyReportsPage = () => {
           tooltipTextColor: "#212529",
           toolbarColor: "#212529",
         };
-  };
+  }, [theme]);
 
-  const getChartTheme = () => {
+  const getChartTheme = useCallback(() => {
     return {
       mode: theme === "dark" ? "dark" : "light",
       palette: "palette1",
@@ -55,10 +66,10 @@ const YearlyReportsPage = () => {
         enabled: false,
       },
     };
-  };
+  }, [theme]);
 
   // Updated toolbar config with simpler structure
-  const getToolbarConfig = () => {
+  const getToolbarConfig = useCallback(() => {
     return {
       show: true,
       tools: {
@@ -71,32 +82,80 @@ const YearlyReportsPage = () => {
         reset: false,
       },
     };
-  };
+  }, []);
 
   // Chart Config
   const chartColors = getChartColors();
   const [monthlyEmissions, setMonthlyEmissions] = useState({
     chart: {
-      type: "bar",
+      type: "area",
       height: 350,
       zoom: { enabled: false },
       foreColor: chartColors.labelColor,
       background: "transparent",
       toolbar: getToolbarConfig(),
       theme: getChartTheme(),
+      sparkline: {
+        enabled: false,
+      },
+      fontFamily: "'Inter', 'Helvetica', sans-serif",
+      animations: {
+        enabled: true,
+        easing: "easeinout",
+        speed: 800,
+        animateGradually: {
+          enabled: true,
+          delay: 150,
+        },
+        dynamicAnimation: {
+          enabled: true,
+          speed: 350,
+        },
+      },
     },
+    fill: {
+      type: "gradient",
+      gradient: {
+        shade: theme === "light" ? "light" : "dark",
+        type: "vertical",
+        shadeIntensity: 0.2,
+        opacityFrom: 0.7,
+        opacityTo: 0.2,
+        stops: [0, 90, 100],
+      },
+    },
+    stroke: {
+      curve: "smooth",
+      width: 3,
+    },
+    colors: ["#4CAF50"],
     title: {
       text: "Monthly CO₂ Emissions",
       align: "left",
       style: {
         fontWeight: "bold",
+        fontSize: "16px",
         color: chartColors.titleColor,
       },
     },
     grid: {
       borderColor: chartColors.gridColor,
+      strokeDashArray: 5,
       row: {
         colors: ["transparent"],
+      },
+      padding: {
+        top: 10,
+        right: 10,
+        bottom: 10,
+        left: 10,
+      },
+    },
+    markers: {
+      size: 5,
+      strokeWidth: 0,
+      hover: {
+        size: 7,
       },
     },
     xaxis: {
@@ -117,6 +176,7 @@ const YearlyReportsPage = () => {
       labels: {
         style: {
           colors: chartColors.labelColor,
+          fontSize: "12px",
         },
       },
       axisBorder: {
@@ -131,11 +191,17 @@ const YearlyReportsPage = () => {
         text: "CO₂ Emissions (tonnes)",
         style: {
           color: chartColors.labelColor,
+          fontSize: "13px",
+          fontWeight: 400,
         },
       },
       labels: {
         style: {
           colors: chartColors.labelColor,
+          fontSize: "12px",
+        },
+        formatter: (val) => {
+          return Math.round(val);
         },
       },
     },
@@ -143,12 +209,21 @@ const YearlyReportsPage = () => {
       theme: theme === "dark" ? "dark" : "light",
       y: {
         formatter: function (val) {
-          return val + " tonnes";
+          return (typeof val === "number" ? val.toFixed(1) : val) + " tonnes";
         },
       },
       style: {
         fontSize: "12px",
       },
+      x: {
+        show: true,
+      },
+      marker: {
+        show: true,
+      },
+    },
+    dataLabels: {
+      enabled: false,
     },
     series: [
       {
@@ -160,15 +235,26 @@ const YearlyReportsPage = () => {
 
   const [categoryEmissions, setCategoryEmissions] = useState({
     chart: {
-      type: "pie",
+      type: "donut",
       foreColor: chartColors.labelColor,
       background: "transparent",
       toolbar: getToolbarConfig(),
       theme: getChartTheme(),
+      fontFamily: "'Inter', 'Helvetica', sans-serif",
+      animations: {
+        enabled: true,
+        speed: 500,
+        animateGradually: {
+          enabled: true,
+          delay: 150,
+        },
+      },
     },
+    colors: ["#2196F3", "#FF9800", "#9C27B0"],
     title: {
       text: "CO₂ Emissions by Category",
       style: {
+        fontSize: "16px",
         color: chartColors.titleColor,
         fontWeight: "bold",
       },
@@ -177,7 +263,8 @@ const YearlyReportsPage = () => {
     tooltip: {
       theme: theme === "dark" ? "dark" : "light",
       y: {
-        formatter: (val) => `${val} Tonnes`,
+        formatter: (val) =>
+          `${typeof val === "number" ? val.toFixed(1) : val} Tonnes`,
       },
       style: {
         fontSize: "12px",
@@ -185,18 +272,62 @@ const YearlyReportsPage = () => {
     },
     legend: {
       position: "bottom",
+      horizontalAlign: "center",
+      fontSize: "14px",
+      markers: {
+        width: 10,
+        height: 10,
+        radius: 50,
+      },
+      itemMargin: {
+        horizontal: 10,
+        vertical: 5,
+      },
       labels: {
         colors: chartColors.legendColor,
       },
     },
-    dataLabels: {
-      style: {
-        colors: theme === "dark" ? ["#fff"] : undefined,
+    plotOptions: {
+      pie: {
+        donut: {
+          size: "55%",
+          labels: {
+            show: true,
+            name: {
+              show: true,
+              fontSize: "16px",
+              fontWeight: 500,
+              offsetY: -10,
+            },
+            value: {
+              show: true,
+              fontSize: "22px",
+              fontWeight: 600,
+              formatter: function (val) {
+                return (typeof val === "number" ? val.toFixed(1) : val) + " t";
+              },
+            },
+            total: {
+              show: true,
+              label: "Total",
+              fontSize: "14px",
+              formatter: function (w) {
+                const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                return (
+                  (typeof total === "number" ? total.toFixed(1) : total) + " t"
+                );
+              },
+            },
+          },
+        },
       },
     },
+    dataLabels: {
+      enabled: false,
+    },
     stroke: {
-      width: 1,
-      colors: theme === "dark" ? ["#343a40"] : undefined,
+      width: 2,
+      colors: theme === "dark" ? ["#343a40"] : ["#ffffff"],
     },
   });
 
@@ -417,7 +548,7 @@ const YearlyReportsPage = () => {
         colors: theme === "dark" ? ["#343a40"] : undefined,
       },
     }));
-  }, [theme]);
+  }, [theme, getChartColors, getChartTheme, getToolbarConfig]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -511,6 +642,17 @@ const YearlyReportsPage = () => {
 
         setCategoryEmissionsSeries(existingReport.categoryData);
         setIsLoading(false);
+
+        // Scroll to report section after a short delay to ensure rendering is complete
+        setTimeout(() => {
+          if (reportSectionRef.current) {
+            reportSectionRef.current.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }
+        }, 100);
+
         return;
       }
 
@@ -558,6 +700,16 @@ const YearlyReportsPage = () => {
       if (!reportExists) {
         setSavedReports((prev) => [...prev, reportData]);
       }
+
+      // Scroll to report section after a short delay to ensure rendering is complete
+      setTimeout(() => {
+        if (reportSectionRef.current) {
+          reportSectionRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      }, 100);
     } catch (error) {
       console.error("Error generating report:", error);
       alert(`Failed to generate report: ${error.message}`);
@@ -642,6 +794,16 @@ const YearlyReportsPage = () => {
           }));
 
           setCategoryEmissionsSeries(report.categoryData);
+
+          // Scroll to report section after a short delay to ensure rendering is complete
+          setTimeout(() => {
+            if (reportSectionRef.current) {
+              reportSectionRef.current.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }
+          }, 100);
         })
         .catch((error) => {
           console.error("Error loading report:", error);
@@ -889,6 +1051,122 @@ const YearlyReportsPage = () => {
     setShowDeleteConfirm(true);
   };
 
+  // Helper utility functions for chart export
+  const prepareLightModeChart = (chartElement) => {
+    if (!chartElement) return;
+
+    // Force everything to light mode for export
+    const originalStyles = {
+      background: chartElement.style.background,
+      color: chartElement.style.color,
+    };
+
+    // Make all text black
+    const allText = chartElement.querySelectorAll("text");
+    allText.forEach((text) => {
+      text.setAttribute("fill", "#000000");
+    });
+
+    // Make all grid lines light gray
+    const gridLines = chartElement.querySelectorAll(".apexcharts-grid line");
+    gridLines.forEach((line) => {
+      line.setAttribute("stroke", "#e0e0e0");
+    });
+
+    // Fix area chart backgrounds
+    const areaPaths = chartElement.querySelectorAll(".apexcharts-area");
+    areaPaths.forEach((path) => {
+      path.style.opacity = "0.6";
+    });
+
+    // Fix chart SVG background
+    const svg = chartElement.querySelector(".apexcharts-svg");
+    if (svg) {
+      svg.style.background = "#ffffff";
+    }
+
+    return originalStyles;
+  };
+
+  // Function to export chart directly with modified styles
+  const exportChartAsImage = (chartId, filename) => {
+    const chartElement = document.getElementById(chartId);
+    if (!chartElement) {
+      console.error(`Chart element with ID ${chartId} not found`);
+      return;
+    }
+
+    // Create a clone of the chart to avoid modifying the displayed one
+    const chartClone = chartElement.cloneNode(true);
+    chartClone.style.background = "#ffffff";
+
+    // Position the clone off-screen
+    chartClone.style.position = "absolute";
+    chartClone.style.top = "-9999px";
+    chartClone.style.left = "-9999px";
+    document.body.appendChild(chartClone);
+
+    // Force light mode styles on the clone
+    prepareLightModeChart(chartClone);
+
+    // Use html2canvas on the clone
+    html2canvas(chartClone, {
+      scale: 2,
+      logging: false,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: "#ffffff",
+    })
+      .then((canvas) => {
+        try {
+          // Create and trigger download
+          const link = document.createElement("a");
+          link.download = `${filename}-${new Date().getTime()}.png`;
+          link.href = canvas.toDataURL("image/png");
+          link.click();
+
+          // Clean up
+          document.body.removeChild(chartClone);
+        } catch (error) {
+          console.error("Error exporting chart:", error);
+          document.body.removeChild(chartClone);
+        }
+      })
+      .catch((error) => {
+        console.error("Error capturing chart:", error);
+        document.body.removeChild(chartClone);
+      });
+  };
+
+  // Update chart configs to hide download button and use custom solution
+  useEffect(() => {
+    // Update chart configurations whenever theme or year changes
+    const updatedMonthlyConfig = {
+      ...monthlyEmissions,
+      chart: {
+        ...monthlyEmissions.chart,
+        id: "monthly-emissions-chart",
+        toolbar: {
+          show: false, // Hide the native toolbar completely
+        },
+      },
+    };
+
+    const updatedCategoryConfig = {
+      ...categoryEmissions,
+      chart: {
+        ...categoryEmissions.chart,
+        id: "category-emissions-chart",
+        toolbar: {
+          show: false, // Hide the native toolbar completely
+        },
+      },
+    };
+
+    setMonthlyEmissions(updatedMonthlyConfig);
+    setCategoryEmissions(updatedCategoryConfig);
+  }, [theme, selectedYear, categoryEmissions, monthlyEmissions]);
+
   return (
     <div className={`dashboard-container bg-${theme}`}>
       <Sidebar
@@ -901,21 +1179,40 @@ const YearlyReportsPage = () => {
       />
 
       <div className={`main-content ${!isSidebarOpen ? "sidebar-closed" : ""}`}>
-        <div className="container">
-          <h1 className="my-4">Yearly CO₂ Emissions Reports</h1>
+        <div className="container px-lg-3 px-0 py-4">
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h1 className="mb-0 fw-bold">
+              <i className="fas fa-chart-line me-2 text-primary"></i>
+              Yearly CO₂ Emissions Reports
+            </h1>
+          </div>
 
-          <div className="row mb-4 row-gap-5">
-            <div className="col-md-4">
-              <div className={`card m-0 p-0 bg-${theme} border-0 shadow-sm`}>
+          <div className="row mb-4">
+            <div className="col-xl-4 col-lg-5 col-md-7 mb-4">
+              <div
+                className={`card m-0 p-0 h-100 border-0 shadow-sm ${
+                  theme === "dark" ? "bg-dark text-light" : "bg-white"
+                }`}
+              >
+                <div className="card-header bg-transparent border-0 py-3">
+                  <h5 className="card-title fw-bold mb-0">
+                    <i className="fas fa-file-alt me-2 text-primary"></i>
+                    Generate New Report
+                  </h5>
+                </div>
                 <div className="card-body">
-                  <h5 className="card-title">Generate New Report</h5>
-                  <div className="mb-3">
+                  <div className="mb-4">
                     <label htmlFor="yearSelect" className="form-label">
+                      <i className="fas fa-calendar-alt me-2"></i>
                       Select Year
                     </label>
                     <select
                       id="yearSelect"
-                      className="form-select"
+                      className={`form-select ${
+                        theme === "dark"
+                          ? "bg-dark text-light border-secondary"
+                          : ""
+                      }`}
                       value={selectedYear}
                       onChange={(e) =>
                         setSelectedYear(parseInt(e.target.value))
@@ -929,7 +1226,7 @@ const YearlyReportsPage = () => {
                     </select>
                   </div>
                   <button
-                    className="btn btn-primary w-100"
+                    className="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center"
                     onClick={generateReport}
                     disabled={isLoading}
                   >
@@ -943,63 +1240,129 @@ const YearlyReportsPage = () => {
                         Generating...
                       </>
                     ) : (
-                      "Generate Report"
+                      <>
+                        <i className="fas fa-sync-alt me-2"></i>
+                        Generate Report
+                      </>
                     )}
                   </button>
                 </div>
               </div>
             </div>
 
-            <div className="col-md-12">
-              <div className={`card m-0 p-0 bg-${theme} border-0 shadow-sm`}>
+            <div className="col-md-12 mb-4">
+              <div
+                className={`card m-0 p-0 h-100 border-0 shadow-sm ${
+                  theme === "dark" ? "bg-dark text-light" : "bg-white"
+                }`}
+              >
+                <div className="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
+                  <h5 className="card-title fw-bold mb-0">
+                    <i className="fas fa-save me-2 text-primary"></i>
+                    Saved Reports
+                  </h5>
+                  <span className="badge bg-primary rounded-pill">
+                    {savedReports.length}
+                  </span>
+                </div>
                 <div className="card-body">
-                  <h5 className="card-title mb-2">Saved Reports</h5>
                   {savedReports.length === 0 ? (
-                    <p className="text-muted">
-                      No saved reports yet. Generate and save your first report!
-                    </p>
+                    <div className="text-center py-5">
+                      <i
+                        className="fas fa-folder-open text-muted mb-3"
+                        style={{ fontSize: "48px" }}
+                      ></i>
+                      <p className="text-muted mb-0">
+                        No saved reports yet. Generate and save your first
+                        report!
+                      </p>
+                    </div>
                   ) : (
                     <div className="table-responsive">
-                      <table className="table table-hover">
+                      <table
+                        className={`table table-hover ${
+                          theme === "dark" ? "table-dark" : ""
+                        }`}
+                      >
                         <thead>
                           <tr>
-                            <th>Report ID</th>
-                            <th>Year</th>
-                            <th>Date Created</th>
-                            <th>Total Emissions</th>
-                            <th>Actions</th>
+                            <th>
+                              <i className="fas fa-id-card me-2"></i>Report ID
+                            </th>
+                            <th>
+                              <i className="fas fa-calendar me-2"></i>Year
+                            </th>
+                            <th>
+                              <i className="fas fa-clock me-2"></i>Date Created
+                            </th>
+                            <th>
+                              <i className="fas fa-chart-pie me-2"></i>Total
+                              Emissions
+                            </th>
+                            <th className="text-center">
+                              <i className="fas fa-cogs me-2"></i>Actions
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
                           {savedReports.map((report) => (
                             <tr key={report.reportId || report._id}>
-                              <td>{report.reportId || report._id}</td>
+                              <td>
+                                <span className="badge bg-light text-dark">
+                                  {(report.reportId || report._id).substring(
+                                    0,
+                                    8
+                                  )}
+                                  ...
+                                </span>
+                              </td>
                               <td>{report.year}</td>
                               <td>
                                 {new Date(
                                   report.createdAt
                                 ).toLocaleDateString()}
                               </td>
-                              <td>{report.totalEmissions} tonnes</td>
                               <td>
-                                <button
-                                  className="btn btn-sm btn-outline-primary me-2"
-                                  onClick={() =>
-                                    loadReport(report.reportId || report._id)
-                                  }
-                                >
-                                  View
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-outline-danger"
-                                  onClick={() =>
-                                    confirmDeleteReport(
-                                      report.reportId || report._id
-                                    )
-                                  }
-                                >
-                                  Delete
-                                </button>
+                                <div className="d-flex align-items-center">
+                                  <span
+                                    className={`badge ${
+                                      report.totalEmissions > 200
+                                        ? "bg-danger"
+                                        : report.totalEmissions > 100
+                                        ? "bg-warning"
+                                        : "bg-success"
+                                    } me-2`}
+                                  >
+                                    {report.totalEmissions > 200
+                                      ? "High"
+                                      : report.totalEmissions > 100
+                                      ? "Medium"
+                                      : "Low"}
+                                  </span>
+                                  <span>{report.totalEmissions} tonnes</span>
+                                </div>
+                              </td>
+                              <td className="text-center">
+                                <div className="d-flex flex-wrap align-items-center justify-content-center gap-2">
+                                  <button
+                                    className="btn btn-sm btn-outline-primary"
+                                    onClick={() =>
+                                      loadReport(report.reportId || report._id)
+                                    }
+                                  >
+                                    <i className="fas fa-eye"></i>
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-outline-danger"
+                                    onClick={() =>
+                                      confirmDeleteReport(
+                                        report.reportId || report._id
+                                      )
+                                    }
+                                  >
+                                    <i className="fas fa-trash"></i>
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -1013,17 +1376,20 @@ const YearlyReportsPage = () => {
           </div>
 
           {reportData && (
-            <div className="row">
+            <div className="row" ref={reportSectionRef}>
               <div className="col-12">
                 <div
-                  className={`card m-0 p-0 bg-${theme} border-0 shadow-sm mb-4`}
+                  className={`border-0 pt-2 pb-4 shadow-sm ${
+                    theme === "dark" ? "bg-dark text-light" : "bg-white"
+                  }`}
                 >
-                  <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-center mb-4">
-                      <h4 className="mb-0">
+                  <div className="card-header bg-transparent border-0 py-3">
+                    <div className="d-flex flex-wrap justify-content-between align-items-center">
+                      <h4 className="mb-0 fw-bold">
+                        <i className="fas fa-file-alt me-2 text-primary"></i>
                         CO₂ Emissions Report for {reportData.year}
                       </h4>
-                      <div>
+                      <div className="d-flex mt-2 mt-md-0">
                         {!savedReports.some(
                           (r) =>
                             (r.reportId === reportData.reportId ||
@@ -1031,14 +1397,15 @@ const YearlyReportsPage = () => {
                             r.year === reportData.year
                         ) && (
                           <button
-                            className="btn btn-success me-2"
+                            className="btn btn-success me-2 d-flex align-items-center"
                             onClick={saveReport}
                           >
+                            <i className="fas fa-save me-2"></i>
                             Save Report
                           </button>
                         )}
                         <button
-                          className="btn btn-info"
+                          className="btn btn-primary d-flex align-items-center"
                           onClick={exportPDF}
                           disabled={isGeneratingPdf}
                         >
@@ -1060,141 +1427,286 @@ const YearlyReportsPage = () => {
                         </button>
                       </div>
                     </div>
+                  </div>
 
-                    <div ref={reportRef}>
-                      <div className="row">
-                        <div className="col-md-4 mb-4">
-                          <div
-                            className={`card m-0 bg-${theme} border-0 shadow-sm h-100`}
-                          >
-                            <div className="card-body text-center">
-                              <h5 className="card-title">Total Emissions</h5>
-                              <div className="display-4 font-weight-bold mt-3 mb-3">
-                                {reportData.totalEmissions}
+                  <div className="card-body" ref={reportRef}>
+                    <div className="row">
+                      <div className="col-md-4 mb-4">
+                        <div
+                          className={`card h-100 border-0 ${
+                            theme === "dark"
+                              ? "bg-dark-secondary text-light"
+                              : "bg-light"
+                          }`}
+                        >
+                          <div className="card-body text-center py-4">
+                            <h5 className="card-title fw-bold text-primary mb-4">
+                              <i className="fas fa-calculator me-2"></i>
+                              Total Emissions
+                            </h5>
+
+                            <div
+                              className={`emission-gauge mx-auto mb-3 mt-2 position-relative d-flex align-items-center justify-content-center rounded-circle ${
+                                reportData.totalEmissions > 200
+                                  ? "bg-danger"
+                                  : reportData.totalEmissions > 100
+                                  ? "bg-warning"
+                                  : "bg-success"
+                              }`}
+                              style={{ width: "150px", height: "150px" }}
+                            >
+                              <div
+                                className={`rounded-circle bg-${
+                                  theme === "dark" ? "dark" : "white"
+                                } d-flex align-items-center justify-content-center`}
+                                style={{ width: "120px", height: "120px" }}
+                              >
+                                <div>
+                                  <div className="display-6 fw-bold mb-0">
+                                    {reportData.totalEmissions}
+                                  </div>
+                                  <small className="text-muted">TONNES</small>
+                                </div>
                               </div>
-                              <p className="text-muted">Tonnes of CO₂</p>
+                            </div>
+
+                            <div className="mt-3">
+                              <div className="d-flex justify-content-between mb-2">
+                                <span className="badge bg-success">Low</span>
+                                <span className="badge bg-warning">Medium</span>
+                                <span className="badge bg-danger">High</span>
+                              </div>
+                              <div
+                                className="progress"
+                                style={{ height: "8px" }}
+                              >
+                                <div
+                                  className="progress-bar bg-success"
+                                  style={{ width: "33%" }}
+                                ></div>
+                                <div
+                                  className="progress-bar bg-warning"
+                                  style={{ width: "33%" }}
+                                ></div>
+                                <div
+                                  className="progress-bar bg-danger"
+                                  style={{ width: "34%" }}
+                                ></div>
+                              </div>
                             </div>
                           </div>
                         </div>
+                      </div>
 
-                        <div className="col-md-8 mb-4">
-                          <div
-                            className={`card m-0 bg-${theme} border-0 shadow-sm h-100`}
-                          >
-                            <div className="card-body">
-                              <h5 className="card-title">
+                      <div className="col-md-8 mb-4">
+                        <div
+                          className={`card h-100 border-0 ${
+                            theme === "dark"
+                              ? "bg-dark-secondary text-light"
+                              : "bg-light"
+                          }`}
+                        >
+                          <div className="card-body">
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                              <h5 className="card-title fw-bold text-primary mb-0">
+                                <i className="fas fa-chart-line me-2"></i>
                                 Monthly Distribution
                               </h5>
+                              <button
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() =>
+                                  exportChartAsImage(
+                                    "monthly-emissions-chart",
+                                    "Monthly-CO2-Emissions"
+                                  )
+                                }
+                                title="Download chart"
+                              >
+                                <i className="fas fa-download"></i>
+                              </button>
+                            </div>
+                            <div
+                              className="monthly-emissions-chart"
+                              id="monthly-emissions-chart"
+                            >
                               <Chart
                                 options={monthlyEmissions}
                                 series={monthlyEmissions.series}
-                                type="bar"
-                                height={300}
+                                type="area"
+                                height={320}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="row">
+                      <div className="col-md-6 mb-4">
+                        <div
+                          className={`card h-100 border-0 ${
+                            theme === "dark"
+                              ? "bg-dark-secondary text-light"
+                              : "bg-light"
+                          }`}
+                        >
+                          <div className="card-body">
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                              <h5 className="card-title fw-bold text-primary mb-0">
+                                <i className="fas fa-chart-pie me-2"></i>
+                                Emissions by Category
+                              </h5>
+                              <button
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() =>
+                                  exportChartAsImage(
+                                    "category-emissions-chart",
+                                    "Category-CO2-Emissions"
+                                  )
+                                }
+                                title="Download chart"
+                              >
+                                <i className="fas fa-download"></i>
+                              </button>
+                            </div>
+                            <div
+                              className="category-emissions-chart"
+                              id="category-emissions-chart"
+                            >
+                              <Chart
+                                options={categoryEmissions}
+                                series={categoryEmissionsSeries}
+                                type="donut"
+                                height={320}
                               />
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      <div className="row">
-                        <div className="col-md-6 mb-4">
-                          <div
-                            className={`card m-0 bg-${theme} border-0 shadow-sm h-100`}
-                          >
-                            <div className="card-body">
-                              <h5 className="card-title">
-                                Emissions by Category
-                              </h5>
-                              <Chart
-                                options={categoryEmissions}
-                                series={categoryEmissionsSeries}
-                                type="pie"
-                                height={300}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="col-md-6 mb-4">
-                          <div
-                            className={`card m-0 bg-${theme} border-0 shadow-sm h-100`}
-                          >
-                            <div className="card-body">
-                              <h5 className="card-title">Summary</h5>
-                              <div className="table-responsive">
-                                <table className="table">
-                                  <tbody>
-                                    <tr>
-                                      <th scope="row">Year</th>
-                                      <td>{reportData.year}</td>
-                                    </tr>
-                                    <tr>
-                                      <th scope="row">Total CO₂ Emissions</th>
-                                      <td>
-                                        {reportData.totalEmissions} tonnes
-                                      </td>
-                                    </tr>
-                                    <tr>
-                                      <th scope="row">Highest Month</th>
-                                      <td>
-                                        {(() => {
-                                          const maxValue = Math.max(
-                                            ...reportData.monthlyData
+                      <div className="col-md-6 mb-4">
+                        <div
+                          className={`card h-100 border-0 ${
+                            theme === "dark"
+                              ? "bg-dark-secondary text-light"
+                              : "bg-light"
+                          }`}
+                        >
+                          <div className="card-body">
+                            <h5 className="card-title fw-bold text-primary mb-4">
+                              <i className="fas fa-list-alt me-2"></i>
+                              Summary
+                            </h5>
+                            <div className="table-responsive">
+                              <table
+                                className={`table ${
+                                  theme === "dark" ? "table-dark" : ""
+                                }`}
+                              >
+                                <tbody>
+                                  <tr>
+                                    <th scope="row" className="border-0">
+                                      <i className="fas fa-calendar-alt me-2 text-primary"></i>
+                                      Year
+                                    </th>
+                                    <td className="border-0 fw-bold">
+                                      {reportData.year}
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <th scope="row" className="border-0">
+                                      <i className="fas fa-weight me-2 text-primary"></i>
+                                      Total CO₂ Emissions
+                                    </th>
+                                    <td className="border-0 fw-bold">
+                                      {reportData.totalEmissions} tonnes
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <th scope="row" className="border-0">
+                                      <i className="fas fa-arrow-up me-2 text-danger"></i>
+                                      Highest Month
+                                    </th>
+                                    <td className="border-0 fw-bold">
+                                      {(() => {
+                                        const maxValue = Math.max(
+                                          ...reportData.monthlyData
+                                        );
+                                        const maxIndex =
+                                          reportData.monthlyData.indexOf(
+                                            maxValue
                                           );
-                                          const maxIndex =
-                                            reportData.monthlyData.indexOf(
-                                              maxValue
-                                            );
-                                          const months = [
-                                            "January",
-                                            "February",
-                                            "March",
-                                            "April",
-                                            "May",
-                                            "June",
-                                            "July",
-                                            "August",
-                                            "September",
-                                            "October",
-                                            "November",
-                                            "December",
-                                          ];
-                                          return `${months[maxIndex]} (${maxValue} tonnes)`;
-                                        })()}
-                                      </td>
-                                    </tr>
-                                    <tr>
-                                      <th scope="row">
-                                        Average Monthly Emissions
-                                      </th>
-                                      <td>
-                                        {Math.round(
-                                          reportData.monthlyData.reduce(
-                                            (acc, val) => acc + val,
-                                            0
-                                          ) / 12
-                                        )}{" "}
-                                        tonnes
-                                      </td>
-                                    </tr>
-                                    <tr>
-                                      <th scope="row">Main Source</th>
-                                      <td>
-                                        {(() => {
-                                          const maxValue = Math.max(
-                                            ...reportData.categoryData
+                                        const months = [
+                                          "January",
+                                          "February",
+                                          "March",
+                                          "April",
+                                          "May",
+                                          "June",
+                                          "July",
+                                          "August",
+                                          "September",
+                                          "October",
+                                          "November",
+                                          "December",
+                                        ];
+                                        return (
+                                          <>
+                                            <span className="text-danger">
+                                              {months[maxIndex]}
+                                            </span>
+                                            <span className="ms-2 badge bg-danger">
+                                              {maxValue} tonnes
+                                            </span>
+                                          </>
+                                        );
+                                      })()}
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <th scope="row" className="border-0">
+                                      <i className="fas fa-calculator me-2 text-primary"></i>
+                                      Average Monthly Emissions
+                                    </th>
+                                    <td className="border-0 fw-bold">
+                                      {Math.round(
+                                        reportData.monthlyData.reduce(
+                                          (acc, val) => acc + val,
+                                          0
+                                        ) / 12
+                                      )}{" "}
+                                      tonnes
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <th scope="row" className="border-0">
+                                      <i className="fas fa-exclamation-circle me-2 text-warning"></i>
+                                      Main Source
+                                    </th>
+                                    <td className="border-0 fw-bold">
+                                      {(() => {
+                                        const maxValue = Math.max(
+                                          ...reportData.categoryData
+                                        );
+                                        const maxIndex =
+                                          reportData.categoryData.indexOf(
+                                            maxValue
                                           );
-                                          const maxIndex =
-                                            reportData.categoryData.indexOf(
-                                              maxValue
-                                            );
-                                          return `${reportData.categories[maxIndex]} (${maxValue} tonnes)`;
-                                        })()}
-                                      </td>
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              </div>
+                                        return (
+                                          <>
+                                            <span>
+                                              {reportData.categories[maxIndex]}
+                                            </span>
+                                            <span className="ms-2 badge bg-warning text-dark">
+                                              {maxValue} tonnes
+                                            </span>
+                                          </>
+                                        );
+                                      })()}
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
                             </div>
                           </div>
                         </div>
@@ -1208,7 +1720,7 @@ const YearlyReportsPage = () => {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal - Update the styling to match the new design */}
       <div
         className={`modal fade ${showDeleteConfirm ? "show" : ""}`}
         style={{ display: showDeleteConfirm ? "block" : "none" }}
@@ -1217,28 +1729,43 @@ const YearlyReportsPage = () => {
         aria-hidden={!showDeleteConfirm}
       >
         <div className="modal-dialog modal-dialog-centered">
-          <div className={`modal-content bg-${theme}`}>
-            <div className="modal-header">
-              <h5 className="modal-title">Confirm Delete</h5>
+          <div
+            className={`modal-content ${
+              theme === "dark" ? "bg-dark text-light" : ""
+            }`}
+          >
+            <div className="modal-header border-0">
+              <h5 className="modal-title fw-bold">
+                <i className="fas fa-trash-alt text-danger me-2"></i>
+                Confirm Delete
+              </h5>
               <button
                 type="button"
-                className="btn-close"
+                className={`btn-close ${
+                  theme === "dark" ? "btn-close-white" : ""
+                }`}
                 aria-label="Close"
                 onClick={() => setShowDeleteConfirm(false)}
               ></button>
             </div>
-            <div className="modal-body">
-              <p>
-                Are you sure you want to delete this report? This action cannot
-                be undone.
-              </p>
+            <div className="modal-body py-4">
+              <div className="d-flex align-items-center">
+                <div className="text-danger me-3" style={{ fontSize: "2rem" }}>
+                  <i className="fas fa-exclamation-triangle"></i>
+                </div>
+                <p className="mb-0">
+                  Are you sure you want to delete this report? This action
+                  cannot be undone.
+                </p>
+              </div>
             </div>
-            <div className="modal-footer">
+            <div className="modal-footer border-0">
               <button
                 type="button"
-                className="btn btn-secondary"
+                className="btn btn-outline-secondary"
                 onClick={() => setShowDeleteConfirm(false)}
               >
+                <i className="fas fa-times me-2"></i>
                 Cancel
               </button>
               <button
@@ -1257,7 +1784,10 @@ const YearlyReportsPage = () => {
                     Deleting...
                   </>
                 ) : (
-                  "Delete Report"
+                  <>
+                    <i className="fas fa-trash-alt me-2"></i>
+                    Delete Report
+                  </>
                 )}
               </button>
             </div>

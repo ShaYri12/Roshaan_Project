@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  JWT_ADMIN_SECRET,
-  JWT_EMPLOYEE_SECRET,
-  REACT_APP_API_URL,
-} from "../env";
+import { JWT_ADMIN_SECRET, REACT_APP_API_URL } from "../env";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { FaHome, FaPlusCircle } from "react-icons/fa";
+import { FaPlusCircle } from "react-icons/fa";
 import VehicleRegisterPage from "./VehicleRegister";
 import UpdateVehicle from "./UpdateVehicle";
+import Sidebar from "../components/Sidebar";
+import { authenticatedFetch } from "../utils/axiosConfig";
 
 const VehiclePage = () => {
   const [vehicles, setVehicles] = useState([]);
@@ -17,6 +15,54 @@ const VehiclePage = () => {
   const [isRegModel, setIsRegModel] = useState(false);
   const [isModalVisible, setModalVisible] = useState(null);
   const navigate = useNavigate();
+
+  // Add Sidebar state variables
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+  const [userData, setUserData] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // Check authentication on load and set user data
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          navigate("/");
+          return;
+        }
+
+        try {
+          const response = await authenticatedFetch(
+            `${REACT_APP_API_URL}/auth/validate-token`,
+            {
+              method: "GET",
+            }
+          );
+          if (response.ok) {
+            // Set the user data
+            const userObj = JSON.parse(localStorage.getItem("userObj"));
+            setUserData(userObj);
+          } else {
+            localStorage.removeItem("token");
+            localStorage.removeItem("userObj");
+            localStorage.removeItem("userData");
+            navigate("/");
+          }
+        } catch (error) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("userObj");
+          localStorage.removeItem("userData");
+          navigate("/");
+        }
+      } catch (error) {
+        navigate("/");
+      }
+    };
+
+    checkAuth();
+    // Apply theme from localStorage
+    document.body.className = `${theme}-theme`;
+  }, [navigate, theme]);
 
   const fetchVehicles = async () => {
     try {
@@ -77,6 +123,23 @@ const VehiclePage = () => {
     setModalVisible(false);
     setIsRegModel(false);
   };
+
+  // Add handleLogout function
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("userObj");
+    localStorage.removeItem("userData");
+    navigate("/");
+  };
+
+  // Add toggleTheme function
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.body.className = `${newTheme}-theme`;
+  };
+
   if (isLoading) {
     return (
       <div className="container py-5">
@@ -99,87 +162,82 @@ const VehiclePage = () => {
   };
 
   return (
-    <div>
-      {/* Navbar with Home Icon */}
-      <nav className="navbar navbar-expand-lg navbar-light bg-light">
-        <div className="navbar-inner d-flex justify-content-between align-items-center flex-wrap gap-2 px-3">
-          <span className="navbar-brand">
-            <div className="d-flex align-items-center">
-              <i className="fas fa-car fa-2x me-3"></i>
-              <h4 className="card-title mb-0">Vehicles</h4>
-            </div>
-          </span>
-          <button
-            className="btn btn-outline-primary"
-            onClick={() => navigate("/dashboard")}
-          >
-            <FaHome className="me-2" /> Home
-          </button>
-        </div>
-      </nav>
+    <div className={`dashboard-container bg-${theme}`}>
+      <Sidebar
+        userData={userData}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        handleLogout={handleLogout}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+      />
 
-      {/* Vehicle Listing Table */}
-      <div className="container py-5">
-        <div className="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
-          <p className="mb-0">Total: {vehicles.length}</p>
-          <button
-            className="btn btn-outline-success d-flex align-items-center px-4 py-1 rounded-3 shadow-sm hover-shadow"
-            onClick={() => regVehicle(true)}
-          >
-            <FaPlusCircle className="me-2" />
-            Register Vehicle
-          </button>
-        </div>
-        <div className="table-responsive">
-          <table className="table table-striped table-bordered table-hover">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Vehicle Name</th>
-                <th>License Plate</th>
-                <th>Vehicle Type</th>
-                <th>Engine Number</th>
-                <th>Vehicle Use</th>
-                <th>Vehicle Model</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vehicles.length > 0 ? (
-                vehicles.map((vehicle, index) => (
-                  <tr key={vehicle._id}>
-                    <td>{index + 1}</td>
-                    <td>{vehicle.vehicleName || "N/A"}</td>
-                    <td>{vehicle.licensePlate || "N/A"}</td>
-                    <td>{vehicle.vehicleType || "N/A"}</td>
-                    <td>{vehicle.engineNumber || "N/A"}</td>
-                    <td>{vehicle.vehicleUseFor || "N/A"}</td>
-                    <td>{vehicle.vehicleModel || "N/A"}</td>
-                    <td>
-                      <button
-                        className="btn btn-info btn-sm me-2"
-                        onClick={() => editVehicle(vehicle)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => deleteVehicle(vehicle._id)}
-                      >
-                        Delete
-                      </button>
+      <div className={`main-content ${!isSidebarOpen ? "sidebar-closed" : ""}`}>
+        <div className="container mt-4">
+          <h1 className="mb-4">Vehicles</h1>
+
+          {/* Vehicle Listing Table */}
+          <div className="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
+            <p className="mb-0">Total: {vehicles.length}</p>
+            <button
+              className="btn btn-outline-success d-flex align-items-center px-4 py-1 rounded-3 shadow-sm hover-shadow"
+              onClick={() => regVehicle(true)}
+            >
+              <FaPlusCircle className="me-2" />
+              Register Vehicle
+            </button>
+          </div>
+          <div className="table-responsive">
+            <table className="table table-striped table-bordered table-hover">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Vehicle Name</th>
+                  <th>License Plate</th>
+                  <th>Vehicle Type</th>
+                  <th>Engine Number</th>
+                  <th>Vehicle Use</th>
+                  <th>Vehicle Model</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vehicles.length > 0 ? (
+                  vehicles.map((vehicle, index) => (
+                    <tr key={vehicle._id}>
+                      <td>{index + 1}</td>
+                      <td>{vehicle.vehicleName || "N/A"}</td>
+                      <td>{vehicle.licensePlate || "N/A"}</td>
+                      <td>{vehicle.vehicleType || "N/A"}</td>
+                      <td>{vehicle.engineNumber || "N/A"}</td>
+                      <td>{vehicle.vehicleUseFor || "N/A"}</td>
+                      <td>{vehicle.vehicleModel || "N/A"}</td>
+                      <td>
+                        <button
+                          className="btn btn-info btn-sm me-2"
+                          onClick={() => editVehicle(vehicle)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => deleteVehicle(vehicle._id)}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="8" className="text-center text-muted">
+                      No records found
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="8" className="text-center text-muted">
-                    No records found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

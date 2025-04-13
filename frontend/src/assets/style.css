@@ -1133,6 +1133,18 @@ h4 {
   border-bottom: 1px solid #343a40;
 }
 
+.sidebar-header-logo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 105px;
+}
+
+.sidebar-header-logo img {
+  width: 110px;
+  object-fit: contain;
+}
+
 .sidebar-content {
   flex: 1;
   overflow-y: auto;
@@ -1237,7 +1249,7 @@ h4 {
 .sidebar-toggle {
   position: absolute;
   right: 10px;
-  top: 10px;
+
   color: #e9ecef;
   padding: 0.5rem;
   border-radius: 50%;
@@ -1325,18 +1337,19 @@ h4 {
 
 /* Adjust welcome section for toggle button */
 .welcome-section {
-  padding-right: 2.5rem;
+  padding-right: 0;
   position: relative;
 }
 
 /* Ensure sidebar header has proper positioning */
 .sidebar-header {
   position: relative;
-  padding: 1.5rem;
+  padding: 1rem 1rem;
   border-bottom: 1px solid #343a40;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 73px;
 }
 
 /* Additional Sidebar Styling */

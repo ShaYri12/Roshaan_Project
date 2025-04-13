@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import UserDashboard from "./pages/UserDashboard";
@@ -16,7 +16,7 @@ import YearlyReportsPage from "./pages/YearlyReports";
 import InvoicesPage from "./pages/Invoices";
 import ProductsPage from "./pages/Products";
 import LicensePlatePage from "./pages/LicensePlate";
-import { AdminRoute, EmployeeRoute, AuthRoute } from "./utils/RouteProtection";
+import { AdminRoute, EmployeeRoute } from "./utils/RouteProtection";
 import "./assets/style.css";
 
 const App = () => {

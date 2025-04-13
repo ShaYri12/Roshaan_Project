@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { REACT_APP_API_URL, JWT_ADMIN_SECRET } from "../../env";
 import Sidebar from "../../components/Sidebar";
 
@@ -425,7 +424,7 @@ const ProductsPage = () => {
 
       <div className={`main-content ${!isSidebarOpen ? "sidebar-closed" : ""}`}>
         <div className="container">
-          <div className="d-flex justify-content-between align-items-center my-4">
+          <div className="d-flex flex-wrap gap-2 justify-content-between align-items-center my-4">
             <h1>Products</h1>
             <button className="btn btn-primary" onClick={openAddModal}>
               <i className="fas fa-plus me-2"></i>
@@ -484,19 +483,21 @@ const ProductsPage = () => {
                       <td>{product.co2Value} kg CO₂</td>
                       <td>{product.manufacturer}</td>
                       <td>{product.origin}</td>
-                      <td>
-                        <button
-                          className="btn btn-sm btn-outline-primary me-2"
-                          onClick={() => openEditModal(product)}
-                        >
-                          <i className="fas fa-edit"></i>
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => handleDeleteProduct(product._id)}
-                        >
-                          <i className="fas fa-trash"></i>
-                        </button>
+                      <td className="text-center">
+                        <div className="d-flex flex-wrap align-items-center justify-content-center gap-2">
+                          <button
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => openEditModal(product)}
+                          >
+                            <i className="fas fa-edit"></i>
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => handleDeleteProduct(product._id)}
+                          >
+                            <i className="fas fa-trash"></i>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

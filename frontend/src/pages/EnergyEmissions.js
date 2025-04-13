@@ -1,33 +1,66 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { JWT_ADMIN_SECRET, REACT_APP_API_URL } from "../env";
-import { FaHome, FaUserPlus } from "react-icons/fa";
+import { FaPlusCircle } from "react-icons/fa";
 import { Modal, Button, Form } from "react-bootstrap";
 import { isRecordEditable, formatDecimal } from "../utils/dateUtils"; // Import the utility function and formatDecimal function
+import Sidebar from "../components/Sidebar";
+import { authenticatedFetch } from "../utils/axiosConfig";
 
 const EnergyEmissions = () => {
+  const navigate = useNavigate();
+
   // Create a more reliable way to get the user ID
   const [user, setUser] = useState(null);
 
+  // Add Sidebar state variables
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+  const [userData, setUserData] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // Check authentication on load and set user data
   useEffect(() => {
-    // Try to load user from localStorage
-    try {
-      const userObj = JSON.parse(localStorage.getItem("userObj"));
-      if (userObj && userObj._id) {
-        console.log("User loaded from localStorage:", userObj._id);
-        setUser(userObj);
-      } else {
-        console.warn("User data is missing or invalid in localStorage");
-        // For testing only - hardcode a default user ID if none is found
-        // In production, this should redirect to login instead
-        setUser({ _id: "6624c7ab8a89c9f76ded3d9e" }); // Example fallback ID - replace with a valid test ID
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          navigate("/");
+          return;
+        }
+
+        try {
+          const response = await authenticatedFetch(
+            `${REACT_APP_API_URL}/auth/validate-token`,
+            {
+              method: "GET",
+            }
+          );
+          if (response.ok) {
+            // Set the user data
+            const userObj = JSON.parse(localStorage.getItem("userObj"));
+            setUserData(userObj);
+            setUser(userObj);
+          } else {
+            localStorage.removeItem("token");
+            localStorage.removeItem("userObj");
+            localStorage.removeItem("userData");
+            navigate("/");
+          }
+        } catch (error) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("userObj");
+          localStorage.removeItem("userData");
+          navigate("/");
+        }
+      } catch (error) {
+        navigate("/");
       }
-    } catch (error) {
-      console.error("Error parsing user data from localStorage:", error);
-      // For testing only - hardcode a default user ID if none is found
-      setUser({ _id: "6624c7ab8a89c9f76ded3d9e" }); // Example fallback ID - replace with a valid test ID
-    }
-  }, []);
+    };
+
+    checkAuth();
+    // Apply theme from localStorage
+    document.body.className = `${theme}-theme`;
+  }, [navigate, theme]);
 
   const [energyRecords, setEnergyRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,8 +87,6 @@ const EnergyEmissions = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [deleteRecordId, setDeleteRecordId] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchEnergyEmissions = async () => {
@@ -320,121 +351,134 @@ const EnergyEmissions = () => {
     }
   };
 
+  // Add handleLogout function
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("userObj");
+    localStorage.removeItem("userData");
+    navigate("/");
+  };
+
+  // Add toggleTheme function
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.body.className = `${newTheme}-theme`;
+  };
+
   return (
-    <div>
-      <nav className="navbar navbar-expand-lg navbar-light bg-light">
-        <div className="container-fluid">
-          <div className="card-header d-flex align-items-center">
-            <i className="fas fa-bolt fa-2x me-3"></i>
-            <h4 className="card-title mb-0">Energy & Gas Emissions</h4>
-          </div>
-          <button
-            className="btn btn-outline-primary"
-            onClick={() => navigate("/dashboard")}
-          >
-            <FaHome className="me-2" /> Home
-          </button>
-        </div>
-      </nav>
-      <div className="container py-4">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <p className="mb-0">Total Records: {energyRecords.length}</p>
-          <button className="btn btn-success" onClick={handleAdd}>
-            <FaUserPlus className="me-2" /> Add New Record
-          </button>
-        </div>
+    <div className={`dashboard-container bg-${theme}`}>
+      <Sidebar
+        userData={userData}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        handleLogout={handleLogout}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+      />
 
-        {loading && (
-          <div className="alert alert-info">
-            Loading energy emission records...
+      <div className={`main-content ${!isSidebarOpen ? "sidebar-closed" : ""}`}>
+        <div className="container mt-4">
+          <h1 className="mb-4">Energy & Gas Emissions</h1>
+          <div className="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
+            <p className="mb-0">Total Records: {energyRecords.length}</p>
+            <button className="btn btn-outline-success" onClick={handleAdd}>
+              <FaPlusCircle className="me-2" /> Add New Record
+            </button>
           </div>
-        )}
-        {error && (
-          <div className="alert alert-danger">
-            Error: {error}. Please check console for details.
-          </div>
-        )}
 
-        <div className="table-responsive">
-          <table className="table table-striped table-bordered table-hover">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Energy Sources</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {energyRecords.length > 0 ? (
-                energyRecords.map((record, index) => (
-                  <tr key={record._id}>
-                    <td>{index + 1}</td>
-                    <td>{formatDateForListing(record.startDate)}</td>
-                    <td>{formatDateForListing(record.endDate)}</td>
-                    <td>
-                      <ul className="list-unstyled mb-0">
-                        {record.energySources &&
-                          Array.isArray(record.energySources) &&
-                          record.energySources.map((source, idx) => (
-                            <li key={idx}>
-                              {source.type}: {formatDecimal(source.emission)} kg
-                              CO₂
-                            </li>
-                          ))}
-                      </ul>
-                    </td>
-                    <td>
-                      <div className="d-flex">
-                        {isRecordEditable(record, "startDate") ? (
-                          <>
-                            <button
-                              className="btn btn-info btn-sm me-2"
-                              onClick={() => handleEdit(record)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="btn btn-danger btn-sm"
-                              onClick={() => confirmDelete(record)}
-                            >
-                              Delete
-                            </button>
-                          </>
-                        ) : (
-                          <span className="text-muted small">
-                            Locked (previous year)
-                          </span>
-                        )}
-                      </div>
+          {loading && (
+            <div className="alert alert-info">
+              Loading energy emission records...
+            </div>
+          )}
+          {error && (
+            <div className="alert alert-danger">
+              Error: {error}. Please check console for details.
+            </div>
+          )}
+
+          <div className="table-responsive">
+            <table className="table table-striped table-bordered table-hover">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                  <th>Energy Sources</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {energyRecords.length > 0 ? (
+                  energyRecords.map((record, index) => (
+                    <tr key={record._id}>
+                      <td>{index + 1}</td>
+                      <td>{formatDateForListing(record.startDate)}</td>
+                      <td>{formatDateForListing(record.endDate)}</td>
+                      <td>
+                        <ul className="list-unstyled mb-0">
+                          {record.energySources &&
+                            Array.isArray(record.energySources) &&
+                            record.energySources.map((source, idx) => (
+                              <li key={idx}>
+                                {source.type}: {formatDecimal(source.emission)}{" "}
+                                kg CO₂
+                              </li>
+                            ))}
+                        </ul>
+                      </td>
+                      <td>
+                        <div className="d-flex">
+                          {isRecordEditable(record, "startDate") ? (
+                            <>
+                              <button
+                                className="btn btn-info btn-sm me-2"
+                                onClick={() => handleEdit(record)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => confirmDelete(record)}
+                              >
+                                Delete
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-muted small">
+                              Locked (previous year)
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : !loading ? (
+                  <tr>
+                    <td colSpan="5" className="text-center text-muted">
+                      No energy emission records found
                     </td>
                   </tr>
-                ))
-              ) : !loading ? (
-                <tr>
-                  <td colSpan="5" className="text-center text-muted">
-                    No energy emission records found
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
 
-        {/* Modal Form */}
-        <Modal
-          className="custom-scrollbar"
-          show={showAddModal}
-          onHide={closeAddModal}
-        >
-          <Modal.Header closeButton>
-            <Modal.Title>Add Energy Emission Record</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Form>
-              {/* Month Selection */}
-              {/* <Form.Group className="mb-3">
+          {/* Modal Form */}
+          <Modal
+            className="custom-scrollbar"
+            show={showAddModal}
+            onHide={closeAddModal}
+          >
+            <Modal.Header closeButton>
+              <Modal.Title>Add Energy Emission Record</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <Form>
+                {/* Month Selection */}
+                {/* <Form.Group className="mb-3">
                                 <Form.Label>Month</Form.Label>
                                 <Form.Control
                                     as="select"
@@ -450,8 +494,8 @@ const EnergyEmissions = () => {
                                 </Form.Control>
                             </Form.Group> */}
 
-              {/* Year Selection */}
-              {/* <Form.Group className="mb-3">
+                {/* Year Selection */}
+                {/* <Form.Group className="mb-3">
                                 <Form.Label>Year</Form.Label>
                                 <Form.Control
                                     type="number"
@@ -460,91 +504,91 @@ const EnergyEmissions = () => {
                                     onChange={(e) => handleInputChange(e, "year")}
                                 />
                             </Form.Group> */}
-              <Form.Group className="mb-3">
-                <Form.Label>Start Date</Form.Label>
-                <Form.Control
-                  type="date"
-                  value={emissionRecord.startDate}
-                  onChange={(e) => handleInputChange(e, "startDate")}
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>End Date</Form.Label>
-                <Form.Control
-                  type="date"
-                  value={emissionRecord.endDate}
-                  onChange={(e) => handleInputChange(e, "endDate")}
-                />
-              </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Start Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={emissionRecord.startDate}
+                    onChange={(e) => handleInputChange(e, "startDate")}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>End Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={emissionRecord.endDate}
+                    onChange={(e) => handleInputChange(e, "endDate")}
+                  />
+                </Form.Group>
 
-              {/* Energy Sources Section */}
-              <Form.Group>
-                <Form.Label>Energy Sources</Form.Label>
-                {emissionRecord.energySources.map((source, index) => (
-                  <div key={index} className="d-flex mb-2">
-                    <Form.Control
-                      type="text"
-                      placeholder="Energy Type (e.g., Electricity, Gas)"
-                      value={source.type}
-                      onChange={(e) =>
-                        handleEnergySourceChange(e, index, "type")
-                      }
-                      className="me-2"
-                    />
-                    <Form.Control
-                      type="number"
-                      placeholder="CO₂ Emission (kg)"
-                      value={source.emission}
-                      onChange={(e) =>
-                        handleEnergySourceChange(e, index, "emission")
-                      }
-                      className="me-2"
-                    />
-                    {index > 0 && (
-                      <Button
-                        variant="danger"
-                        onClick={() => removeEnergySource(index)}
-                      >
-                        X
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </Form.Group>
+                {/* Energy Sources Section */}
+                <Form.Group>
+                  <Form.Label>Energy Sources</Form.Label>
+                  {emissionRecord.energySources.map((source, index) => (
+                    <div key={index} className="d-flex mb-2">
+                      <Form.Control
+                        type="text"
+                        placeholder="Energy Type (e.g., Electricity, Gas)"
+                        value={source.type}
+                        onChange={(e) =>
+                          handleEnergySourceChange(e, index, "type")
+                        }
+                        className="me-2"
+                      />
+                      <Form.Control
+                        type="number"
+                        placeholder="CO₂ Emission (kg)"
+                        value={source.emission}
+                        onChange={(e) =>
+                          handleEnergySourceChange(e, index, "emission")
+                        }
+                        className="me-2"
+                      />
+                      {index > 0 && (
+                        <Button
+                          variant="danger"
+                          onClick={() => removeEnergySource(index)}
+                        >
+                          X
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </Form.Group>
 
-              {/* Add More Energy Sources */}
-              <Button
-                variant="primary"
-                className="mt-2"
-                onClick={addEnergySource}
-              >
-                + Add Another Energy Source
+                {/* Add More Energy Sources */}
+                <Button
+                  variant="primary"
+                  className="mt-2"
+                  onClick={addEnergySource}
+                >
+                  + Add Another Energy Source
+                </Button>
+              </Form>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={closeAddModal}>
+                Cancel
               </Button>
-            </Form>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={closeAddModal}>
-              Cancel
-            </Button>
-            <Button variant="success" onClick={handleSubmit}>
-              Save Record
-            </Button>
-          </Modal.Footer>
-        </Modal>
+              <Button variant="success" onClick={handleSubmit}>
+                Save Record
+              </Button>
+            </Modal.Footer>
+          </Modal>
 
-        {/* Edit form */}
-        <Modal
-          className="custom-scrollbar"
-          show={showEditModal}
-          onHide={closeEditModal}
-        >
-          <Modal.Header closeButton>
-            <Modal.Title>Update Energy Emission Record</Modal.Title>
-          </Modal.Header>
-          <Form onSubmit={(e) => handleSubmit(e, true)}>
-            <Modal.Body>
-              {/* Month */}
-              {/* <Form.Group controlId="month" className="mb-3">
+          {/* Edit form */}
+          <Modal
+            className="custom-scrollbar"
+            show={showEditModal}
+            onHide={closeEditModal}
+          >
+            <Modal.Header closeButton>
+              <Modal.Title>Update Energy Emission Record</Modal.Title>
+            </Modal.Header>
+            <Form onSubmit={(e) => handleSubmit(e, true)}>
+              <Modal.Body>
+                {/* Month */}
+                {/* <Form.Group controlId="month" className="mb-3">
                                 <Form.Label>Month</Form.Label>
                                 <Form.Control
                                     as="select"
@@ -562,8 +606,8 @@ const EnergyEmissions = () => {
                                 </Form.Control>
                             </Form.Group> */}
 
-              {/* Year */}
-              {/* <Form.Group controlId="year" className="mb-3">
+                {/* Year */}
+                {/* <Form.Group controlId="year" className="mb-3">
                                 <Form.Label>Year</Form.Label>
                                 <Form.Control
                                     type="number"
@@ -573,101 +617,102 @@ const EnergyEmissions = () => {
                                 />
                             </Form.Group> */}
 
-              <Form.Group className="mb-3">
-                <Form.Label>Start Date</Form.Label>
-                <Form.Control
-                  type="date"
-                  value={formatDate(emissionRecord.startDate)}
-                  onChange={(e) => handleInputChange(e, "startDate")}
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>End Date</Form.Label>
-                <Form.Control
-                  type="date"
-                  value={formatDate(emissionRecord.endDate)}
-                  onChange={(e) => handleInputChange(e, "endDate")}
-                />
-              </Form.Group>
-              {/* Energy Sources (Dynamic) */}
-              <Form.Group controlId="energySources" className="mb-3">
-                <Form.Label>Energy Sources</Form.Label>
-                {emissionRecord.energySources.map((source, index) => (
-                  <div key={index} className="d-flex align-items-center mb-2">
-                    <Form.Control
-                      type="text"
-                      className="me-2"
-                      value={source.type}
-                      onChange={(e) =>
-                        handleEnergySourceChange(e, index, "type")
-                      }
-                      placeholder="Energy Type (e.g., Electricity, Gas)"
-                    />
-                    <Form.Control
-                      type="number"
-                      value={source.emission}
-                      onChange={(e) =>
-                        handleEnergySourceChange(e, index, "emission")
-                      }
-                      placeholder="Emission (kg CO2)"
-                    />
-                    <Button
-                      variant="danger"
-                      className="ms-2"
-                      onClick={() => removeEnergySource(index)}
-                    >
-                      ✖
-                    </Button>
-                  </div>
-                ))}
-                {/* Add More Energy Sources */}
+                <Form.Group className="mb-3">
+                  <Form.Label>Start Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={formatDate(emissionRecord.startDate)}
+                    onChange={(e) => handleInputChange(e, "startDate")}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>End Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={formatDate(emissionRecord.endDate)}
+                    onChange={(e) => handleInputChange(e, "endDate")}
+                  />
+                </Form.Group>
+                {/* Energy Sources (Dynamic) */}
+                <Form.Group controlId="energySources" className="mb-3">
+                  <Form.Label>Energy Sources</Form.Label>
+                  {emissionRecord.energySources.map((source, index) => (
+                    <div key={index} className="d-flex align-items-center mb-2">
+                      <Form.Control
+                        type="text"
+                        className="me-2"
+                        value={source.type}
+                        onChange={(e) =>
+                          handleEnergySourceChange(e, index, "type")
+                        }
+                        placeholder="Energy Type (e.g., Electricity, Gas)"
+                      />
+                      <Form.Control
+                        type="number"
+                        value={source.emission}
+                        onChange={(e) =>
+                          handleEnergySourceChange(e, index, "emission")
+                        }
+                        placeholder="Emission (kg CO2)"
+                      />
+                      <Button
+                        variant="danger"
+                        className="ms-2"
+                        onClick={() => removeEnergySource(index)}
+                      >
+                        ✖
+                      </Button>
+                    </div>
+                  ))}
+                  {/* Add More Energy Sources */}
+                  <Button
+                    variant="primary"
+                    className="mt-2"
+                    onClick={addEnergySource}
+                  >
+                    + Add Another Energy Source
+                  </Button>
+                </Form.Group>
+              </Modal.Body>
+              <Modal.Footer>
                 <Button
-                  variant="primary"
-                  className="mt-2"
-                  onClick={addEnergySource}
+                  variant="secondary"
+                  className="mt-3"
+                  onClick={closeEditModal}
                 >
-                  + Add Another Energy Source
+                  Cancel
                 </Button>
-              </Form.Group>
+                <Button variant="success" type="submit" className="mt-3">
+                  Update
+                </Button>
+              </Modal.Footer>
+            </Form>
+          </Modal>
+
+          {/* Delete Confirmation Modal */}
+          <Modal
+            show={showDeleteConfirm}
+            onHide={() => setShowDeleteConfirm(false)}
+          >
+            <Modal.Header closeButton>
+              <Modal.Title>Confirm Delete</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              Are you sure you want to delete this energy emission record?
             </Modal.Body>
             <Modal.Footer>
               <Button
                 variant="secondary"
-                className="mt-3"
-                onClick={closeEditModal}
+                onClick={() => setShowDeleteConfirm(false)}
               >
                 Cancel
               </Button>
-              <Button variant="success" type="submit" className="mt-3">
-                Update
+              <Button variant="danger" onClick={handleDelete}>
+                Delete
               </Button>
             </Modal.Footer>
-          </Form>
-        </Modal>
-
-        {/* Delete Confirmation Modal */}
-        <Modal
-          show={showDeleteConfirm}
-          onHide={() => setShowDeleteConfirm(false)}
-        >
-          <Modal.Header closeButton>
-            <Modal.Title>Confirm Delete</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            Are you sure you want to delete this energy emission record?
-          </Modal.Body>
-          <Modal.Footer>
-            <Button
-              variant="secondary"
-              onClick={() => setShowDeleteConfirm(false)}
-            >
-              Cancel
-            </Button>
-            <Button variant="danger" onClick={handleDelete}>
-              Delete
-            </Button>
-          </Modal.Footer>
-        </Modal>
+          </Modal>
+        </div>
       </div>
     </div>
   );

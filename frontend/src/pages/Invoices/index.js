@@ -4,102 +4,6 @@ import axios from "axios";
 import { REACT_APP_API_URL } from "../../env";
 import Sidebar from "../../components/Sidebar";
 
-// Helper function to generate mock invoice content based on type and provider
-const generateMockInvoiceContent = (type, provider) => {
-  const date = new Date().toISOString().split("T")[0];
-  const invoiceNum = `INV-${Date.now().toString().slice(-6)}`;
-
-  switch (type) {
-    case "energy":
-      return `
-INVOICE
-${provider}
-Invoice Number: ${invoiceNum}
-Date: ${date}
-
-Electricity Usage: 450 kWh
-Rate: €0.22 per kWh
-Total Amount: €99.00
-
-Customer Details:
-Name: Example Customer
-Account: ACC-12345
-`;
-    case "water":
-      return `
-INVOICE
-${provider}
-Invoice Number: ${invoiceNum}
-Date: ${date}
-
-Water Usage: 15 cubic meters
-Rate: €2.10 per cubic meter
-Total Amount: €31.50
-
-Customer Details:
-Name: Example Customer
-Account: ACC-12345
-`;
-    case "gas":
-      return `
-INVOICE
-${provider}
-Invoice Number: ${invoiceNum}
-Date: ${date}
-
-Gas Usage: 120 cubic meters
-Rate: €0.95 per cubic meter
-Total Amount: €114.00
-
-Customer Details:
-Name: Example Customer
-Account: ACC-12345
-`;
-    default:
-      return `
-INVOICE
-${provider}
-Invoice Number: ${invoiceNum}
-Date: ${date}
-
-Service: General services
-Amount: €75.00
-
-Customer Details:
-Name: Example Customer
-Account: ACC-12345
-`;
-  }
-};
-
-// Helper function to calculate consumption by invoice type
-const calculateConsumptionByType = (type) => {
-  switch (type) {
-    case "energy":
-      return `450 kWh`;
-    case "water":
-      return `15 cubic meters`;
-    case "gas":
-      return `120 cubic meters`;
-    default:
-      return `Various services`;
-  }
-};
-
-// Helper function to get emission factor by invoice type
-const getEmissionFactorByType = (type) => {
-  switch (type) {
-    case "energy":
-      return `0.233 kg CO₂/kWh`;
-    case "water":
-      return `0.344 kg CO₂/m³`;
-    case "gas":
-      return `2.0 kg CO₂/m³`;
-    default:
-      return `Various factors`;
-  }
-};
-
 const InvoicesPage = () => {
   const navigate = useNavigate();
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
@@ -774,19 +678,21 @@ const InvoicesPage = () => {
                               <td>{formatDate(invoice.invoiceDate)}</td>
                               <td>{invoice.provider}</td>
                               <td>{invoice.co2Emissions} kg</td>
-                              <td>
-                                <button
-                                  className="btn btn-sm btn-outline-primary me-2"
-                                  onClick={() => handleViewInvoice(invoice)}
-                                >
-                                  <i className="fas fa-eye"></i>
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-outline-danger"
-                                  onClick={() => handleDeleteInvoice(invoice)}
-                                >
-                                  <i className="fas fa-trash"></i>
-                                </button>
+                              <td className="text-center">
+                                <div className="d-flex flex-wrap align-items-center justify-content-center gap-2">
+                                  <button
+                                    className="btn btn-sm btn-outline-primary"
+                                    onClick={() => handleViewInvoice(invoice)}
+                                  >
+                                    <i className="fas fa-eye"></i>
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-outline-danger"
+                                    onClick={() => handleDeleteInvoice(invoice)}
+                                  >
+                                    <i className="fas fa-trash"></i>
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
