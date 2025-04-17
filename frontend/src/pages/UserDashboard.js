@@ -10,7 +10,6 @@ import {
 import UpdateEmployee from "./UpdateEmployee";
 import Select from "react-select";
 import TransportEmissions from "./TransportEmissions";
-import { FaArrowLeft, FaPlusCircle } from "react-icons/fa";
 import VehicleRegisterPage from "./VehicleRegister";
 import Sidebar from "../components/Sidebar";
 
@@ -925,7 +924,7 @@ const DashboardPage = () => {
           {activeTab === "transport" && (
             <div className="container-fluid mt-4 px-3">
               <div className="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
-                <h4 className="text-primary mb-0">Transportation Records</h4>
+                <h4 className="text-success mb-0">Transportation Records</h4>
                 <div>
                   <select
                     className="form-select"
@@ -982,7 +981,7 @@ const DashboardPage = () => {
           {activeTab === "workTransport" && (
             <div className="container-fluid mt-4 px-3">
               <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                <h4 className="text-primary mb-0">
+                <h4 className="text-success mb-0">
                   Work Transportation Records
                 </h4>
                 <div>
@@ -1047,7 +1046,7 @@ const DashboardPage = () => {
           {activeTab === "otherResources" && (
             <div className="container-fluid mt-4 px-3">
               <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                <h4 className="text-primary mb-0">Other Resources</h4>
+                <h4 className="text-success mb-0">Other Resources</h4>
                 <div>
                   <select
                     className="form-select"
@@ -1131,7 +1130,7 @@ const DashboardPage = () => {
           {activeTab === "Manage Vehicles" && (
             <div className="container-fluid py-4 px-3">
               <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                <h4 className="text-primary mb-0">Manage Vehicles</h4>
+                <h4 className="text-success mb-0">Manage Vehicles</h4>
                 <p className="mb-0">Total Vehicles: {vehicles.length}</p>
               </div>
               <div className="table-responsive shadow-sm rounded">
@@ -1164,7 +1163,7 @@ const DashboardPage = () => {
                               className={`btn w-100 p-2 ${
                                 vehicle.isFavorite
                                   ? "btn-warning"
-                                  : "btn-outline-primary"
+                                  : "btn-outline-success"
                               }`}
                               onClick={() => toggleFavorite(vehicle._id, index)}
                             >
@@ -1400,7 +1399,7 @@ const DashboardPage = () => {
                       </div>
 
                       <div className="d-flex justify-content-end">
-                        <button type="submit" className="btn btn-primary">
+                        <button type="submit" className="btn btn-success">
                           Save Work Transport Record
                         </button>
                       </div>
@@ -1508,7 +1507,7 @@ const DashboardPage = () => {
                         />
                       </div>
                       <div className="d-flex justify-content-end">
-                        <button type="submit" className="btn btn-primary">
+                        <button type="submit" className="btn btn-success">
                           Save Resource
                         </button>
                       </div>
@@ -1733,7 +1732,7 @@ const DashboardPage = () => {
                       </div>
 
                       <div className="d-flex justify-content-end">
-                        <button type="submit" className="btn btn-primary">
+                        <button type="submit" className="btn btn-success">
                           Save Work Transport Record
                         </button>
                       </div>
@@ -1854,7 +1853,7 @@ const DashboardPage = () => {
                         />
                       </div>
                       <div className="d-flex justify-content-end">
-                        <button type="submit" className="btn btn-primary">
+                        <button type="submit" className="btn btn-success">
                           Update Resource
                         </button>
                       </div>

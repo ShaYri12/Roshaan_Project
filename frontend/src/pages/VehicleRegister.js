@@ -236,7 +236,7 @@ const VehicleRegisterPage = ({ userData, isModelVisible, isAdmin }) => {
                   <div className="row text-center mt-3">
                     <span className="text-muted">
                       Already have an account?
-                      <Link to="/" className="btn btn-link text-primary">
+                      <Link to="/" className="btn btn-link text-success">
                         Login
                       </Link>
                     </span>
@@ -246,7 +246,7 @@ const VehicleRegisterPage = ({ userData, isModelVisible, isAdmin }) => {
                 <div className="d-flex justify-content-end">
                   <button
                     type="submit"
-                    className="btn btn-primary"
+                    className="btn btn-success"
                     disabled={isLoading}
                   >
                     {isLoading ? (

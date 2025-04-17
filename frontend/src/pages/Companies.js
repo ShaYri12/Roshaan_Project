@@ -463,7 +463,7 @@ const CompanyPage = () => {
                         <td className="text-center">
                           <div className="d-flex flex-wrap align-items-center justify-content-center gap-2">
                             <button
-                              className="btn btn-sm btn-outline-primary"
+                              className="btn btn-sm btn-outline-success"
                               onClick={() => handleEditCompany(company)}
                             >
                               <i className="fas fa-edit"></i>
@@ -553,7 +553,7 @@ const CompanyPage = () => {
                   </button>
                   <button
                     type="button"
-                    className="btn btn-primary"
+                    className="btn btn-success"
                     onClick={handleAddSubmit}
                   >
                     Save Company
@@ -627,7 +627,7 @@ const CompanyPage = () => {
                   </button>
                   <button
                     type="button"
-                    className="btn btn-primary"
+                    className="btn btn-success"
                     onClick={handleEditSubmit}
                   >
                     Update Company

@@ -11,6 +11,7 @@ const Leaderboard = () => {
   const [error, setError] = useState(null);
   const [month, setMonth] = useState(null);
   const [year, setYear] = useState(new Date().getFullYear());
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
   const months = [
     { value: 1, label: "January" },
@@ -272,7 +273,12 @@ const Leaderboard = () => {
         <div className="d-flex mb-3 align-items-center justify-content-between flex-wrap gap-3">
           <div className="">
             <h4 className="card-title text-start mb-0">
-              <GoTrophy style={{ color: "#1890ff", marginRight: 10 }} />
+              <GoTrophy
+                style={{
+                  color: theme === "light" ? "#157347" : "#34d399",
+                  marginRight: 10,
+                }}
+              />
               Conservation Leaders{" "}
               <span className="text-success fs-6 ms-2 fw-normal">
                 Lowest CO₂ Emissions

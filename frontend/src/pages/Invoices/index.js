@@ -418,7 +418,7 @@ const InvoicesPage = () => {
           <h1 className="my-4">CO₂ Emissions from Invoices</h1>
 
           <div className="row mb-4 row-gap-4">
-            <div className="col-lg-4">
+            <div className="col-xl-4 col-lg-6 col-md-8">
               <div className={`card p-0 m-0 bg-${theme} border-0 shadow-sm`}>
                 <div className="card-body">
                   <h5 className="card-title mb-3">Upload New Invoice</h5>
@@ -484,7 +484,7 @@ const InvoicesPage = () => {
                         </p>
                       </div>
                       <div className="d-flex justify-content-center mt-3">
-                        <button className="btn btn-primary" onClick={resetForm}>
+                        <button className="btn btn-success" onClick={resetForm}>
                           Upload Another Invoice
                         </button>
                       </div>
@@ -529,7 +529,7 @@ const InvoicesPage = () => {
                           </div>
                         ) : (
                           <button
-                            className="btn btn-outline-primary w-100"
+                            className="btn btn-outline-success w-100"
                             onClick={triggerFileInput}
                             disabled={isUploading || calculatingEmissions}
                           >
@@ -543,7 +543,7 @@ const InvoicesPage = () => {
                       </div>
 
                       <button
-                        className="btn btn-primary w-100"
+                        className="btn btn-success w-100"
                         onClick={handleUpload}
                         disabled={
                           !selectedFile || isUploading || calculatingEmissions
@@ -681,7 +681,7 @@ const InvoicesPage = () => {
                               <td className="text-center">
                                 <div className="d-flex flex-wrap align-items-center justify-content-center gap-2">
                                   <button
-                                    className="btn btn-sm btn-outline-primary"
+                                    className="btn btn-sm btn-outline-success"
                                     onClick={() => handleViewInvoice(invoice)}
                                   >
                                     <i className="fas fa-eye"></i>
@@ -971,7 +971,7 @@ const InvoicesPage = () => {
                     <i className="fas fa-trash me-2"></i>
                     Delete Invoice
                   </button>
-                  <button className="btn btn-primary" onClick={closeModal}>
+                  <button className="btn btn-success" onClick={closeModal}>
                     Close
                   </button>
                 </div>

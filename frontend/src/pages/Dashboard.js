@@ -1249,7 +1249,7 @@ const DashboardPage = () => {
                 </div>
                 <div className="card-footer text-center">
                   <button
-                    className="btn btn-info w-100 shadow-sm"
+                    className="btn btn-success w-100 shadow-sm"
                     onClick={() => navigate("/employees")}
                   >
                     Manage Employees
@@ -1281,7 +1281,7 @@ const DashboardPage = () => {
                 </div>
                 <div className="card-footer text-center">
                   <button
-                    className="btn btn-info w-100"
+                    className="btn btn-success w-100"
                     onClick={() => navigate("/companies")}
                   >
                     Manage Companies
@@ -1308,7 +1308,7 @@ const DashboardPage = () => {
                 </div>
                 <div className="card-footer text-center">
                   <button
-                    className="btn btn-info w-100"
+                    className="btn btn-success w-100"
                     onClick={() => navigate("/user-dashboard")}
                   >
                     Manage Regular User
@@ -1338,7 +1338,7 @@ const DashboardPage = () => {
                 </div>
                 <div className="card-footer text-center">
                   <button
-                    className="btn btn-info w-100"
+                    className="btn btn-success w-100"
                     onClick={() => navigate("/emissions")}
                   >
                     View Emission Records
@@ -1367,7 +1367,7 @@ const DashboardPage = () => {
                 </div>
                 <div className="card-footer text-center">
                   <button
-                    className="btn btn-info w-100"
+                    className="btn btn-success w-100"
                     onClick={() => navigate("/emission-types")}
                   >
                     View Emission Type
@@ -1396,7 +1396,7 @@ const DashboardPage = () => {
                 </div>
                 <div className="card-footer text-center">
                   <button
-                    className="btn btn-info w-100 shadow-sm"
+                    className="btn btn-success w-100 shadow-sm"
                     onClick={() => navigate("/vehicles")}
                   >
                     Manage Vehicles
@@ -1411,7 +1411,7 @@ const DashboardPage = () => {
             <div className="col-12 mt-3">
               <button
                 onClick={downloadAllPDFs}
-                className="btn btn-info float-end mx-3 mt-3"
+                className="btn btn-success float-end mx-3 mt-3"
                 disabled={isGeneratingPDF}
               >
                 {isGeneratingPDF ? (

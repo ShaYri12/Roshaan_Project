@@ -1,7 +1,7 @@
 /* Base styling */
 :root {
-  --primary-color: #0d6efd;
-  --primary-hover: #0b5ed7;
+  --primary-color: #198754;
+  --primary-hover: #157347;
   --secondary-color: #6c757d;
   --success-color: #198754;
   --info-color: #0dcaf0;
@@ -60,7 +60,7 @@ a:focus,
 input:focus,
 select:focus,
 textarea:focus {
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
 }
 
 /* Fix scrollbar appearance */
@@ -149,4 +149,14 @@ textarea:focus {
 
 .leaderboard-third:hover {
   background-color: rgba(205, 127, 50, 0.2) !important;
+}
+
+/* Global Link Styles (Using Bootstrap's color classes) */
+a {
+  text-decoration: none;
+  color: #198754;
+}
+
+a:hover {
+  color: #157347;
 }

@@ -1226,7 +1226,7 @@ const YearlyReportsPage = () => {
                     </select>
                   </div>
                   <button
-                    className="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center"
+                    className="btn btn-success w-100 py-2 d-flex align-items-center justify-content-center"
                     onClick={generateReport}
                     disabled={isLoading}
                   >
@@ -1345,7 +1345,7 @@ const YearlyReportsPage = () => {
                               <td className="text-center">
                                 <div className="d-flex flex-wrap align-items-center justify-content-center gap-2">
                                   <button
-                                    className="btn btn-sm btn-outline-primary"
+                                    className="btn btn-sm btn-outline-success"
                                     onClick={() =>
                                       loadReport(report.reportId || report._id)
                                     }
@@ -1405,7 +1405,7 @@ const YearlyReportsPage = () => {
                           </button>
                         )}
                         <button
-                          className="btn btn-primary d-flex align-items-center"
+                          className="btn btn-success d-flex align-items-center"
                           onClick={exportPDF}
                           disabled={isGeneratingPdf}
                         >
@@ -1513,7 +1513,7 @@ const YearlyReportsPage = () => {
                                 Monthly Distribution
                               </h5>
                               <button
-                                className="btn btn-sm btn-outline-primary"
+                                className="btn btn-sm btn-outline-success"
                                 onClick={() =>
                                   exportChartAsImage(
                                     "monthly-emissions-chart",
@@ -1557,7 +1557,7 @@ const YearlyReportsPage = () => {
                                 Emissions by Category
                               </h5>
                               <button
-                                className="btn btn-sm btn-outline-primary"
+                                className="btn btn-sm btn-outline-success"
                                 onClick={() =>
                                   exportChartAsImage(
                                     "category-emissions-chart",

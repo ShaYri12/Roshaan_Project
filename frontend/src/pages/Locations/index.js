@@ -454,7 +454,7 @@ const LocationsPage = () => {
               {theme === "light" ? "Dark Mode" : "Light Mode"}
             </button>
             <button
-              className="btn btn-outline-primary"
+              className="btn btn-outline-success"
               onClick={() => navigate("/dashboard")}
             >
               <FaHome className="me-2" /> Home

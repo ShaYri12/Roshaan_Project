@@ -233,7 +233,7 @@ const UpdateEmployee = ({ userData, isModelVisible, onUpdate }) => {
         <div className="d-flex justify-content-end">
           <button
             type="submit"
-            className="btn btn-primary"
+            className="btn btn-success"
             disabled={isLoading}
           >
             {isLoading ? "Updating..." : "Update"}
@@ -245,3 +245,4 @@ const UpdateEmployee = ({ userData, isModelVisible, onUpdate }) => {
 };
 
 export default UpdateEmployee;
+

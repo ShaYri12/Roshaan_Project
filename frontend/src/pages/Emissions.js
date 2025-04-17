@@ -404,7 +404,7 @@ const EmissionPage = () => {
                           {isRecordEditable(record) ? (
                             <>
                               <button
-                                className="btn btn-sm btn-outline-primary"
+                                className="btn btn-sm btn-outline-success"
                                 onClick={() => handleEdit(record)}
                               >
                                 <i className="fas fa-edit"></i>

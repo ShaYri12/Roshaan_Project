@@ -253,7 +253,7 @@ const TransportEmissions = (tab) => {
   // Helper to format loading state
   const renderLoading = () => (
     <div className="d-flex justify-content-center my-5">
-      <div className="spinner-border text-primary" role="status">
+      <div className="spinner-border text-success" role="status">
         <span className="visually-hidden">Loading...</span>
       </div>
     </div>
@@ -280,7 +280,7 @@ const TransportEmissions = (tab) => {
                         <i className="fas fa-bus fa-2x me-3"></i>
                         <h4 className="card-title mb-0">Transport Emission Records</h4>
                     </div>
-                    <button className="btn btn-outline-primary" onClick={() => navigate("/dashboard")}>
+                    <button className="btn btn-outline-success" onClick={() => navigate("/dashboard")}>
                         <FaHome className="me-2" /> Home
                     </button>
                 </div>
@@ -290,7 +290,7 @@ const TransportEmissions = (tab) => {
           {error && renderError()}
 
           <div className="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
-            <h4 className="text-left text-primary mb-0">
+            <h4 className="text-left text-success mb-0">
               Monthly Transport Emissions
             </h4>
             <button

@@ -426,7 +426,7 @@ const ProductsPage = () => {
         <div className="container">
           <div className="d-flex flex-wrap gap-2 justify-content-between align-items-center my-4">
             <h1>Products</h1>
-            <button className="btn btn-primary" onClick={openAddModal}>
+            <button className="btn btn-success" onClick={openAddModal}>
               <i className="fas fa-plus me-2"></i>
               Add New Product
             </button>
@@ -452,7 +452,7 @@ const ProductsPage = () => {
                 <p className="text-muted">
                   Add your first product to start tracking carbon footprints.
                 </p>
-                <button className="btn btn-primary mt-3" onClick={openAddModal}>
+                <button className="btn btn-success mt-3" onClick={openAddModal}>
                   <i className="fas fa-plus me-2"></i>
                   Add Product
                 </button>
@@ -486,7 +486,7 @@ const ProductsPage = () => {
                       <td className="text-center">
                         <div className="d-flex flex-wrap align-items-center justify-content-center gap-2">
                           <button
-                            className="btn btn-sm btn-outline-primary"
+                            className="btn btn-sm btn-outline-success"
                             onClick={() => openEditModal(product)}
                           >
                             <i className="fas fa-edit"></i>
@@ -750,7 +750,7 @@ const ProductsPage = () => {
                         </button>
                         <button
                           type="submit"
-                          className="btn btn-primary"
+                          className="btn btn-success"
                           disabled={isLoading}
                         >
                           {isLoading ? (
@@ -1016,7 +1016,7 @@ const ProductsPage = () => {
                         </button>
                         <button
                           type="submit"
-                          className="btn btn-primary"
+                          className="btn btn-success"
                           disabled={isLoading}
                         >
                           {isLoading ? (

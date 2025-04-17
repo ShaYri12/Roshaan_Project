@@ -345,7 +345,7 @@ const EmissionPage = () => {
             <h4 className="card-title mb-0">Emission Records</h4>
           </div>
           <button
-            className="btn btn-outline-primary"
+            className="btn btn-outline-success"
             onClick={() => navigate("/dashboard")}
           >
             <FaHome className="me-2" /> Home

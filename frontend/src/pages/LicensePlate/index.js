@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { REACT_APP_API_URL } from "../../env";
@@ -15,6 +15,7 @@ const LicensePlatePage = () => {
   const [vehicleData, setVehicleData] = useState(null);
   const [co2Data, setCo2Data] = useState(null);
   const [searchHistory, setSearchHistory] = useState([]);
+  const resultSectionRef = useRef(null);
 
   // Fetch user data on component mount
   useEffect(() => {
@@ -80,14 +81,14 @@ const LicensePlatePage = () => {
     setCo2Data(null);
 
     try {
-      // Fetch vehicle data from RDW API
+      // Fetch vehicle data from backend proxy
       const vehicleResponse = await axios.get(
-        `https://opendata.rdw.nl/resource/m9d7-ebf2.json?kenteken=${formattedPlate}`
+        `${REACT_APP_API_URL}/rdw/vehicle/${formattedPlate}`
       );
 
-      // Fetch CO2 data from RDW API
+      // Fetch CO2 data from backend proxy
       const co2Response = await axios.get(
-        `https://opendata.rdw.nl/resource/8ys7-d773.json?kenteken=${formattedPlate}`
+        `${REACT_APP_API_URL}/rdw/co2/${formattedPlate}`
       );
 
       if (vehicleResponse.data.length === 0) {
@@ -121,6 +122,16 @@ const LicensePlatePage = () => {
         "licenseSearchHistory",
         JSON.stringify(updatedHistory)
       );
+
+      // Scroll to the result section after a short delay to ensure rendering is complete
+      setTimeout(() => {
+        if (resultSectionRef.current) {
+          resultSectionRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      }, 100);
     } catch (error) {
       console.error("Error fetching vehicle data:", error);
       setError("Failed to fetch vehicle data. Please try again.");
@@ -131,6 +142,10 @@ const LicensePlatePage = () => {
 
   const loadFromHistory = (plate) => {
     setLicensePlate(plate);
+    // Trigger search after setting the license plate
+    setTimeout(() => {
+      document.getElementById("search-button").click();
+    }, 50);
   };
 
   return (
@@ -177,8 +192,9 @@ const LicensePlatePage = () => {
                         />
                         <button
                           type="submit"
-                          className="btn btn-primary btn-no-transform"
+                          className="btn btn-success btn-no-transform"
                           disabled={isLoading}
+                          id="search-button"
                         >
                           {isLoading ? (
                             <>
@@ -224,7 +240,7 @@ const LicensePlatePage = () => {
                                 <td>{item.model}</td>
                                 <td>
                                   <button
-                                    className="btn btn-sm btn-outline-primary"
+                                    className="btn btn-sm btn-outline-success"
                                     onClick={() =>
                                       loadFromHistory(item.licensePlate)
                                     }
@@ -243,7 +259,7 @@ const LicensePlatePage = () => {
               </div>
             </div>
 
-            <div className="col-12">
+            <div className="col-12" ref={resultSectionRef}>
               {vehicleData && (
                 <div className={`bg-${theme} border-0 shadow-sm h-100`}>
                   <div className="card-body">

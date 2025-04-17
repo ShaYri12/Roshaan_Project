@@ -33,6 +33,9 @@ const RegisterPage = ({ userData, isModelVisible, isAdmin }) => {
   const [isLoading, setIsLoading] = useState(false); // State for toggling password visibility
   const navigate = useNavigate();
 
+  // Get theme from localStorage or use light as default
+  const theme = localStorage.getItem("theme") || "light";
+
   useEffect(() => {
     if (isModelVisible) {
       setFirstName(userData?.firstName || "");
@@ -131,7 +134,7 @@ const RegisterPage = ({ userData, isModelVisible, isAdmin }) => {
               textAlign: "center",
               fontFamily: "Arial, sans-serif",
               color: "#fff",
-              background: "linear-gradient(to right, #4CAF50, #81C784)",
+              background: "linear-gradient(to right, #198754, #20c997)",
               padding: "10px 20px",
               borderRadius: "8px",
               textTransform: "uppercase",
@@ -146,15 +149,20 @@ const RegisterPage = ({ userData, isModelVisible, isAdmin }) => {
           </h4>
         </div>
       ) : null}
-      <div
-        className={`${userData ? "" : "container py-5"}`} // Apply 'container py-5' only if there's no existing user data
-      >
-        <div
-          className={`${userData ? "" : "row justify-content-center"} `} // Apply 'row justify-content-center' only when there's no existing data
-        >
-          <div
-            className={`${userData ? "" : "col-md-8"}`} // Apply 'col-md-8' for layout when no data exists
-          >
+      <div className={`${userData ? "" : "container py-5"}`}>
+        <div className={`${userData ? "" : "row justify-content-center"} `}>
+          <div className={`${userData ? "" : "col-md-8"}`}>
+            {!isModelVisible && !isAdmin && (
+              <div className="text-center mb-4">
+                <img
+                  src={theme === "dark" ? "/logo-white.png" : "/logo-black.png"}
+                  alt="Logo"
+                  width={150}
+                  height={84}
+                  className="mb-3"
+                />
+              </div>
+            )}
             <div className="container">
               <form
                 onSubmit={handleSubmit}
@@ -285,7 +293,7 @@ const RegisterPage = ({ userData, isModelVisible, isAdmin }) => {
                       Already have an account?
                       <Link
                         to="/"
-                        className="btn btn-link text-primary"
+                        className="btn btn-link text-success"
                         style={{ fontSize: "16px" }}
                       >
                         Login
@@ -293,10 +301,27 @@ const RegisterPage = ({ userData, isModelVisible, isAdmin }) => {
                     </span>
                   </div>
                 ) : null}
-                <div className="d-flex justify-content-end">
-                  <button type="submit" className="btn btn-primary">
-                    {isModelVisible ? "Update" : "Register"}
-                  </button>
+                <div className="row">
+                  <div className="col-12 mt-3 mb-3 d-flex justify-content-center">
+                    <button
+                      className="btn btn-success w-50"
+                      type="submit"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <div
+                          className="spinner-border spinner-border-sm text-light"
+                          role="status"
+                        >
+                          <span className="visually-hidden">Loading...</span>
+                        </div>
+                      ) : isModelVisible ? (
+                        "Update Profile"
+                      ) : (
+                        "Register"
+                      )}
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>

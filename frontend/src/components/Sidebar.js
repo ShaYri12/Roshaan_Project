@@ -105,7 +105,7 @@ const Sidebar = ({
       <div className={`sidebar ${isSidebarOpen ? "open" : "closed"}`}>
         <div className="sidebar-header d-md-flex align-items-center justify-content-between">
           <button
-            className={`btn btn-link sidebar-toggle d-none d-md-flex align-items-center justify-content-center ${
+            className={`btn sidebar-toggle d-none d-md-flex align-items-center justify-content-center ${
               isSidebarOpen ? "" : "sidebar-toggled"
             }`}
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -117,23 +117,6 @@ const Sidebar = ({
               isSidebarOpen ? "" : "d-none"
             }`}
           >
-            {/*
-            <span
-              className="d-block"
-              style={{ fontSize: "1.2rem", fontWeight: "bold" }}
-            >
-              Welcome,{" "}
-              <span className="text-primary">
-                {userData?.firstName} {userData?.lastName}
-              </span>
-            </span>
-            <span
-              className="d-block"
-              style={{ fontSize: "0.9rem", fontStyle: "italic" }}
-            >
-              It's a great day to be productive! ✨
-            </span>
-            */}
             <div className="sidebar-header-logo">
               {theme === "light" ? (
                 <img
@@ -568,7 +551,7 @@ const Sidebar = ({
         >
           <button
             className={`btn ${
-              theme === "light" ? "btn-outline-dark" : "btn-outline-light"
+              theme === "light" ? "btn-outline-success" : "btn-outline-light"
             } mb-2`}
             onClick={toggleTheme}
           >

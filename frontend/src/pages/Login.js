@@ -12,6 +12,14 @@ const LoginPage = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  // Toggle password visibility
+  const togglePassword = () => {
+    setPasswordVisible(!passwordVisible);
+  };
+
+  // Get theme from localStorage
+  const theme = localStorage.getItem("theme") || "light";
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -75,18 +83,22 @@ const LoginPage = () => {
     }
   };
 
-  // Toggle password visibility
-  const togglePassword = () => {
-    setPasswordVisible(!passwordVisible);
-  };
-
   return (
     <div className="container py-5">
       <div className="row justify-content-center">
         <div className="col-md-6">
           <div className="card">
             <div className="card-body">
-              <h2 className="card-title text-center mb-4">Login</h2>
+              <div className="text-center mb-4">
+                <img
+                  src={theme === "dark" ? "/logo-white.png" : "/logo-black.png"}
+                  alt="Logo"
+                  width={150}
+                  height={84}
+                  className="mb-3"
+                />
+                <h2 className="card-title">Login</h2>
+              </div>
               {error && (
                 <div className="alert alert-danger" role="alert">
                   {error}
@@ -106,15 +118,15 @@ const LoginPage = () => {
                 <div className="mb-3 position-relative">
                   <label className="form-label">Password</label>
                   <input
-                    type={passwordVisible ? "text" : "password"} // Toggle input type
+                    type={passwordVisible ? "text" : "password"}
                     className="form-control"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
-                  {password && ( // Only show eye icon if password is not empty
+                  {password && (
                     <span
-                      onClick={togglePassword} // Toggle password visibility
+                      onClick={togglePassword}
                       className="cursorPointer position-absolute top-62 end-0 translate-middle-y me-3"
                     >
                       {passwordVisible ? (
@@ -136,7 +148,7 @@ const LoginPage = () => {
                 <div className="d-flex justify-content-center">
                   <button
                     type="submit"
-                    className="btn btn-primary w-50"
+                    className="btn btn-success w-50"
                     disabled={loading}
                   >
                     {loading ? "Logging in..." : "Login"}

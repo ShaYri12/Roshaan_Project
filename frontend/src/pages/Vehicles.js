@@ -215,7 +215,7 @@ const VehiclePage = () => {
                       <td className="text-center">
                         <div className="d-flex flex-wrap align-items-center justify-content-center gap-2">
                           <button
-                            className="btn btn-sm btn-outline-primary"
+                            className="btn btn-sm btn-outline-success"
                             onClick={() => editVehicle(vehicle)}
                           >
                             <i className="fas fa-edit"></i>
