@@ -1,36 +1,33 @@
-import React, { useContext } from "react";
+import React from "react";
 import Select from "react-select";
 
-const EmployeeSelect = ({
-  modalData,
-  employeesState,
-  handleEmployeeChange,
+const TransportationSingleSelect = ({
+  selectedTransportation,
+  transportationsState,
+  handleTransportationChange,
   theme = "light",
+  label = "Transportation",
+  placeholder = "Select a transportation",
+  isClearable = true,
 }) => {
-  const formatEmployeeData = (employee) => {
-    // Make sure we have valid data
-    if (!employee) return null;
+  const formatTransportationData = (transportation) => ({
+    value: transportation._id ? transportation._id : transportation.value,
+    label: `${transportation.name}`,
+    key: transportation._id ? transportation._id : transportation.value,
+  });
 
-    return {
-      value: employee._id ? employee._id : employee.value,
-      label:
-        employee.firstName && employee.lastName
-          ? `${employee.firstName} ${employee.lastName}`
-          : employee.label || "",
-      key: employee._id ? employee._id : employee.value,
-    };
-  };
+  const transportationOptions = transportationsState.map(
+    formatTransportationData
+  );
 
-  // Filter out any null values from the formatted data
-  const selectedEmployees = modalData?.employees
-    ?.map(formatEmployeeData)
-    .filter(Boolean);
+  // Find the selected transportation in the options
+  const selectedValue = selectedTransportation
+    ? transportationOptions.find(
+        (option) => option.value === selectedTransportation
+      )
+    : null;
 
-  const employeeOptions = employeesState.map(formatEmployeeData);
-
-  console.log("EmployeeSelect - Selected:", selectedEmployees);
-  console.log("EmployeeSelect - Options:", employeeOptions);
-
+  // Create custom styles for theming the select component
   const customStyles = {
     control: (provided) => ({
       ...provided,
@@ -78,20 +75,22 @@ const EmployeeSelect = ({
 
   return (
     <div className="mb-3">
-      <label htmlFor="employees" className="form-label">
-        Employees
+      <label htmlFor="transportation" className="form-label">
+        {label}
       </label>
       <Select
-        id="employees"
-        isMulti
-        value={selectedEmployees}
-        onChange={handleEmployeeChange}
-        options={employeeOptions}
+        id="transportation"
+        isMulti={false}
+        isClearable={isClearable}
+        value={selectedValue}
+        onChange={handleTransportationChange}
+        options={transportationOptions}
         classNamePrefix="react-select"
         styles={customStyles}
+        placeholder={placeholder}
       />
     </div>
   );
 };
 
-export default EmployeeSelect;
+export default TransportationSingleSelect;

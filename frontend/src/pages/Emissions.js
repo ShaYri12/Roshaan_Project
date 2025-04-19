@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Modal, Button, Form } from "react-bootstrap";
+import { Modal, Button, Form, Card, Row, Col } from "react-bootstrap";
 import { JWT_ADMIN_SECRET, REACT_APP_API_URL } from "../env";
 import DynamicSelect from "../components/DynamicSelect";
 import LocationPicker from "../components/LocationPicker";
@@ -8,6 +8,34 @@ import { isRecordEditable, formatDecimal } from "../utils/dateUtils";
 import { authenticatedFetch } from "../utils/axiosConfig";
 import Sidebar from "../components/Sidebar";
 import { FaPlusCircle } from "react-icons/fa";
+import { Line, Bar, Pie } from "react-chartjs-2";
+import EmployeeSelect from "../components/EmployeeSelect";
+import CarsSelect from "../components/CarsSelect";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const EmissionPage = () => {
   const [emissionRecords, setEmissionRecords] = useState([]);
@@ -33,6 +61,22 @@ const EmissionPage = () => {
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
   const [userData, setUserData] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // New state variables for analytics
+  const [emissionsByMonth, setEmissionsByMonth] = useState({});
+  const [emissionsByType, setEmissionsByType] = useState({});
+  const [totalEmissions, setTotalEmissions] = useState(0);
+
+  // Add filter state
+  const [filters, setFilters] = useState({
+    startDate: "",
+    endDate: "",
+    employees: [],
+    transportations: [],
+  });
+
+  const [filteredRecords, setFilteredRecords] = useState([]);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Check authentication on load
   useEffect(() => {
@@ -334,6 +378,148 @@ const EmissionPage = () => {
     document.body.className = `${newTheme}-theme`;
   };
 
+  // Process emissions data for charts
+  useEffect(() => {
+    if (emissionRecords.length > 0) {
+      // Process monthly data
+      const monthlyData = emissionRecords.reduce((acc, record) => {
+        const month = new Date(record.date).toLocaleString("default", {
+          month: "long",
+        });
+        acc[month] = (acc[month] || 0) + parseFloat(record.co2Used);
+        return acc;
+      }, {});
+
+      // Process type data
+      const typeData = emissionRecords.reduce((acc, record) => {
+        const type = record.transportation?.name || "Other";
+        acc[type] = (acc[type] || 0) + parseFloat(record.co2Used);
+        return acc;
+      }, {});
+
+      // Calculate total emissions
+      const total = emissionRecords.reduce(
+        (sum, record) => sum + parseFloat(record.co2Used),
+        0
+      );
+
+      setEmissionsByMonth(monthlyData);
+      setEmissionsByType(typeData);
+      setTotalEmissions(total);
+    }
+  }, [emissionRecords]);
+
+  // Apply filters
+  const applyFilters = () => {
+    let filtered = [...emissionRecords];
+    console.log("Manual filter application triggered");
+    console.log("Initial records count:", filtered.length);
+
+    if (filters.startDate) {
+      filtered = filtered.filter(
+        (record) => new Date(record.date) >= new Date(filters.startDate)
+      );
+      console.log("After startDate filter:", filtered.length);
+    }
+
+    if (filters.endDate) {
+      filtered = filtered.filter(
+        (record) => new Date(record.date) <= new Date(filters.endDate)
+      );
+      console.log("After endDate filter:", filtered.length);
+    }
+
+    if (filters.employees && filters.employees.length > 0) {
+      console.log("Selected employees:", filters.employees);
+      filtered = filtered.filter((record) =>
+        filters.employees.some((emp) => emp.value === record.employee?._id)
+      );
+      console.log("After employees filter:", filtered.length);
+    }
+
+    if (filters.transportations && filters.transportations.length > 0) {
+      console.log("Selected transportations:", filters.transportations);
+      filtered = filtered.filter((record) =>
+        filters.transportations.some(
+          (trans) => trans.value === record.transportation?._id
+        )
+      );
+      console.log("After transportations filter:", filtered.length);
+    }
+
+    setFilteredRecords(filtered);
+    console.log("Final filtered records:", filtered.length);
+  };
+
+  // Reset filters
+  const resetFilters = () => {
+    setFilters({
+      startDate: "",
+      endDate: "",
+      employees: [],
+      transportations: [],
+    });
+    setFilteredRecords(emissionRecords);
+  };
+
+  // Initialize filtered records when emission records change
+  useEffect(() => {
+    setFilteredRecords(emissionRecords);
+  }, [emissionRecords]);
+
+  // Chart configurations
+  const monthlyChartData = {
+    labels: Object.keys(emissionsByMonth),
+    datasets: [
+      {
+        label: "Monthly CO₂ Emissions (kg)",
+        data: Object.values(emissionsByMonth),
+        backgroundColor:
+          theme === "dark"
+            ? "rgba(75, 192, 192, 0.3)"
+            : "rgba(75, 192, 192, 0.2)",
+        borderColor:
+          theme === "dark" ? "rgba(75, 192, 192, 1)" : "rgba(54, 162, 235, 1)",
+        borderWidth: 2,
+        tension: 0.4,
+        fill: true,
+        pointBackgroundColor:
+          theme === "dark" ? "rgba(75, 192, 192, 1)" : "rgba(54, 162, 235, 1)",
+        pointBorderColor: "#fff",
+        pointHoverBackgroundColor: "#fff",
+        pointHoverBorderColor:
+          theme === "dark" ? "rgba(75, 192, 192, 1)" : "rgba(54, 162, 235, 1)",
+      },
+    ],
+  };
+
+  const typeChartData = {
+    labels: Object.keys(emissionsByType),
+    datasets: [
+      {
+        label: "Emissions by Type",
+        data: Object.values(emissionsByType),
+        backgroundColor: [
+          "rgba(255, 99, 132, 0.7)",
+          "rgba(54, 162, 235, 0.7)",
+          "rgba(255, 206, 86, 0.7)",
+          "rgba(75, 192, 192, 0.7)",
+          "rgba(153, 102, 255, 0.7)",
+          "rgba(255, 159, 64, 0.7)",
+        ],
+        borderColor: [
+          "rgba(255, 99, 132, 1)",
+          "rgba(54, 162, 235, 1)",
+          "rgba(255, 206, 86, 1)",
+          "rgba(75, 192, 192, 1)",
+          "rgba(153, 102, 255, 1)",
+          "rgba(255, 159, 64, 1)",
+        ],
+        borderWidth: 2,
+      },
+    ],
+  };
+
   return (
     <div className={`dashboard-container bg-${theme}`}>
       <Sidebar
@@ -346,8 +532,23 @@ const EmissionPage = () => {
       />
 
       <div className={`main-content ${!isSidebarOpen ? "sidebar-closed" : ""}`}>
-        <div className="container mt-4">
-          <h1 className="mb-4">Emission Records</h1>
+        <div className="container-fluid mt-4">
+          <div className="d-flex flex-wrap justify-content-between align-items-center mb-4">
+            <h1>Emission Records</h1>
+            <div>
+              <Button
+                variant="outline-primary"
+                className="me-2"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <i className="fas fa-filter me-2"></i>{" "}
+                {showFilters ? "Hide Filters" : "Show Filters"}
+              </Button>
+              <Button variant="outline-success" onClick={handleAdd}>
+                <FaPlusCircle className="me-2" /> Add New Record
+              </Button>
+            </div>
+          </div>
 
           {error && (
             <div className="alert alert-danger" role="alert">
@@ -355,86 +556,375 @@ const EmissionPage = () => {
             </div>
           )}
 
-          <div className="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
-            <p className="mb-0">Total Records: {emissionRecords.length}</p>
-            <button className="btn btn-outline-success" onClick={handleAdd}>
-              <FaPlusCircle className="me-2" /> Add New Record
-            </button>
-          </div>
+          {/* Filters Section */}
+          {showFilters && (
+            <Card className={`bg-${theme} mb-4 m-0 z-3 position-relative`}>
+              <Card.Body>
+                <Card.Title className="mb-3">Filter Records</Card.Title>
+                <Row>
+                  <Col xl={3} md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Start Date</Form.Label>
+                      <Form.Control
+                        type="date"
+                        value={filters.startDate}
+                        onChange={(e) =>
+                          setFilters({ ...filters, startDate: e.target.value })
+                        }
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col xl={3} md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>End Date</Form.Label>
+                      <Form.Control
+                        type="date"
+                        value={filters.endDate}
+                        onChange={(e) =>
+                          setFilters({ ...filters, endDate: e.target.value })
+                        }
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col xl={3} md={6}>
+                    <EmployeeSelect
+                      modalData={{ employees: filters.employees }}
+                      employeesState={employeesState}
+                      handleEmployeeChange={(selectedOptions) => {
+                        console.log(
+                          "Emissions: Employee selection changed to:",
+                          selectedOptions
+                        );
+                        setFilters({
+                          ...filters,
+                          employees: selectedOptions,
+                        });
+                      }}
+                      theme={theme}
+                    />
+                  </Col>
+                  <Col xl={3} md={6}>
+                    <CarsSelect
+                      modalData={{ cars: filters.transportations }}
+                      carsState={carsState}
+                      handleCarChange={(selectedOptions) => {
+                        console.log(
+                          "Emissions: Transportation selection changed to:",
+                          selectedOptions
+                        );
+                        setFilters({
+                          ...filters,
+                          transportations: selectedOptions,
+                        });
+                      }}
+                      theme={theme}
+                    />
+                  </Col>
+                </Row>
+                <div className="d-flex justify-content-end">
+                  <Button
+                    variant="secondary"
+                    className="me-2"
+                    onClick={() => {
+                      setFilters({
+                        startDate: "",
+                        endDate: "",
+                        employees: [],
+                        transportations: [],
+                      });
+                      setFilteredRecords(emissionRecords);
+                    }}
+                  >
+                    Reset
+                  </Button>
+                  <Button variant="primary" onClick={applyFilters}>
+                    Apply Filters
+                  </Button>
+                </div>
+              </Card.Body>
+            </Card>
+          )}
 
-          <div className="table-responsive">
-            <table className="table table-striped table-bordered table-hover">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Start Location</th>
-                  <th>End Location</th>
-                  <th>Date</th>
-                  <th>Distance (km)</th>
-                  <th>CO2 Used (kg)</th>
-                  <th>Employee</th>
-                  <th>Transportation</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {emissionRecords.length > 0 ? (
-                  emissionRecords.map((record, index) => (
-                    <tr key={record._id}>
-                      <td>{index + 1}</td>
-                      <td className="f10">
-                        <div className="scrollable-address">
-                          {record.startLocation.address}
-                        </div>
-                      </td>
-                      <td className="f10">
-                        <div className="scrollable-address">
-                          {record.endLocation.address}
-                        </div>
-                      </td>
-                      <td>{new Date(record.date).toLocaleDateString()}</td>
-                      <td>{formatDecimal(record.distance)}</td>
-                      <td>{record.co2Used}</td>
-                      <td>
-                        {record.employee?.firstName} {record.employee?.lastName}
-                      </td>
-                      <td>{record.transportation?.name || "N/A"}</td>
-                      <td className="text-center">
-                        <div className="d-flex flex-wrap align-items-center justify-content-center gap-2">
-                          {isRecordEditable(record) ? (
-                            <>
-                              <button
-                                className="btn btn-sm btn-outline-success"
-                                onClick={() => handleEdit(record)}
-                              >
-                                <i className="fas fa-edit"></i>
-                              </button>
-                              <button
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => confirmDelete(record)}
-                              >
-                                <i className="fas fa-trash"></i>
-                              </button>
-                            </>
-                          ) : (
-                            <span className="text-muted small">
-                              Locked (previous year)
-                            </span>
-                          )}
-                        </div>
-                      </td>
+          {/* Analytics Cards */}
+          <Row className="mb-4">
+            <Col lg={3} md={6} className="mb-3 mb-lg-0">
+              <Card className={`bg-${theme} shadow-sm h-100 m-0`}>
+                <Card.Body className="d-flex flex-column align-items-center">
+                  <div className="icon-container mb-3 text-primary">
+                    <i className="fas fa-cloud fa-3x"></i>
+                  </div>
+                  <Card.Title className="text-center mb-3">
+                    Total CO₂ Emissions
+                  </Card.Title>
+                  <h3 className="text-center mb-0">
+                    {formatDecimal(totalEmissions)} kg
+                  </h3>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col lg={3} md={6} className="mb-3 mb-lg-0">
+              <Card className={`bg-${theme} shadow-sm h-100 m-0`}>
+                <Card.Body className="d-flex flex-column align-items-center">
+                  <div className="icon-container mb-3 text-success">
+                    <i className="fas fa-list fa-3x"></i>
+                  </div>
+                  <Card.Title className="text-center mb-3">
+                    Total Records
+                  </Card.Title>
+                  <h3 className="text-center mb-0">{filteredRecords.length}</h3>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col lg={3} md={6} className="mb-3 mb-lg-0">
+              <Card className={`bg-${theme} shadow-sm h-100 m-0`}>
+                <Card.Body className="d-flex flex-column align-items-center">
+                  <div className="icon-container mb-3 text-warning">
+                    <i className="fas fa-calculator fa-3x"></i>
+                  </div>
+                  <Card.Title className="text-center mb-3">
+                    Average per Record
+                  </Card.Title>
+                  <h3 className="text-center mb-0">
+                    {filteredRecords.length > 0
+                      ? formatDecimal(totalEmissions / filteredRecords.length)
+                      : 0}{" "}
+                    kg
+                  </h3>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col lg={3} md={6} className="mb-3 mb-lg-0">
+              <Card className={`bg-${theme} shadow-sm h-100 m-0`}>
+                <Card.Body className="d-flex flex-column align-items-center">
+                  <div className="icon-container mb-3 text-info">
+                    <i className="fas fa-road fa-3x"></i>
+                  </div>
+                  <Card.Title className="text-center mb-3">
+                    Total Distance
+                  </Card.Title>
+                  <h3 className="text-center mb-0">
+                    {formatDecimal(
+                      filteredRecords.reduce(
+                        (sum, record) => sum + parseFloat(record.distance || 0),
+                        0
+                      )
+                    )}{" "}
+                    km
+                  </h3>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+
+          {/* Charts */}
+          <Row className="mb-4">
+            <Col md={8}>
+              <Card className={`bg-${theme} shadow-sm h-100 m-0`}>
+                <Card.Body>
+                  <Card.Title className="mb-4">
+                    Monthly Emissions Trend
+                  </Card.Title>
+                  <div style={{ height: "300px", padding: "10px" }}>
+                    <Line
+                      data={monthlyChartData}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                          y: {
+                            beginAtZero: true,
+                            grid: {
+                              color:
+                                theme === "dark"
+                                  ? "rgba(255, 255, 255, 0.1)"
+                                  : "rgba(0, 0, 0, 0.1)",
+                            },
+                            ticks: {
+                              color: theme === "dark" ? "#fff" : "#666",
+                              font: {
+                                size: 11,
+                              },
+                            },
+                            title: {
+                              display: true,
+                              text: "CO₂ Emissions (kg)",
+                              color: theme === "dark" ? "#fff" : "#666",
+                              font: {
+                                weight: "bold",
+                                size: 12,
+                              },
+                            },
+                          },
+                          x: {
+                            grid: {
+                              color:
+                                theme === "dark"
+                                  ? "rgba(255, 255, 255, 0.1)"
+                                  : "rgba(0, 0, 0, 0.1)",
+                            },
+                            ticks: {
+                              color: theme === "dark" ? "#fff" : "#666",
+                              font: {
+                                size: 11,
+                              },
+                            },
+                          },
+                        },
+                        plugins: {
+                          legend: {
+                            labels: {
+                              color: theme === "dark" ? "#fff" : "#666",
+                              font: {
+                                size: 12,
+                              },
+                            },
+                          },
+                          tooltip: {
+                            backgroundColor:
+                              theme === "dark"
+                                ? "rgba(0, 0, 0, 0.8)"
+                                : "rgba(255, 255, 255, 0.8)",
+                            titleColor: theme === "dark" ? "#fff" : "#000",
+                            bodyColor: theme === "dark" ? "#fff" : "#000",
+                            borderColor:
+                              theme === "dark"
+                                ? "rgba(255, 255, 255, 0.2)"
+                                : "rgba(0, 0, 0, 0.2)",
+                            borderWidth: 1,
+                          },
+                        },
+                      }}
+                    />
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col md={4}>
+              <Card className={`bg-${theme} shadow-sm h-100 m-0`}>
+                <Card.Body>
+                  <Card.Title className="mb-4">Emissions by Type</Card.Title>
+                  <div style={{ height: "300px", padding: "10px" }}>
+                    <Pie
+                      data={typeChartData}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: {
+                            position: "right",
+                            labels: {
+                              color: theme === "dark" ? "#fff" : "#666",
+                              padding: 15,
+                              font: {
+                                size: 11,
+                              },
+                            },
+                            display: Object.keys(emissionsByType).length <= 8,
+                          },
+                          tooltip: {
+                            backgroundColor:
+                              theme === "dark"
+                                ? "rgba(0, 0, 0, 0.8)"
+                                : "rgba(255, 255, 255, 0.8)",
+                            titleColor: theme === "dark" ? "#fff" : "#000",
+                            bodyColor: theme === "dark" ? "#fff" : "#000",
+                            borderColor:
+                              theme === "dark"
+                                ? "rgba(255, 255, 255, 0.2)"
+                                : "rgba(0, 0, 0, 0.2)",
+                            borderWidth: 1,
+                          },
+                        },
+                      }}
+                    />
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+
+          {/* Records Table */}
+          <Card className={`bg-${theme} shadow-sm m-0`}>
+            <Card.Body>
+              <Card.Title className="mb-3">Emission Records</Card.Title>
+              <div className="table-responsive">
+                <table className="table table-striped table-hover">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Start Location</th>
+                      <th>End Location</th>
+                      <th>Date</th>
+                      <th>Distance (km)</th>
+                      <th>CO₂ Used (kg)</th>
+                      <th>Employee</th>
+                      <th>Transportation</th>
+                      <th>Actions</th>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="9" className="text-center text-muted">
-                      No records found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody>
+                    {filteredRecords.length > 0 ? (
+                      filteredRecords.map((record, index) => (
+                        <tr key={record._id}>
+                          <td>{index + 1}</td>
+                          <td className="f10">
+                            <div className="scrollable-address">
+                              {record.startLocation.address}
+                            </div>
+                          </td>
+                          <td className="f10">
+                            <div className="scrollable-address">
+                              {record.endLocation.address}
+                            </div>
+                          </td>
+                          <td>{new Date(record.date).toLocaleDateString()}</td>
+                          <td>{formatDecimal(record.distance)}</td>
+                          <td>{record.co2Used}</td>
+                          <td>
+                            {record.employee?.firstName}{" "}
+                            {record.employee?.lastName}
+                          </td>
+                          <td>{record.transportation?.name || "N/A"}</td>
+                          <td>
+                            <div className="d-flex gap-2 justify-content-center">
+                              {isRecordEditable(record) ? (
+                                <>
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    onClick={() => handleEdit(record)}
+                                  >
+                                    <i className="fas fa-edit"></i>
+                                  </Button>
+                                  <Button
+                                    variant="outline-danger"
+                                    size="sm"
+                                    onClick={() => confirmDelete(record)}
+                                  >
+                                    <i className="fas fa-trash"></i>
+                                  </Button>
+                                </>
+                              ) : (
+                                <span className="text-muted small">
+                                  Locked (previous year)
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="9" className="text-center text-muted">
+                          No records found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card.Body>
+          </Card>
 
           {/* Add Modal */}
           <Modal

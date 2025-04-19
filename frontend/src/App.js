@@ -16,6 +16,9 @@ import YearlyReportsPage from "./pages/YearlyReports";
 import InvoicesPage from "./pages/Invoices";
 import ProductsPage from "./pages/Products";
 import LicensePlatePage from "./pages/LicensePlate";
+import ScenariosPage from "./pages/Scenarios";
+import TargetsPage from "./pages/Targets";
+import AnalyticsPage from "./pages/Analytics";
 import { AdminRoute, EmployeeRoute } from "./utils/RouteProtection";
 import "./assets/style.css";
 
@@ -119,6 +122,30 @@ const App = () => {
           element={
             <AdminRoute>
               <LicensePlatePage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/scenarios"
+          element={
+            <AdminRoute>
+              <ScenariosPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/targets"
+          element={
+            <AdminRoute>
+              <TargetsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <AdminRoute>
+              <AnalyticsPage />
             </AdminRoute>
           }
         />

@@ -1,46 +1,38 @@
-import React, { useContext } from "react";
+import React from "react";
 import Select from "react-select";
 
-const EmployeeSelect = ({
-  modalData,
+const EmployeeSingleSelect = ({
+  selectedEmployee,
   employeesState,
   handleEmployeeChange,
   theme = "light",
+  label = "Employee",
+  placeholder = "Select an employee",
+  isClearable = true,
 }) => {
-  const formatEmployeeData = (employee) => {
-    // Make sure we have valid data
-    if (!employee) return null;
-
-    return {
-      value: employee._id ? employee._id : employee.value,
-      label:
-        employee.firstName && employee.lastName
-          ? `${employee.firstName} ${employee.lastName}`
-          : employee.label || "",
-      key: employee._id ? employee._id : employee.value,
-    };
-  };
-
-  // Filter out any null values from the formatted data
-  const selectedEmployees = modalData?.employees
-    ?.map(formatEmployeeData)
-    .filter(Boolean);
+  const formatEmployeeData = (employee) => ({
+    value: employee._id ? employee._id : employee.value,
+    label: `${employee.firstName} ${employee.lastName}`,
+    key: employee._id ? employee._id : employee.value,
+  });
 
   const employeeOptions = employeesState.map(formatEmployeeData);
 
-  console.log("EmployeeSelect - Selected:", selectedEmployees);
-  console.log("EmployeeSelect - Options:", employeeOptions);
+  // Find the selected employee in the options
+  const selectedValue = selectedEmployee
+    ? employeeOptions.find((option) => option.value === selectedEmployee)
+    : null;
 
   const customStyles = {
     control: (provided) => ({
       ...provided,
-      backgroundColor: theme === "dark" ? "#272b30" : provided.backgroundColor,
-      borderColor: theme === "dark" ? "#272b30" : provided.borderColor,
+      backgroundColor: theme === "dark" ? "#1a1d20" : provided.backgroundColor,
+      borderColor: theme === "dark" ? "#343a40" : provided.borderColor,
       color: theme === "dark" ? "#e9ecef" : provided.color,
     }),
     menu: (provided) => ({
       ...provided,
-      backgroundColor: theme === "dark" ? "#272b30" : provided.backgroundColor,
+      backgroundColor: theme === "dark" ? "#1a1d20" : provided.backgroundColor,
     }),
     option: (provided, state) => ({
       ...provided,
@@ -49,8 +41,8 @@ const EmployeeSelect = ({
           ? state.isSelected
             ? "#0d6efd"
             : state.isFocused
-            ? "#272b30"
-            : "#272b30"
+            ? "#343a40"
+            : "#1a1d20"
           : provided.backgroundColor,
       color: theme === "dark" ? "#e9ecef" : provided.color,
     }),
@@ -68,7 +60,7 @@ const EmployeeSelect = ({
     }),
     multiValue: (provided) => ({
       ...provided,
-      backgroundColor: theme === "dark" ? "#272b30" : provided.backgroundColor,
+      backgroundColor: theme === "dark" ? "#343a40" : provided.backgroundColor,
     }),
     multiValueLabel: (provided) => ({
       ...provided,
@@ -78,20 +70,22 @@ const EmployeeSelect = ({
 
   return (
     <div className="mb-3">
-      <label htmlFor="employees" className="form-label">
-        Employees
+      <label htmlFor="employee" className="form-label">
+        {label}
       </label>
       <Select
-        id="employees"
-        isMulti
-        value={selectedEmployees}
+        id="employee"
+        isMulti={false}
+        isClearable={isClearable}
+        value={selectedValue}
         onChange={handleEmployeeChange}
         options={employeeOptions}
         classNamePrefix="react-select"
         styles={customStyles}
+        placeholder={placeholder}
       />
     </div>
   );
 };
 
-export default EmployeeSelect;
+export default EmployeeSingleSelect;

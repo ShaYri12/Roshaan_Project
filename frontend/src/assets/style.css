@@ -748,12 +748,12 @@ h4 {
 
 .light-theme .nav-tabs .nav-link:hover {
   border-color: #e9ecef #e9ecef #dee2e6;
-  background-color: rgba(0, 255, 8, 0.1);
+  background-color: rgba(25, 135, 84, 0.1);
 }
 
 .light-theme .nav-tabs .nav-link.active {
-  color: #10b981;
-  background-color: rgba(0, 255, 8, 0.05);
+  color: #198754;
+  background-color: rgba(25, 135, 84, 0.05);
   font-weight: 600;
 }
 
@@ -767,24 +767,23 @@ h4 {
 
 .dark-theme .nav-tabs .nav-link:hover {
   border-color: #343a40 #343a40 #343a40;
-  background-color: rgba(0, 255, 8, 0.1);
+  background-color: rgba(25, 135, 84, 0.1);
   color: #e9ecef;
 }
 
 .dark-theme .nav-tabs .nav-link.active {
-  background-color: rgba(0, 255, 8, 0.05);
+  background-color: rgba(25, 135, 84, 0.05);
   color: #34d399 !important;
 }
 
 /* Hover effect for nav links */
 .nav-link:hover {
-  background-color: rgba(0, 255, 8, 0.08);
-  background-color: rgba(0, 123, 255, 0.1);
+  background-color: rgba(25, 135, 84, 0.08);
   border-radius: 5px;
 }
 
 .dark-theme .nav-link.active {
-  background-color: rgba(0, 255, 8, 0.05);
+  background-color: rgba(25, 135, 84, 0.05);
   color: #34d399 !important;
   font-weight: 600;
 }
@@ -922,7 +921,7 @@ h4 {
 .btn:focus,
 .form-control:focus,
 .form-select:focus {
-  box-shadow: 0 0 0 0.25rem rgba(63, 248, 63, 0.25);
+  box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
   outline: none;
 }
 
@@ -1001,6 +1000,65 @@ h4 {
   color: #ffffff !important;
 }
 
+/* Fix default Bootstrap blue colors in light mode to maintain green color scheme */
+.light-theme .btn-primary {
+  background-color: #198754 !important;
+  border-color: #198754 !important;
+}
+
+.light-theme .btn-outline-primary {
+  color: #198754 !important;
+  border-color: #198754 !important;
+}
+
+.light-theme .btn-outline-primary:hover {
+  background-color: #198754 !important;
+  color: #ffffff !important;
+}
+
+.light-theme .text-primary {
+  color: #198754 !important;
+}
+
+.light-theme a {
+  color: #198754;
+}
+
+.light-theme a:hover {
+  color: #157347;
+}
+
+.light-theme .nav-link.active {
+  color: #198754;
+  background-color: rgba(25, 135, 84, 0.08);
+  font-weight: 600;
+}
+
+.light-theme .page-link {
+  color: #198754;
+}
+
+.light-theme .page-link:hover {
+  color: #157347;
+  background-color: rgba(25, 135, 84, 0.05);
+}
+
+.light-theme .form-check-input:checked {
+  background-color: #198754;
+  border-color: #198754;
+}
+
+.light-theme .form-control:focus,
+.light-theme .form-select:focus {
+  border-color: #198754;
+  box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+}
+
+.light-theme .dropdown-item.active,
+.light-theme .dropdown-item:active {
+  background-color: #198754;
+}
+
 /* Custom select styles for dark mode */
 .dark-theme .react-select__control {
   background-color: #343a40 !important;
@@ -1022,7 +1080,7 @@ h4 {
 
 .dark-theme
   .react-select__option--is-focused:not(.react-select__option--is-selected) {
-  background-color: #343a40 !important;
+  background-color: rgba(25, 135, 84, 0.1) !important;
 }
 
 .dark-theme .react-select__single-value {
@@ -1775,4 +1833,201 @@ h4 {
   color: #10b981;
   background-color: rgba(0, 255, 8, 0.08);
   font-weight: 600;
+}
+
+/* Additional styles for Bootstrap components to maintain green theme */
+.btn-primary {
+  background-color: #198754 !important;
+  border-color: #198754 !important;
+}
+
+.btn-primary:hover {
+  background-color: #157347 !important;
+  border-color: #146c43 !important;
+}
+
+.btn-check:checked + .btn-primary,
+.btn-check:active + .btn-primary,
+.btn-primary:active,
+.btn-primary.active,
+.show > .btn-primary.dropdown-toggle {
+  background-color: #146c43 !important;
+  border-color: #13653f !important;
+}
+
+/* Override Bootstrap's blue focus styles */
+.btn-check:focus + .btn-primary,
+.btn-primary:focus {
+  background-color: #157347 !important;
+  border-color: #146c43 !important;
+  box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.5) !important;
+}
+
+/* Make sure active buttons and links maintain the green color */
+.active,
+.nav-item.active,
+.submenu-item.active {
+  color: #198754 !important;
+}
+
+.dark-theme .active,
+.dark-theme .nav-item.active,
+.dark-theme .submenu-item.active {
+  color: #34d399 !important;
+}
+
+.light-theme .submenu-item.active {
+  color: #198754 !important;
+  border-left: 2px solid #198754 !important;
+}
+
+/* Ensure react-select components stay green in both themes */
+.light-theme .react-select__option--is-selected {
+  background-color: #198754 !important;
+}
+
+.light-theme
+  .react-select__option--is-focused:not(.react-select__option--is-selected) {
+  background-color: rgba(25, 135, 84, 0.1) !important;
+}
+
+/* Override Bootstrap's blue highlight color for selected text */
+::selection {
+  background-color: rgba(25, 135, 84, 0.3);
+  color: inherit;
+}
+
+/* Override charts and graph colors */
+.light-theme .apexcharts-legend-series .apexcharts-legend-marker {
+  color: #198754 !important;
+}
+
+.light-theme .apexcharts-tooltip-marker {
+  background-color: #198754 !important;
+}
+
+.light-theme .apexcharts-tooltip-series-group.active,
+.light-theme .apexcharts-tooltip-series-group:hover {
+  background-color: rgba(25, 135, 84, 0.1) !important;
+}
+
+.light-theme .apexcharts-xaxistooltip.active,
+.light-theme .apexcharts-yaxistooltip.active {
+  border-color: #198754 !important;
+  background-color: rgba(25, 135, 84, 0.1) !important;
+}
+
+/* Override Bootstrap's blue progress bar */
+.light-theme .progress-bar {
+  background-color: #198754 !important;
+}
+
+/* Fix any remaining button styles */
+.light-theme .btn-info {
+  background-color: #20c997 !important;
+  border-color: #20c997 !important;
+}
+
+.light-theme .btn-info:hover {
+  background-color: #1ba87e !important;
+  border-color: #1ba87e !important;
+}
+
+/* Ensure all themed links are consistent */
+.theme-link {
+  color: #198754 !important;
+}
+
+.theme-link:hover {
+  color: #157347 !important;
+}
+
+/* Ensure Bootstrap alerts use the green theme */
+.light-theme .alert-primary {
+  color: #0f5132;
+  background-color: #d1e7dd;
+  border-color: #badbcc;
+}
+
+/* Fix color for form validation */
+.light-theme .was-validated .form-control:valid,
+.light-theme .form-control.is-valid {
+  border-color: #198754 !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e") !important;
+}
+
+.light-theme .was-validated .form-check-input:valid,
+.light-theme .form-check-input.is-valid {
+  border-color: #198754;
+}
+
+.light-theme .was-validated .form-check-input:valid:checked,
+.light-theme .form-check-input.is-valid:checked {
+  background-color: #198754;
+}
+
+/* Fix badge colors */
+.light-theme .badge-primary {
+  background-color: #198754 !important;
+  color: #fff;
+}
+
+/* Fix any Bootstrap table styles */
+.light-theme .table-primary {
+  --bs-table-bg: rgba(25, 135, 84, 0.1) !important;
+  --bs-table-striped-bg: rgba(25, 135, 84, 0.15) !important;
+  --bs-table-active-bg: rgba(25, 135, 84, 0.2) !important;
+  --bs-table-hover-bg: rgba(25, 135, 84, 0.15) !important;
+  color: #0f5132 !important;
+}
+
+/* Fix datepicker if used */
+.light-theme .react-datepicker__day--selected,
+.light-theme .react-datepicker__day--in-selecting-range,
+.light-theme .react-datepicker__day--in-range,
+.light-theme .react-datepicker__month-text--selected,
+.light-theme .react-datepicker__month-text--in-selecting-range,
+.light-theme .react-datepicker__month-text--in-range,
+.light-theme .react-datepicker__quarter-text--selected,
+.light-theme .react-datepicker__quarter-text--in-selecting-range,
+.light-theme .react-datepicker__quarter-text--in-range,
+.light-theme .react-datepicker__year-text--selected,
+.light-theme .react-datepicker__year-text--in-selecting-range,
+.light-theme .react-datepicker__year-text--in-range {
+  background-color: #198754 !important;
+}
+
+.light-theme .react-datepicker__day--keyboard-selected,
+.light-theme .react-datepicker__month-text--keyboard-selected,
+.light-theme .react-datepicker__quarter-text--keyboard-selected,
+.light-theme .react-datepicker__year-text--keyboard-selected {
+  background-color: rgba(25, 135, 84, 0.1) !important;
+  color: #198754 !important;
+}
+
+/* Override any blue in charts */
+.chart-container .apexcharts-series-markers .apexcharts-marker,
+.chart-container
+  .apexcharts-series.apexcharts-line-series
+  .apexcharts-series-markers
+  .apexcharts-marker {
+  stroke: #198754 !important;
+}
+
+.chart-container
+  .apexcharts-line-series
+  .apexcharts-series-markers
+  .apexcharts-marker.apexcharts-marker-hover {
+  fill: #198754 !important;
+}
+
+.chart-container .apexcharts-legend-series .apexcharts-legend-text {
+  color: inherit !important;
+}
+
+/* Ensure no blue is used in dropdown active states */
+.dropdown-item.active,
+.dropdown-item:active {
+  background-color: #198754 !important;
+  color: white !important;
 }

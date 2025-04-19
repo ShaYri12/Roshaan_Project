@@ -258,6 +258,33 @@ const Sidebar = ({
                       >
                         Energy Emissions
                       </Link>
+                      <Link
+                        to="/scenarios"
+                        className={`submenu-item px-3 py-2 d-block ${
+                          isActive("/scenarios") ? "active" : ""
+                        }`}
+                        onClick={handleNavigation("/scenarios", true)}
+                      >
+                        Scenarios
+                      </Link>
+                      <Link
+                        to="/targets"
+                        className={`submenu-item px-3 py-2 d-block ${
+                          isActive("/targets") ? "active" : ""
+                        }`}
+                        onClick={handleNavigation("/targets", true)}
+                      >
+                        Targets
+                      </Link>
+                      <Link
+                        to="/analytics"
+                        className={`submenu-item px-3 py-2 d-block ${
+                          isActive("/analytics") ? "active" : ""
+                        }`}
+                        onClick={handleNavigation("/analytics", true)}
+                      >
+                        Analytics
+                      </Link>
                     </div>
                   )}
                 </div>

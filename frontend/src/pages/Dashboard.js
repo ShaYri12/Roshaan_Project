@@ -1434,7 +1434,7 @@ const DashboardPage = () => {
           <div className="row mt-3 pb-5 row-gap-3">
             <div className="col-lg-6">
               <div
-                className={`card shadow-lg h-100 bg-${theme} text-${
+                className={`card m-0 shadow-lg h-100 bg-${theme} text-${
                   theme === "light" ? "dark" : "light"
                 } rounded-3`}
               >
@@ -1455,7 +1455,7 @@ const DashboardPage = () => {
             </div>
             <div className="col-lg-6">
               <div
-                className={`card shadow-lg h-100 bg-${theme} text-${
+                className={`card m-0 shadow-lg h-100 bg-${theme} text-${
                   theme === "light" ? "dark" : "light"
                 } rounded-3`}
               >
@@ -1479,7 +1479,7 @@ const DashboardPage = () => {
             </div>
             <div className="col-lg-6 mt-2">
               <div
-                className={`card shadow-lg h-100 bg-${theme} text-${
+                className={`card m-0 shadow-lg h-100 bg-${theme} text-${
                   theme === "light" ? "dark" : "light"
                 } rounded-3`}
               >
@@ -1504,7 +1504,7 @@ const DashboardPage = () => {
 
             <div className="col-lg-6 mt-2">
               <div
-                className={`card shadow-lg h-100 bg-${theme} text-${
+                className={`card m-0 shadow-lg h-100 bg-${theme} text-${
                   theme === "light" ? "dark" : "light"
                 } rounded-3`}
               >

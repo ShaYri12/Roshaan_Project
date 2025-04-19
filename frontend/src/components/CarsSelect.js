@@ -7,14 +7,24 @@ const CarsSelect = ({
   handleCarChange,
   theme = "light",
 }) => {
-  const formatCarData = (car) => ({
-    value: car._id ? car._id : car.value,
-    label: `${car.name}`,
-    key: car._id ? car._id : car.value,
-  });
+  const formatCarData = (car) => {
+    // Make sure we have valid data
+    if (!car) return null;
 
-  const selectedCars = modalData?.cars?.map(formatCarData);
+    return {
+      value: car._id ? car._id : car.value,
+      label: car.name ? `${car.name}` : car.label || "",
+      key: car._id ? car._id : car.value,
+    };
+  };
+
+  // Filter out any null values from the formatted data
+  const selectedCars = modalData?.cars?.map(formatCarData).filter(Boolean);
+
   const carOptions = carsState.map(formatCarData);
+
+  console.log("CarsSelect - Selected:", selectedCars);
+  console.log("CarsSelect - Options:", carOptions);
 
   // Create custom styles for theming the select component
   const customStyles = {

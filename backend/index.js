@@ -24,6 +24,9 @@ const yearlyReportRoutes = require("./routes/yearlyReportRoutes");
 const locationRoutes = require("./routes/locationRoutes");
 const invoiceRoutes = require("./routes/InvoiceRoutes");
 const rdwProxyRoutes = require("./routes/rdwProxy");
+const scenarioRoutes = require("./routes/scenarioRoutes");
+const targetRoutes = require("./routes/targetRoutes");
+const taskRoutes = require("./routes/taskRoutes");
 
 const energyEmissionRoutes = require("./routes/energyEmissions");
 const transportEmissionRoutes = require("./routes/transportEmission");
@@ -59,6 +62,9 @@ app.use("/api/yearly-reports", yearlyReportRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/rdw", rdwProxyRoutes);
+app.use("/api/scenarios", scenarioRoutes);
+app.use("/api/targets", targetRoutes);
+app.use("/api/tasks", taskRoutes);
 
 app.use("/api/energy-emissions", energyEmissionRoutes);
 app.use("/api/transport-emissions", transportEmissionRoutes);
