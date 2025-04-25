@@ -22,15 +22,31 @@ api.interceptors.response.use(
           error.response.data.message ===
             "Token verification failed: jwt expired"))
     ) {
-      console.log("Authentication error detected, redirecting to login");
+      console.log("Authentication error detected");
 
-      // Clear local storage
+      // Set auth error flag
+      localStorage.setItem("auth_error", "true");
+
+      // Clear tokens but keep other data for now
       localStorage.removeItem("token");
-      localStorage.removeItem("userObj");
-      localStorage.removeItem("userData");
 
-      // Redirect to login page
-      window.location.href = "/";
+      // Only redirect if we're not in the middle of rendering a component
+      // This helps prevent React errors during rendering
+      if (!error.config._isRetry) {
+        // Use setTimeout to ensure we're outside React rendering cycle
+        setTimeout(() => {
+          // Check if we already handled this auth error
+          if (localStorage.getItem("auth_error") === "true") {
+            // Clear all auth data
+            localStorage.removeItem("userObj");
+            localStorage.removeItem("userData");
+            localStorage.removeItem("auth_error");
+
+            // Redirect to login page
+            window.location.href = "/";
+          }
+        }, 300);
+      }
 
       return Promise.reject(error);
     }
@@ -72,10 +88,6 @@ export const authenticatedFetch = async (url, options = {}) => {
       ...options.headers,
     };
 
-    console.log(
-      `Fetching ${url} with auth: ${authToken ? "Using token" : "No token"}`
-    );
-
     // Create the request
     const response = await fetch(url, {
       ...options,
@@ -84,12 +96,17 @@ export const authenticatedFetch = async (url, options = {}) => {
 
     // Check if the token is expired
     if (response.status === 401) {
+      let isTokenExpired = false;
+
       try {
         const data = await response.json();
         if (
           data.message === "jwt expired" ||
-          data.message === "Invalid token"
+          data.message === "Invalid token" ||
+          data.message === "Token verification failed: jwt expired"
         ) {
+          isTokenExpired = true;
+
           // If normal token failed and we have JWT_ADMIN_SECRET, try with that instead
           if (token && JWT_ADMIN_SECRET && token !== JWT_ADMIN_SECRET) {
             console.log("Retrying with admin secret");
@@ -111,16 +128,24 @@ export const authenticatedFetch = async (url, options = {}) => {
             }
           }
 
-          // Clear localStorage and redirect to login only if all attempts failed
-          localStorage.removeItem("token");
-          localStorage.removeItem("userObj");
-          localStorage.removeItem("userData");
-
-          window.location.href = "/";
-          throw new Error("Authentication error. Please log in again.");
+          // Instead of immediately redirecting, throw a specific error type
+          // that component can catch and handle appropriately
+          const authError = new Error("Authentication token expired");
+          authError.isAuthError = true;
+          throw authError;
         }
       } catch (jsonError) {
-        // Continue with the error handling below
+        // If we identified token expiration earlier, handle appropriately
+        if (isTokenExpired) {
+          // Clear token but don't redirect - let components handle it
+          localStorage.removeItem("token");
+
+          // Return a special error that components can check for
+          const authError = new Error("Authentication token expired");
+          authError.isAuthError = true;
+          throw authError;
+        }
+        // Otherwise, continue with the error handling below
       }
     }
 
@@ -130,6 +155,11 @@ export const authenticatedFetch = async (url, options = {}) => {
 
     return response;
   } catch (error) {
+    // Pass through auth errors so they can be handled by components
+    if (error.isAuthError) {
+      throw error;
+    }
+
     console.error("Request failed:", error);
     throw error;
   }

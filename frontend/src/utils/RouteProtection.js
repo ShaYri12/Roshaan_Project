@@ -1,5 +1,48 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import { REACT_APP_API_URL } from "../env";
+
+/**
+ * Helper function to verify token validity
+ * @returns {boolean} - True if the token is valid, false otherwise
+ */
+const verifyToken = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return false;
+
+    const response = await fetch(`${REACT_APP_API_URL}/auth/validate-token`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      // Check if token is expired
+      if (
+        data.message === "jwt expired" ||
+        data.message === "Invalid token" ||
+        data.message === "Token verification failed: jwt expired"
+      ) {
+        console.log("Token expired, redirecting to login");
+        // Clear all auth data
+        localStorage.removeItem("token");
+        localStorage.removeItem("userObj");
+        localStorage.removeItem("userData");
+        return false;
+      }
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Token verification error:", error);
+    return false;
+  }
+};
 
 /**
  * AdminRoute - Protects routes that should only be accessible by admins
@@ -7,6 +50,29 @@ import { Navigate, useLocation } from "react-router-dom";
  */
 export const AdminRoute = ({ children }) => {
   const location = useLocation();
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkToken = async () => {
+      const isValidToken = await verifyToken();
+      setIsAuthenticated(isValidToken);
+      setIsVerifying(false);
+    };
+
+    checkToken();
+  }, []);
+
+  // Show nothing while verifying to prevent flash of login page
+  if (isVerifying) {
+    return null;
+  }
+
+  // If token is invalid or expired, redirect to login
+  if (!isAuthenticated) {
+    // Not logged in or token expired, redirect to login
+    return <Navigate to="/" state={{ from: location }} replace />;
+  }
 
   // Check if user is logged in
   const userStr = localStorage.getItem("userObj");
@@ -42,6 +108,7 @@ export const AdminRoute = ({ children }) => {
     // Invalid user data, redirect to login
     localStorage.removeItem("userObj");
     localStorage.removeItem("token");
+    localStorage.removeItem("userData");
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 };
@@ -52,6 +119,29 @@ export const AdminRoute = ({ children }) => {
  */
 export const EmployeeRoute = ({ children }) => {
   const location = useLocation();
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkToken = async () => {
+      const isValidToken = await verifyToken();
+      setIsAuthenticated(isValidToken);
+      setIsVerifying(false);
+    };
+
+    checkToken();
+  }, []);
+
+  // Show nothing while verifying to prevent flash of login page
+  if (isVerifying) {
+    return null;
+  }
+
+  // If token is invalid or expired, redirect to login
+  if (!isAuthenticated) {
+    // Not logged in or token expired, redirect to login
+    return <Navigate to="/" state={{ from: location }} replace />;
+  }
 
   // Check if this is a redirect from another protected route to prevent loops
   if (location.state && location.state.isRedirected) {
@@ -113,6 +203,7 @@ export const EmployeeRoute = ({ children }) => {
     // Invalid user data, redirect to login
     localStorage.removeItem("userObj");
     localStorage.removeItem("token");
+    localStorage.removeItem("userData");
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 };
@@ -123,6 +214,29 @@ export const EmployeeRoute = ({ children }) => {
  */
 export const AuthRoute = ({ children }) => {
   const location = useLocation();
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkToken = async () => {
+      const isValidToken = await verifyToken();
+      setIsAuthenticated(isValidToken);
+      setIsVerifying(false);
+    };
+
+    checkToken();
+  }, []);
+
+  // Show nothing while verifying to prevent flash of login page
+  if (isVerifying) {
+    return null;
+  }
+
+  // If token is invalid or expired, redirect to login
+  if (!isAuthenticated) {
+    // Not logged in or token expired, redirect to login
+    return <Navigate to="/" state={{ from: location }} replace />;
+  }
 
   // Check if user is logged in
   const token = localStorage.getItem("token");

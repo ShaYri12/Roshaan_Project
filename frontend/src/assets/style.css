@@ -776,6 +776,14 @@ h4 {
   color: #34d399 !important;
 }
 
+.dark-theme .nav-item .nav-link {
+  color: #e9ecef;
+}
+
+.nav-dark .nav-item:hover {
+  background-color: transparent;
+}
+
 /* Hover effect for nav links */
 .nav-link:hover {
   background-color: rgba(25, 135, 84, 0.08);
@@ -2030,4 +2038,9 @@ h4 {
 .dropdown-item:active {
   background-color: #198754 !important;
   color: white !important;
+}
+
+.dark-theme .report-details-container p,
+.dark-theme .verification-status-container p {
+  color: #e9ecef;
 }

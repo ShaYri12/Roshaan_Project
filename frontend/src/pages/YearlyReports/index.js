@@ -5,6 +5,8 @@ import Chart from "react-apexcharts";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import Sidebar from "../../components/Sidebar";
+import JaaropgaveExport from "./JaaropgaveExport";
+import { Modal } from "react-bootstrap";
 
 const YearlyReportsPage = () => {
   const navigate = useNavigate();
@@ -20,6 +22,9 @@ const YearlyReportsPage = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [reportToDelete, setReportToDelete] = useState(null);
+  const [showJaaropgaveModal, setShowJaaropgaveModal] = useState(false);
+  const [selectedReportForJaaropgave, setSelectedReportForJaaropgave] =
+    useState(null);
 
   const reportRef = useRef(null);
   const reportSectionRef = useRef(null);
@@ -129,15 +134,6 @@ const YearlyReportsPage = () => {
       width: 3,
     },
     colors: ["#4CAF50"],
-    title: {
-      text: "Monthly CO₂ Emissions",
-      align: "left",
-      style: {
-        fontWeight: "bold",
-        fontSize: "16px",
-        color: chartColors.titleColor,
-      },
-    },
     grid: {
       borderColor: chartColors.gridColor,
       strokeDashArray: 5,
@@ -251,14 +247,6 @@ const YearlyReportsPage = () => {
       },
     },
     colors: ["#2196F3", "#FF9800", "#9C27B0"],
-    title: {
-      text: "CO₂ Emissions by Category",
-      style: {
-        fontSize: "16px",
-        color: chartColors.titleColor,
-        fontWeight: "bold",
-      },
-    },
     labels: ["Transportation", "Energy", "Other"],
     tooltip: {
       theme: theme === "dark" ? "dark" : "light",
@@ -357,7 +345,7 @@ const YearlyReportsPage = () => {
         }
 
         // Then try userData if userObj failed
-        if (!userObj || !userObj._id) {
+        if (!userObj) {
           try {
             const userDataStr = localStorage.getItem("userData");
             if (userDataStr) {
@@ -368,9 +356,14 @@ const YearlyReportsPage = () => {
           }
         }
 
-        if (token && userObj && userObj._id) {
-          console.log("User data found:", userObj._id);
-          setUserData(userObj);
+        // Check for both id and _id formats
+        if (token && userObj && (userObj._id || userObj.id)) {
+          console.log("User data found:", userObj._id || userObj.id);
+          // Use the available id format and store in userData state
+          setUserData({
+            _id: userObj._id || userObj.id,
+            role: userObj.role || "admin", // Default to admin if no role specified
+          });
         } else if (token) {
           // We have a token but no user data - use a default for development
           console.warn("Token found but no user data, using default user ID");
@@ -402,7 +395,8 @@ const YearlyReportsPage = () => {
           const userObjStr = localStorage.getItem("userObj");
           if (userObjStr) {
             const userObj = JSON.parse(userObjStr);
-            userId = userObj._id;
+            // Check for both id and _id formats
+            userId = userObj._id || userObj.id;
           }
         } catch (e) {
           console.error("Error getting user ID from userObj:", e);
@@ -413,7 +407,8 @@ const YearlyReportsPage = () => {
             const userDataStr = localStorage.getItem("userData");
             if (userDataStr) {
               const userData = JSON.parse(userDataStr);
-              userId = userData._id;
+              // Check for both id and _id formats
+              userId = userData._id || userData.id;
             }
           } catch (e) {
             console.error("Error getting user ID from userData:", e);
@@ -575,8 +570,9 @@ const YearlyReportsPage = () => {
         const userObjStr = localStorage.getItem("userObj");
         if (userObjStr) {
           const userObj = JSON.parse(userObjStr);
-          if (userObj && userObj._id) {
-            userId = userObj._id;
+          if (userObj) {
+            // Check for both id and _id formats
+            userId = userObj._id || userObj.id;
           }
         }
       } catch (e) {
@@ -589,8 +585,9 @@ const YearlyReportsPage = () => {
           const userDataStr = localStorage.getItem("userData");
           if (userDataStr) {
             const userData = JSON.parse(userDataStr);
-            if (userData && userData._id) {
-              userId = userData._id;
+            if (userData) {
+              // Check for both id and _id formats
+              userId = userData._id || userData.id;
             }
           }
         } catch (e) {
@@ -599,8 +596,9 @@ const YearlyReportsPage = () => {
       }
 
       // Use userData state as fallback
-      if (!userId && userData && userData._id) {
-        userId = userData._id;
+      if (!userId && userData) {
+        // Check for both id and _id formats in userData state
+        userId = userData._id || userData.id;
       }
 
       // Final fallback for development
@@ -820,40 +818,22 @@ const YearlyReportsPage = () => {
 
     setIsGeneratingPdf(true);
     try {
-      const reportElement = reportRef.current;
-      const canvas = await html2canvas(reportElement, {
-        scale: 2,
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-      });
-
-      const imgData = canvas.toDataURL("image/png");
+      // Create a new PDF document
       const pdf = new jsPDF("p", "mm", "a4");
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 15;
 
-      // Add company logo or header
+      // Step 1: Add PDF Header
       pdf.setFontSize(22);
-      pdf.setTextColor(20, 80, 140); // Dark blue
-      pdf.text(`CO₂ Emissions Yearly Report`, 105, 15, {
+      pdf.setTextColor(40, 40, 40);
+      pdf.text(`Emissions Report ${reportData.year}`, pageWidth / 2, 20, {
         align: "center",
       });
 
-      // Add year subtitle
-      pdf.setFontSize(18);
-      pdf.setTextColor(60, 60, 60);
-      pdf.text(`Year: ${reportData.year}`, 105, 25, {
-        align: "center",
-      });
-
-      // Add organization info
-      const userObj = JSON.parse(localStorage.getItem("userObj"));
-      const orgName =
-        userObj?.company?.name || userObj?.organization || "Your Organization";
-      pdf.setFontSize(12);
-      pdf.setTextColor(80, 80, 80);
-      pdf.text(`Organization: ${orgName}`, 105, 35, {
+      // Add subtitle with CO2 text
+      pdf.setFontSize(16);
+      pdf.text(`Annual CO2 Emissions Report`, pageWidth / 2, 30, {
         align: "center",
       });
 
@@ -861,113 +841,166 @@ const YearlyReportsPage = () => {
       pdf.setFontSize(10);
       pdf.setTextColor(100, 100, 100);
       pdf.text(
-        `Generated on: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`,
-        105,
-        42,
+        `Generated on: ${new Date().toLocaleDateString()}`,
+        pageWidth / 2,
+        38,
         {
           align: "center",
         }
       );
 
-      // Add the report image
-      pdf.addImage(imgData, "PNG", 0, 48, imgWidth, imgHeight);
+      let currentY = 45;
 
-      // Add summary table
-      const finalY = 48 + imgHeight + 10;
-      pdf.setFontSize(14);
-      pdf.setTextColor(20, 80, 140);
-      pdf.text("Summary of Emissions", 105, finalY, { align: "center" });
-
-      pdf.setFontSize(10);
-      pdf.setTextColor(60, 60, 60);
-
-      // Summary table
-      const summaryData = [
-        ["Total Emissions", `${reportData.totalEmissions} tonnes CO₂`],
-        [
-          "Transportation Emissions",
-          `${reportData.categoryData[0]} tonnes CO₂`,
-        ],
-        ["Energy Emissions", `${reportData.categoryData[1]} tonnes CO₂`],
-        ["Other Emissions", `${reportData.categoryData[2]} tonnes CO₂`],
-        [
-          "Average Monthly Emissions",
-          `${Math.round(reportData.totalEmissions / 12)} tonnes CO₂`,
-        ],
-      ];
-
-      // Draw summary table
-      pdf.autoTable({
-        startY: finalY + 5,
-        head: [["Category", "Amount"]],
-        body: summaryData,
-        theme: "grid",
-        headStyles: { fillColor: [20, 80, 140], textColor: [255, 255, 255] },
-        styles: { fontSize: 10 },
-        margin: { left: 50, right: 50 },
-      });
-
-      // Add recommendations section
-      const tableEndY = pdf.previousAutoTable.finalY + 10;
-      pdf.setFontSize(14);
-      pdf.setTextColor(20, 80, 140);
-      pdf.text("Recommendations", 105, tableEndY, { align: "center" });
-
-      pdf.setFontSize(10);
-      pdf.setTextColor(60, 60, 60);
-
-      // Simple recommendations based on data
-      const highestEmissionMonth = reportData.monthlyData.indexOf(
-        Math.max(...reportData.monthlyData)
+      // Step 2: Capture and add Total Emissions section
+      const totalEmissionsSection = reportRef.current.querySelector(
+        ".card-body.text-center.py-4"
       );
-      const months = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ];
+      if (totalEmissionsSection) {
+        const totalEmissionsCanvas = await html2canvas(totalEmissionsSection, {
+          scale: 2,
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: theme === "dark" ? "#1a1d20" : "#ffffff",
+        });
 
-      pdf.text(
-        [
-          `1. Focus on reducing emissions in ${months[highestEmissionMonth]}, your highest emission month.`,
-          `2. Consider strategies to lower ${
-            reportData.categoryData.indexOf(
-              Math.max(...reportData.categoryData)
-            ) === 0
-              ? "transportation"
-              : "energy"
-          } emissions, your largest source.`,
-          `3. Set a target to reduce overall emissions by 10% next year.`,
-          `4. Implement regular monitoring and tracking of emissions to identify reduction opportunities.`,
-        ],
-        20,
-        tableEndY + 10
+        const imgWidth = pageWidth - margin * 2;
+        const imgHeight =
+          (totalEmissionsCanvas.height * imgWidth) / totalEmissionsCanvas.width;
+
+        pdf.addImage(
+          totalEmissionsCanvas.toDataURL("image/png"),
+          "PNG",
+          margin,
+          currentY,
+          imgWidth,
+          imgHeight,
+          "",
+          "FAST"
+        );
+
+        currentY += imgHeight + 15;
+      }
+
+      // Step 3: Capture and add Monthly Distribution section
+      const monthlySection = reportRef.current.querySelector(
+        ".card-body:has(.fas.fa-chart-line)"
       );
+      if (monthlySection) {
+        if (currentY + 100 > pageHeight) {
+          pdf.addPage();
+          currentY = margin;
+        }
 
-      // Add footer
-      const pageCount = pdf.internal.getNumberOfPages();
-      pdf.setFontSize(8);
-      pdf.setTextColor(100, 100, 100);
-      for (let i = 1; i <= pageCount; i++) {
-        pdf.setPage(i);
-        pdf.text(
-          `Page ${i} of ${pageCount} - Generated by CO₂ Emissions Tracker - Report ID: ${reportData.reportId}`,
-          105,
-          290,
-          { align: "center" }
+        const monthlyCanvas = await html2canvas(monthlySection, {
+          scale: 2,
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: theme === "dark" ? "#1a1d20" : "#ffffff",
+        });
+
+        const imgWidth = pageWidth - margin * 2;
+        const imgHeight =
+          (monthlyCanvas.height * imgWidth) / monthlyCanvas.width;
+
+        pdf.addImage(
+          monthlyCanvas.toDataURL("image/png"),
+          "PNG",
+          margin,
+          currentY,
+          imgWidth,
+          imgHeight,
+          "",
+          "FAST"
+        );
+
+        currentY += imgHeight + 15;
+      }
+
+      // Step 4: Capture and add Emissions by Category section
+      const categorySection = reportRef.current.querySelector(
+        ".card-body:has(.fas.fa-chart-pie)"
+      );
+      if (categorySection) {
+        if (currentY + 100 > pageHeight) {
+          pdf.addPage();
+          currentY = margin;
+        }
+
+        const categoryCanvas = await html2canvas(categorySection, {
+          scale: 2,
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: theme === "dark" ? "#1a1d20" : "#ffffff",
+        });
+
+        const imgWidth = pageWidth - margin * 2;
+        const imgHeight =
+          (categoryCanvas.height * imgWidth) / categoryCanvas.width;
+
+        pdf.addImage(
+          categoryCanvas.toDataURL("image/png"),
+          "PNG",
+          margin,
+          currentY,
+          imgWidth,
+          imgHeight,
+          "",
+          "FAST"
+        );
+
+        currentY += imgHeight + 15;
+      }
+
+      // Step 5: Capture and add Summary section
+      const summarySection = reportRef.current.querySelector(
+        ".card-body:has(.fas.fa-list-alt)"
+      );
+      if (summarySection) {
+        if (currentY + 100 > pageHeight) {
+          pdf.addPage();
+          currentY = margin;
+        }
+
+        const summaryCanvas = await html2canvas(summarySection, {
+          scale: 2,
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: theme === "dark" ? "#1a1d20" : "#ffffff",
+        });
+
+        const imgWidth = pageWidth - margin * 2;
+        const imgHeight =
+          (summaryCanvas.height * imgWidth) / summaryCanvas.width;
+
+        pdf.addImage(
+          summaryCanvas.toDataURL("image/png"),
+          "PNG",
+          margin,
+          currentY,
+          imgWidth,
+          imgHeight,
+          "",
+          "FAST"
         );
       }
 
+      // Add page numbers
+      const totalPages = pdf.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(10);
+        pdf.setTextColor(100, 100, 100);
+        pdf.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, {
+          align: "center",
+        });
+      }
+
       // Save the PDF
-      pdf.save(`CO2_Yearly_Report_${reportData.year}.pdf`);
+      pdf.save(`CO2_Emissions_Report_${reportData.year}.pdf`);
     } catch (error) {
       console.error("Error generating PDF:", error);
       alert(`Failed to generate PDF: ${error.message}`);
@@ -1165,7 +1198,13 @@ const YearlyReportsPage = () => {
 
     setMonthlyEmissions(updatedMonthlyConfig);
     setCategoryEmissions(updatedCategoryConfig);
-  }, [theme, selectedYear, categoryEmissions, monthlyEmissions]);
+  }, [theme, selectedYear]);
+
+  // Function to open Jaaropgave export
+  const openJaaropgaveExport = (reportId) => {
+    setSelectedReportForJaaropgave(reportId);
+    setShowJaaropgaveModal(true);
+  };
 
   return (
     <div className={`dashboard-container bg-${theme}`}>
@@ -1190,7 +1229,7 @@ const YearlyReportsPage = () => {
           <div className="row mb-4">
             <div className="col-xl-4 col-lg-5 col-md-7 mb-4">
               <div
-                className={`card m-0 p-0 h-100 border-0 shadow-sm ${
+                className={`card m-0 m-0 p-0 h-100 border-0 shadow-sm ${
                   theme === "dark" ? "bg-dark text-light" : "bg-white"
                 }`}
               >
@@ -1252,7 +1291,7 @@ const YearlyReportsPage = () => {
 
             <div className="col-md-12 mb-4">
               <div
-                className={`card m-0 p-0 h-100 border-0 shadow-sm ${
+                className={`card m-0 m-0 p-0 h-100 border-0 shadow-sm ${
                   theme === "dark" ? "bg-dark text-light" : "bg-white"
                 }`}
               >
@@ -1287,7 +1326,8 @@ const YearlyReportsPage = () => {
                         <thead>
                           <tr>
                             <th>
-                              <i className="fas fa-id-card me-2"></i>Report ID
+                              <i className="fas fa-id-card m-0 me-2"></i>Report
+                              ID
                             </th>
                             <th>
                               <i className="fas fa-calendar me-2"></i>Year
@@ -1351,6 +1391,17 @@ const YearlyReportsPage = () => {
                                     }
                                   >
                                     <i className="fas fa-eye"></i>
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-outline-success"
+                                    onClick={() =>
+                                      openJaaropgaveExport(
+                                        report.reportId || report._id
+                                      )
+                                    }
+                                    title="VSME Jaaropgave Export"
+                                  >
+                                    <i className="fas fa-file-export"></i>
                                   </button>
                                   <button
                                     className="btn btn-sm btn-outline-danger"
@@ -1433,7 +1484,7 @@ const YearlyReportsPage = () => {
                     <div className="row">
                       <div className="col-md-4 mb-4">
                         <div
-                          className={`card h-100 border-0 ${
+                          className={`card m-0 h-100 border-0 ${
                             theme === "dark"
                               ? "bg-dark-secondary text-light"
                               : "bg-light"
@@ -1500,7 +1551,7 @@ const YearlyReportsPage = () => {
 
                       <div className="col-md-8 mb-4">
                         <div
-                          className={`card h-100 border-0 ${
+                          className={`card m-0 h-100 border-0 ${
                             theme === "dark"
                               ? "bg-dark-secondary text-light"
                               : "bg-light"
@@ -1541,10 +1592,10 @@ const YearlyReportsPage = () => {
                       </div>
                     </div>
 
-                    <div className="row">
-                      <div className="col-md-6 mb-4">
+                    <div className="d-flex gap-4 flex-wrap">
+                      <div className="flex-fill mb-4">
                         <div
-                          className={`card h-100 border-0 ${
+                          className={`card m-0 h-100 border-0 ${
                             theme === "dark"
                               ? "bg-dark-secondary text-light"
                               : "bg-light"
@@ -1578,15 +1629,17 @@ const YearlyReportsPage = () => {
                                 series={categoryEmissionsSeries}
                                 type="donut"
                                 height={320}
+                                width="100%"
+                                className="w-100 d-flex justify-content-center align-items-center"
                               />
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      <div className="col-md-6 mb-4">
+                      <div className="flex-fill mb-4">
                         <div
-                          className={`card h-100 border-0 ${
+                          className={`card m-0 h-100 border-0 ${
                             theme === "dark"
                               ? "bg-dark-secondary text-light"
                               : "bg-light"
@@ -1802,6 +1855,28 @@ const YearlyReportsPage = () => {
           onClick={() => setShowDeleteConfirm(false)}
         ></div>
       )}
+
+      {/* Add the Modal for Jaaropgave Export */}
+      <Modal
+        show={showJaaropgaveModal}
+        onHide={() => setShowJaaropgaveModal(false)}
+        size="xl"
+        backdrop="static"
+        className={theme === "dark" ? "dark-theme-modal" : ""}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>VSME Compliant Jaaropgave Export</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-0">
+          {selectedReportForJaaropgave && (
+            <JaaropgaveExport
+              reportId={selectedReportForJaaropgave}
+              theme={theme}
+              onClose={() => setShowJaaropgaveModal(false)}
+            />
+          )}
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

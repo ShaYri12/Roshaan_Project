@@ -19,6 +19,13 @@ router.get(
   yearlyReportController.getReportByYear
 );
 
+// New route for Jaaropgave export in various formats
+router.get(
+  "/jaaropgave/:reportId/:format",
+  authMiddleware,
+  yearlyReportController.generateJaaropgaveExport
+);
+
 // Delete a report
 router.delete("/:id", authMiddleware, yearlyReportController.deleteReport);
 
