@@ -1,10 +1,391 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, memo } from "react";
 import { CiLogout } from "react-icons/ci";
 import { FaBars, FaShippingFast, FaCog, FaBuilding } from "react-icons/fa";
 import { MdTravelExplore } from "react-icons/md";
 import { BsCloudHaze2Fill } from "react-icons/bs";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
+// Reusable MenuItem Component
+const MenuItem = ({ icon, title, isExpanded, isSidebarOpen, onToggle }) => {
+  return (
+    <div
+      className={`nav-item px-3 py-2 d-flex align-items-center justify-content-between ${
+        isExpanded ? "active" : ""
+      }`}
+      onClick={onToggle}
+      style={{ cursor: "pointer" }}
+    >
+      <div
+        className={`d-flex align-items-center ${
+          !isSidebarOpen && "justify-content-center w-100"
+        }`}
+      >
+        <span className="nav-icon me-0">{icon}</span>
+        {isSidebarOpen && <span className="nav-text ms-2">{title}</span>}
+      </div>
+      {isSidebarOpen && (
+        <i className={`fas fa-chevron-${isExpanded ? "up" : "down"}`}></i>
+      )}
+    </div>
+  );
+};
+
+// SubMenuItem Component for route navigation
+const NavLinkItem = ({ to, isActive, onClick, children }) => {
+  return (
+    <Link
+      to={to}
+      className={`submenu-item px-3 py-2 d-block ${isActive ? "active" : ""}`}
+      onClick={onClick}
+    >
+      {children}
+    </Link>
+  );
+};
+
+// Button SubMenuItem Component for modal triggers - memoized to prevent unnecessary re-renders
+const ButtonItem = memo(({ onClick, children }) => {
+  return (
+    <button
+      className="submenu-item px-3 py-2 d-block w-100 text-start border-0 bg-transparent"
+      onClick={(e) => {
+        // Stop propagation to prevent parent elements from receiving the event
+        e.stopPropagation();
+        onClick(e);
+      }}
+    >
+      {children}
+    </button>
+  );
+});
+
+// Admin Travel & Commute Menu
+const TravelAndCommuteMenu = ({
+  isSidebarOpen,
+  expandedItem,
+  toggleExpand,
+  isActive,
+  handleNavigation,
+}) => {
+  return (
+    <div className="nav-group mb-1">
+      <MenuItem
+        icon={<MdTravelExplore size={22} />}
+        title="Travel & Commute"
+        isExpanded={expandedItem === "travel"}
+        isSidebarOpen={isSidebarOpen}
+        onToggle={() => toggleExpand("travel")}
+      />
+
+      {isSidebarOpen && expandedItem === "travel" && (
+        <div className="submenu">
+          <NavLinkItem
+            to="/transport-emissions"
+            isActive={isActive("/transport-emissions")}
+            onClick={handleNavigation("/transport-emissions", true)}
+          >
+            Transport Emissions
+          </NavLinkItem>
+          <NavLinkItem
+            to="/vehicles"
+            isActive={isActive("/vehicles")}
+            onClick={handleNavigation("/vehicles", true)}
+          >
+            Vehicles
+          </NavLinkItem>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Admin Greenhouse & Emissions Menu
+const GreenhouseEmissionsMenu = ({
+  isSidebarOpen,
+  expandedItem,
+  toggleExpand,
+  isActive,
+  handleNavigation,
+}) => {
+  return (
+    <div className="nav-group mb-1">
+      <MenuItem
+        icon={<BsCloudHaze2Fill size={22} />}
+        title="Greenhouse & Emissions"
+        isExpanded={expandedItem === "emissions"}
+        isSidebarOpen={isSidebarOpen}
+        onToggle={() => toggleExpand("emissions")}
+      />
+
+      {isSidebarOpen && expandedItem === "emissions" && (
+        <div className="submenu">
+          <NavLinkItem
+            to="/emissions"
+            isActive={isActive("/emissions")}
+            onClick={handleNavigation("/emissions", true)}
+          >
+            Emissions
+          </NavLinkItem>
+          <NavLinkItem
+            to="/emission-types"
+            isActive={isActive("/emission-types")}
+            onClick={handleNavigation("/emission-types", true)}
+          >
+            Emission Types
+          </NavLinkItem>
+          <NavLinkItem
+            to="/energy-emissions"
+            isActive={isActive("/energy-emissions")}
+            onClick={handleNavigation("/energy-emissions", true)}
+          >
+            Energy Emissions
+          </NavLinkItem>
+          <NavLinkItem
+            to="/scenarios"
+            isActive={isActive("/scenarios")}
+            onClick={handleNavigation("/scenarios", true)}
+          >
+            Scenarios
+          </NavLinkItem>
+          <NavLinkItem
+            to="/targets"
+            isActive={isActive("/targets")}
+            onClick={handleNavigation("/targets", true)}
+          >
+            Targets
+          </NavLinkItem>
+          <NavLinkItem
+            to="/analytics"
+            isActive={isActive("/analytics")}
+            onClick={handleNavigation("/analytics", true)}
+          >
+            Analytics
+          </NavLinkItem>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Admin Purchased Goods Menu
+const PurchasedGoodsMenu = ({
+  isSidebarOpen,
+  expandedItem,
+  toggleExpand,
+  isActive,
+  handleNavigation,
+}) => {
+  return (
+    <div className="nav-group mb-1">
+      <MenuItem
+        icon={<FaBuilding size={22} />}
+        title="Purchased Goods"
+        isExpanded={expandedItem === "products"}
+        isSidebarOpen={isSidebarOpen}
+        onToggle={() => toggleExpand("products")}
+      />
+
+      {isSidebarOpen && expandedItem === "products" && (
+        <div className="submenu">
+          <NavLinkItem
+            to="/products"
+            isActive={isActive("/products")}
+            onClick={handleNavigation("/products", true)}
+          >
+            Products
+          </NavLinkItem>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Admin Freight Transports Menu
+const FreightTransportsMenu = ({
+  isSidebarOpen,
+  expandedItem,
+  toggleExpand,
+}) => {
+  return (
+    <div className="nav-group mb-1">
+      <MenuItem
+        icon={<FaShippingFast size={22} />}
+        title="Freight Transports"
+        isExpanded={expandedItem === "freight"}
+        isSidebarOpen={isSidebarOpen}
+        onToggle={() => toggleExpand("freight")}
+      />
+
+      {isSidebarOpen && expandedItem === "freight" && (
+        <div className="submenu">
+          {/* Currently no freight transport pages */}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Admin Others Menu
+const OthersMenu = ({
+  isSidebarOpen,
+  expandedItem,
+  toggleExpand,
+  isActive,
+  handleNavigation,
+}) => {
+  return (
+    <div className="nav-group mb-1">
+      <MenuItem
+        icon={<FaCog size={22} />}
+        title="Others"
+        isExpanded={expandedItem === "others"}
+        isSidebarOpen={isSidebarOpen}
+        onToggle={() => toggleExpand("others")}
+      />
+
+      {isSidebarOpen && expandedItem === "others" && (
+        <div className="submenu">
+          <NavLinkItem
+            to="/companies"
+            isActive={isActive("/companies")}
+            onClick={handleNavigation("/companies", true)}
+          >
+            Company Locations
+          </NavLinkItem>
+          <NavLinkItem
+            to="/employees"
+            isActive={isActive("/employees")}
+            onClick={handleNavigation("/employees", true)}
+          >
+            Employees
+          </NavLinkItem>
+          <NavLinkItem
+            to="/yearly-reports"
+            isActive={isActive("/yearly-reports")}
+            onClick={handleNavigation("/yearly-reports", true)}
+          >
+            Yearly Reports
+          </NavLinkItem>
+          <NavLinkItem
+            to="/invoices"
+            isActive={isActive("/invoices")}
+            onClick={handleNavigation("/invoices", true)}
+          >
+            Invoices
+          </NavLinkItem>
+          <NavLinkItem
+            to="/license-plate"
+            isActive={isActive("/license-plate")}
+            onClick={handleNavigation("/license-plate", true)}
+          >
+            License Plate CO₂
+          </NavLinkItem>
+          <NavLinkItem
+            to="/dashboard"
+            isActive={isActive("/dashboard")}
+            onClick={handleNavigation("/dashboard", true)}
+          >
+            Dashboard
+          </NavLinkItem>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Employee Menu component optimized with useCallback
+const EmployeeMenu = memo(
+  ({
+    isSidebarOpen,
+    expandedItem,
+    toggleExpand,
+    isActive,
+    handleNavigation,
+  }) => {
+    // Create stable event handlers using useCallback
+    const openTransportModal = useCallback((e) => {
+      e.stopPropagation();
+      const event = new CustomEvent("openTransportModal");
+      window.dispatchEvent(event);
+    }, []);
+
+    const openWorkTransportModal = useCallback((e) => {
+      e.stopPropagation();
+      const event = new CustomEvent("openWorkTransportModal");
+      window.dispatchEvent(event);
+    }, []);
+
+    const openVehicleModal = useCallback((e) => {
+      e.stopPropagation();
+      const event = new CustomEvent("openVehicleModal");
+      window.dispatchEvent(event);
+    }, []);
+
+    const openOtherResourceModal = useCallback((e) => {
+      e.stopPropagation();
+      const event = new CustomEvent("openOtherResourceModal");
+      window.dispatchEvent(event);
+    }, []);
+
+    const openProfileModal = useCallback((e) => {
+      e.stopPropagation();
+      const event = new CustomEvent("openProfileModal");
+      window.dispatchEvent(event);
+    }, []);
+
+    // Memoize the onToggle function to prevent re-renders
+    const handleToggleExpand = useCallback(() => {
+      toggleExpand("travel");
+    }, [toggleExpand]);
+
+    return (
+      <div className="nav-group mb-1">
+        <MenuItem
+          icon={<MdTravelExplore size={22} />}
+          title="Travel & Commute"
+          isExpanded={expandedItem === "travel"}
+          isSidebarOpen={isSidebarOpen}
+          onToggle={handleToggleExpand}
+        />
+
+        {isSidebarOpen && expandedItem === "travel" && (
+          <div className="submenu">
+            <NavLinkItem
+              to="/user-dashboard"
+              isActive={isActive("/user-dashboard")}
+              onClick={handleNavigation("/user-dashboard", false, true)}
+            >
+              <i className="fas fa-tachometer-alt me-2"></i>
+              My Dashboard
+            </NavLinkItem>
+            <ButtonItem onClick={openTransportModal}>
+              <i className="fas fa-car me-2"></i>
+              Add New Transport
+            </ButtonItem>
+            <ButtonItem onClick={openWorkTransportModal}>
+              <i className="fas fa-truck me-2"></i>
+              Add New Work Transport
+            </ButtonItem>
+            <ButtonItem onClick={openVehicleModal}>
+              <i className="fas fa-plus-circle me-2"></i>
+              Register Vehicle
+            </ButtonItem>
+            <ButtonItem onClick={openOtherResourceModal}>
+              <i className="fas fa-plus me-2"></i>
+              Add Other Resource
+            </ButtonItem>
+            <ButtonItem onClick={openProfileModal}>
+              <i className="fas fa-user-edit me-2"></i>
+              Profile
+            </ButtonItem>
+          </div>
+        )}
+      </div>
+    );
+  }
+);
+
+// Main Sidebar Component
 const Sidebar = ({
   userData,
   theme,
@@ -18,57 +399,72 @@ const Sidebar = ({
   const [expandedItem, setExpandedItem] = useState(null);
   const [unauthorizedMessage, setUnauthorizedMessage] = useState(null);
 
-  // Determine if user is admin
+  // Determine if user is admin or employee
   const isAdmin = userData?.role === "admin";
   const isEmployee = userData?.role === "employee";
 
-  // Check if a path is active
-  const isActive = (path) => location.pathname === path;
+  // Check if a path is active - memoized
+  const isActive = useCallback(
+    (path) => location.pathname === path,
+    [location.pathname]
+  );
 
-  // Toggle expanded state for menu items
-  const toggleExpand = (itemName) => {
-    setIsSidebarOpen(true);
-    if (expandedItem === itemName) {
-      setExpandedItem(null);
-    } else {
-      setExpandedItem(itemName);
-    }
-  };
+  // Toggle expanded state for menu items - memoized
+  const toggleExpand = useCallback(
+    (itemName) => {
+      setIsSidebarOpen(true);
+      setExpandedItem((prev) => (prev === itemName ? null : itemName));
+    },
+    [setIsSidebarOpen]
+  );
 
-  // Enhanced link handler to prevent unauthorized navigation
-  const handleNavigation =
+  // Add a stopPropagation utility for footer buttons - memoized
+  const handleFooterButtonClick = useCallback(
+    (callback) => (e) => {
+      e.stopPropagation(); // Stop event from bubbling up
+      if (typeof callback === "function") {
+        callback();
+      }
+    },
+    []
+  );
+
+  // Enhanced link handler to prevent unauthorized navigation - memoized
+  const handleNavigation = useCallback(
     (path, requiresAdmin = false, requiresEmployee = false) =>
-    (e) => {
-      // Clear any previous unauthorized message
-      setUnauthorizedMessage(null);
+      (e) => {
+        // Clear any previous unauthorized message
+        setUnauthorizedMessage(null);
 
-      // Check access permissions
-      if (requiresAdmin && !isAdmin) {
-        e.preventDefault();
-        setUnauthorizedMessage(
-          "You don't have permission to access the admin area"
-        );
-        setTimeout(() => setUnauthorizedMessage(null), 3000);
-        return;
-      }
+        // Check access permissions
+        if (requiresAdmin && !isAdmin) {
+          e.preventDefault();
+          setUnauthorizedMessage(
+            "You don't have permission to access the admin area"
+          );
+          setTimeout(() => setUnauthorizedMessage(null), 3000);
+          return;
+        }
 
-      if (requiresEmployee && !isEmployee) {
-        e.preventDefault();
-        setUnauthorizedMessage(
-          "You don't have permission to access the employee area"
-        );
-        setTimeout(() => setUnauthorizedMessage(null), 3000);
-        return;
-      }
+        if (requiresEmployee && !isEmployee) {
+          e.preventDefault();
+          setUnauthorizedMessage(
+            "You don't have permission to access the employee area"
+          );
+          setTimeout(() => setUnauthorizedMessage(null), 3000);
+          return;
+        }
 
-      // Navigation is allowed
-      navigate(path);
+        // Navigation is allowed
+        navigate(path);
 
-      // Close sidebar on mobile after navigation
-      if (window.innerWidth <= 768) {
-        setIsSidebarOpen(false);
-      }
-    };
+        // Close sidebar on mobile after navigation
+        if (window.innerWidth <= 768) {
+          setIsSidebarOpen(false);
+        }
+      },
+    [isAdmin, isEmployee, navigate, setIsSidebarOpen]
+  );
 
   // Close sidebar on mobile devices when the component mounts
   useEffect(() => {
@@ -83,13 +479,91 @@ const Sidebar = ({
     return () => window.removeEventListener("resize", handleResize);
   }, [setIsSidebarOpen]);
 
+  // Memoized sidebar toggle handler
+  const handleSidebarToggle = useCallback(() => {
+    setIsSidebarOpen(!isSidebarOpen);
+  }, [isSidebarOpen, setIsSidebarOpen]);
+
+  // Sidebar header with logo and toggle button - memoized
+  const SidebarHeader = useCallback(
+    () => (
+      <div className="sidebar-header d-md-flex align-items-center justify-content-between">
+        <button
+          className={`btn sidebar-toggle d-none d-md-flex align-items-center justify-content-center ${
+            isSidebarOpen ? "" : "sidebar-toggled"
+          }`}
+          onClick={handleSidebarToggle}
+        >
+          <FaBars />
+        </button>
+        <div
+          className={`welcome-section mt-md-0 mt-4 ${
+            isSidebarOpen ? "" : "d-none"
+          }`}
+        >
+          <div className="sidebar-header-logo">
+            {theme === "light" ? (
+              <img
+                src="/logo-black.png"
+                alt="Logo"
+                width={128}
+                height={71.41}
+              />
+            ) : (
+              <img
+                src="/logo-white.png"
+                alt="Logo"
+                width={128}
+                height={71.41}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    ),
+    [isSidebarOpen, theme, handleSidebarToggle]
+  );
+
+  // Sidebar footer with theme toggle and logout - memoized
+  const SidebarFooter = useCallback(
+    () => (
+      <div
+        className={`sidebar-footer flex-column ${isSidebarOpen ? "" : "p-2"}`}
+      >
+        <button
+          className={`btn ${
+            theme === "light" ? "btn-outline-success" : "btn-outline-light"
+          } mb-2`}
+          onClick={handleFooterButtonClick(toggleTheme)}
+        >
+          {theme === "light" ? (
+            <i className="fas fa-moon"></i>
+          ) : (
+            <i className="fas fa-sun"></i>
+          )}
+          {isSidebarOpen && <span className="ms-2">Toggle Theme</span>}
+        </button>
+        <button
+          className={`btn btn-outline-danger ${isSidebarOpen ? "" : "px-1"}`}
+          onClick={handleFooterButtonClick(handleLogout)}
+        >
+          {isSidebarOpen ? (
+            <>
+              <CiLogout size={24} className="me-2" /> Logout
+            </>
+          ) : (
+            <CiLogout size={24} />
+          )}
+        </button>
+      </div>
+    ),
+    [isSidebarOpen, theme, handleFooterButtonClick, toggleTheme, handleLogout]
+  );
+
   return (
     <>
       {/* Mobile Toggle Button */}
-      <button
-        className="mobile-sidebar-toggle"
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-      >
+      <button className="mobile-sidebar-toggle" onClick={handleSidebarToggle}>
         <FaBars />
       </button>
 
@@ -103,505 +577,63 @@ const Sidebar = ({
       )}
 
       <div className={`sidebar ${isSidebarOpen ? "open" : "closed"}`}>
-        <div className="sidebar-header d-md-flex align-items-center justify-content-between">
-          <button
-            className={`btn sidebar-toggle d-none d-md-flex align-items-center justify-content-center ${
-              isSidebarOpen ? "" : "sidebar-toggled"
-            }`}
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          >
-            <FaBars />
-          </button>
-          <div
-            className={`welcome-section mt-md-0 mt-4 ${
-              isSidebarOpen ? "" : "d-none"
-            }`}
-          >
-            <div className="sidebar-header-logo">
-              {theme === "light" ? (
-                <img
-                  src="/logo-black.png"
-                  alt="Logo"
-                  width={128}
-                  height={71.41}
-                />
-              ) : (
-                <img
-                  src="/logo-white.png"
-                  alt="Logo"
-                  width={128}
-                  height={71.41}
-                />
-              )}
-            </div>
-          </div>
-        </div>
+        <SidebarHeader />
 
         <div className="sidebar-content custom-scrollbar p-0">
           <nav className="sidebar-nav">
             {isAdmin ? (
               <>
-                {/* ADMIN MENU - 5 buttons */}
-
-                {/* 1. Travel & Commute */}
-                <div className="nav-group mb-1">
-                  <div
-                    className={`nav-item px-3 py-2 d-flex align-items-center justify-content-between ${
-                      expandedItem === "travel" ? "active" : ""
-                    }`}
-                    onClick={() => toggleExpand("travel")}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div
-                      className={`d-flex align-items-center ${
-                        !isSidebarOpen && "justify-content-center w-100"
-                      }`}
-                    >
-                      <span className="nav-icon me-0">
-                        <MdTravelExplore size={22} />
-                      </span>
-                      {isSidebarOpen && (
-                        <span className="nav-text ms-2">Travel & Commute</span>
-                      )}
-                    </div>
-                    {isSidebarOpen && (
-                      <i
-                        className={`fas fa-chevron-${
-                          expandedItem === "travel" ? "up" : "down"
-                        }`}
-                      ></i>
-                    )}
-                  </div>
-
-                  {isSidebarOpen && expandedItem === "travel" && (
-                    <div className="submenu">
-                      <Link
-                        to="/transport-emissions"
-                        className={`submenu-item px-3 py-2 d-block ${
-                          isActive("/transport-emissions") ? "active" : ""
-                        }`}
-                        onClick={handleNavigation("/transport-emissions", true)}
-                      >
-                        Transport Emissions
-                      </Link>
-                      <Link
-                        to="/vehicles"
-                        className={`submenu-item px-3 py-2 d-block ${
-                          isActive("/vehicles") ? "active" : ""
-                        }`}
-                        onClick={handleNavigation("/vehicles", true)}
-                      >
-                        Vehicles
-                      </Link>
-                    </div>
-                  )}
-                </div>
-
-                {/* 2. Greenhouse & Emissions */}
-                <div className="nav-group mb-1">
-                  <div
-                    className={`nav-item px-3 py-2 d-flex align-items-center justify-content-between ${
-                      expandedItem === "emissions" ? "active" : ""
-                    }`}
-                    onClick={() => toggleExpand("emissions")}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div
-                      className={`d-flex align-items-center ${
-                        !isSidebarOpen && "justify-content-center w-100"
-                      }`}
-                    >
-                      <span className="nav-icon me-0">
-                        <BsCloudHaze2Fill size={22} />
-                      </span>
-                      {isSidebarOpen && (
-                        <span className="nav-text ms-2">
-                          Greenhouse & Emissions
-                        </span>
-                      )}
-                    </div>
-                    {isSidebarOpen && (
-                      <i
-                        className={`fas fa-chevron-${
-                          expandedItem === "emissions" ? "up" : "down"
-                        }`}
-                      ></i>
-                    )}
-                  </div>
-
-                  {isSidebarOpen && expandedItem === "emissions" && (
-                    <div className="submenu">
-                      <Link
-                        to="/emissions"
-                        className={`submenu-item px-3 py-2 d-block ${
-                          isActive("/emissions") ? "active" : ""
-                        }`}
-                        onClick={handleNavigation("/emissions", true)}
-                      >
-                        Emissions
-                      </Link>
-                      <Link
-                        to="/emission-types"
-                        className={`submenu-item px-3 py-2 d-block ${
-                          isActive("/emission-types") ? "active" : ""
-                        }`}
-                        onClick={handleNavigation("/emission-types", true)}
-                      >
-                        Emission Types
-                      </Link>
-                      <Link
-                        to="/energy-emissions"
-                        className={`submenu-item px-3 py-2 d-block ${
-                          isActive("/energy-emissions") ? "active" : ""
-                        }`}
-                        onClick={handleNavigation("/energy-emissions", true)}
-                      >
-                        Energy Emissions
-                      </Link>
-                      <Link
-                        to="/scenarios"
-                        className={`submenu-item px-3 py-2 d-block ${
-                          isActive("/scenarios") ? "active" : ""
-                        }`}
-                        onClick={handleNavigation("/scenarios", true)}
-                      >
-                        Scenarios
-                      </Link>
-                      <Link
-                        to="/targets"
-                        className={`submenu-item px-3 py-2 d-block ${
-                          isActive("/targets") ? "active" : ""
-                        }`}
-                        onClick={handleNavigation("/targets", true)}
-                      >
-                        Targets
-                      </Link>
-                      <Link
-                        to="/analytics"
-                        className={`submenu-item px-3 py-2 d-block ${
-                          isActive("/analytics") ? "active" : ""
-                        }`}
-                        onClick={handleNavigation("/analytics", true)}
-                      >
-                        Analytics
-                      </Link>
-                    </div>
-                  )}
-                </div>
-
-                {/* 3. Purchased Goods */}
-                <div className="nav-group mb-1">
-                  <div
-                    className={`nav-item px-3 py-2 d-flex align-items-center justify-content-between ${
-                      expandedItem === "products" ? "active" : ""
-                    }`}
-                    onClick={() => toggleExpand("products")}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div
-                      className={`d-flex align-items-center ${
-                        !isSidebarOpen && "justify-content-center w-100"
-                      }`}
-                    >
-                      <span className="nav-icon me-0">
-                        <FaBuilding size={22} />
-                      </span>
-                      {isSidebarOpen && (
-                        <span className="nav-text ms-2">Purchased Goods</span>
-                      )}
-                    </div>
-                    {isSidebarOpen && (
-                      <i
-                        className={`fas fa-chevron-${
-                          expandedItem === "products" ? "up" : "down"
-                        }`}
-                      ></i>
-                    )}
-                  </div>
-
-                  {isSidebarOpen && expandedItem === "products" && (
-                    <div className="submenu">
-                      <Link
-                        to="/products"
-                        className={`submenu-item px-3 py-2 d-block ${
-                          isActive("/products") ? "active" : ""
-                        }`}
-                        onClick={handleNavigation("/products", true)}
-                      >
-                        Products
-                      </Link>
-                    </div>
-                  )}
-                </div>
-
-                {/* 4. Freight Transports */}
-                <div className="nav-group mb-1">
-                  <div
-                    className={`nav-item px-3 py-2 d-flex align-items-center justify-content-between ${
-                      expandedItem === "freight" ? "active" : ""
-                    }`}
-                    onClick={() => toggleExpand("freight")}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div
-                      className={`d-flex align-items-center ${
-                        !isSidebarOpen && "justify-content-center w-100"
-                      }`}
-                    >
-                      <span className="nav-icon me-0">
-                        <FaShippingFast size={22} />
-                      </span>
-                      {isSidebarOpen && (
-                        <span className="nav-text ms-2">
-                          Freight Transports
-                        </span>
-                      )}
-                    </div>
-                    {isSidebarOpen && (
-                      <i
-                        className={`fas fa-chevron-${
-                          expandedItem === "freight" ? "up" : "down"
-                        }`}
-                      ></i>
-                    )}
-                  </div>
-
-                  {isSidebarOpen && expandedItem === "freight" && (
-                    <div className="submenu">
-                      {/* Currently no freight transport pages */}
-                    </div>
-                  )}
-                </div>
-
-                {/* 5. Others */}
-                <div className="nav-group mb-1">
-                  <div
-                    className={`nav-item px-3 py-2 d-flex align-items-center justify-content-between ${
-                      expandedItem === "others" ? "active" : ""
-                    }`}
-                    onClick={() => toggleExpand("others")}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div
-                      className={`d-flex align-items-center ${
-                        !isSidebarOpen && "justify-content-center w-100"
-                      }`}
-                    >
-                      <span className="nav-icon me-0">
-                        <FaCog size={22} />
-                      </span>
-                      {isSidebarOpen && (
-                        <span className="nav-text ms-2">Others</span>
-                      )}
-                    </div>
-                    {isSidebarOpen && (
-                      <i
-                        className={`fas fa-chevron-${
-                          expandedItem === "others" ? "up" : "down"
-                        }`}
-                      ></i>
-                    )}
-                  </div>
-
-                  {isSidebarOpen && expandedItem === "others" && (
-                    <div className="submenu">
-                      <Link
-                        to="/companies"
-                        className={`submenu-item px-3 py-2 d-block ${
-                          isActive("/companies") ? "active" : ""
-                        }`}
-                        onClick={handleNavigation("/companies", true)}
-                      >
-                        Company Locations
-                      </Link>
-                      <Link
-                        to="/employees"
-                        className={`submenu-item px-3 py-2 d-block ${
-                          isActive("/employees") ? "active" : ""
-                        }`}
-                        onClick={handleNavigation("/employees", true)}
-                      >
-                        Employees
-                      </Link>
-                      <Link
-                        to="/yearly-reports"
-                        className={`submenu-item px-3 py-2 d-block ${
-                          isActive("/yearly-reports") ? "active" : ""
-                        }`}
-                        onClick={handleNavigation("/yearly-reports", true)}
-                      >
-                        Yearly Reports
-                      </Link>
-                      <Link
-                        to="/invoices"
-                        className={`submenu-item px-3 py-2 d-block ${
-                          isActive("/invoices") ? "active" : ""
-                        }`}
-                        onClick={handleNavigation("/invoices", true)}
-                      >
-                        Invoices
-                      </Link>
-                      <Link
-                        to="/license-plate"
-                        className={`submenu-item px-3 py-2 d-block ${
-                          isActive("/license-plate") ? "active" : ""
-                        }`}
-                        onClick={handleNavigation("/license-plate", true)}
-                      >
-                        License Plate CO₂
-                      </Link>
-                      <Link
-                        to="/dashboard"
-                        className={`submenu-item px-3 py-2 d-block ${
-                          isActive("/dashboard") ? "active" : ""
-                        }`}
-                        onClick={handleNavigation("/dashboard", true)}
-                      >
-                        Dashboard
-                      </Link>
-                    </div>
-                  )}
-                </div>
+                {/* ADMIN MENU */}
+                <TravelAndCommuteMenu
+                  isSidebarOpen={isSidebarOpen}
+                  expandedItem={expandedItem}
+                  toggleExpand={toggleExpand}
+                  isActive={isActive}
+                  handleNavigation={handleNavigation}
+                />
+                <GreenhouseEmissionsMenu
+                  isSidebarOpen={isSidebarOpen}
+                  expandedItem={expandedItem}
+                  toggleExpand={toggleExpand}
+                  isActive={isActive}
+                  handleNavigation={handleNavigation}
+                />
+                <PurchasedGoodsMenu
+                  isSidebarOpen={isSidebarOpen}
+                  expandedItem={expandedItem}
+                  toggleExpand={toggleExpand}
+                  isActive={isActive}
+                  handleNavigation={handleNavigation}
+                />
+                <FreightTransportsMenu
+                  isSidebarOpen={isSidebarOpen}
+                  expandedItem={expandedItem}
+                  toggleExpand={toggleExpand}
+                />
+                <OthersMenu
+                  isSidebarOpen={isSidebarOpen}
+                  expandedItem={expandedItem}
+                  toggleExpand={toggleExpand}
+                  isActive={isActive}
+                  handleNavigation={handleNavigation}
+                />
               </>
             ) : (
               <>
-                {/* EMPLOYEE MENU - Single button */}
-                <div className="nav-group mb-1">
-                  <div
-                    className={`nav-item px-3 py-2 d-flex align-items-center justify-content-between ${
-                      expandedItem === "travel" ? "active" : ""
-                    }`}
-                    onClick={() => toggleExpand("travel")}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div
-                      className={`d-flex align-items-center ${
-                        !isSidebarOpen && "justify-content-center w-100"
-                      }`}
-                    >
-                      <span className="nav-icon me-0">
-                        <MdTravelExplore size={22} />
-                      </span>
-                      {isSidebarOpen && (
-                        <span className="nav-text ms-2">Travel & Commute</span>
-                      )}
-                    </div>
-                    {isSidebarOpen && (
-                      <i
-                        className={`fas fa-chevron-${
-                          expandedItem === "travel" ? "up" : "down"
-                        }`}
-                      ></i>
-                    )}
-                  </div>
-
-                  {isSidebarOpen && expandedItem === "travel" && (
-                    <div className="submenu">
-                      <Link
-                        to="/user-dashboard"
-                        className={`submenu-item px-3 py-2 d-block ${
-                          isActive("/user-dashboard") ? "active" : ""
-                        }`}
-                        onClick={handleNavigation(
-                          "/user-dashboard",
-                          false,
-                          true
-                        )}
-                      >
-                        <i className="fas fa-tachometer-alt me-2"></i>
-                        My Dashboard
-                      </Link>
-                      <button
-                        className="submenu-item px-3 py-2 d-block w-100 text-start border-0 bg-transparent"
-                        onClick={() => {
-                          const event = new CustomEvent("openTransportModal");
-                          window.dispatchEvent(event);
-                        }}
-                      >
-                        <i className="fas fa-car me-2"></i>
-                        Add New Transport
-                      </button>
-                      <button
-                        className="submenu-item px-3 py-2 d-block w-100 text-start border-0 bg-transparent"
-                        onClick={() => {
-                          const event = new CustomEvent(
-                            "openWorkTransportModal"
-                          );
-                          window.dispatchEvent(event);
-                        }}
-                      >
-                        <i className="fas fa-truck me-2"></i>
-                        Add New Work Transport
-                      </button>
-                      <button
-                        className="submenu-item px-3 py-2 d-block w-100 text-start border-0 bg-transparent"
-                        onClick={() => {
-                          const event = new CustomEvent("openVehicleModal");
-                          window.dispatchEvent(event);
-                        }}
-                      >
-                        <i className="fas fa-plus-circle me-2"></i>
-                        Register Vehicle
-                      </button>
-                      <button
-                        className="submenu-item px-3 py-2 d-block w-100 text-start border-0 bg-transparent"
-                        onClick={() => {
-                          const event = new CustomEvent(
-                            "openOtherResourceModal"
-                          );
-                          window.dispatchEvent(event);
-                        }}
-                      >
-                        <i className="fas fa-plus me-2"></i>
-                        Add Other Resource
-                      </button>
-                      <button
-                        className="submenu-item px-3 py-2 d-block w-100 text-start border-0 bg-transparent"
-                        onClick={() => {
-                          const event = new CustomEvent("openProfileModal");
-                          window.dispatchEvent(event);
-                        }}
-                      >
-                        <i className="fas fa-user-edit me-2"></i>
-                        Profile
-                      </button>
-                    </div>
-                  )}
-                </div>
+                {/* EMPLOYEE MENU */}
+                <EmployeeMenu
+                  isSidebarOpen={isSidebarOpen}
+                  expandedItem={expandedItem}
+                  toggleExpand={toggleExpand}
+                  isActive={isActive}
+                  handleNavigation={handleNavigation}
+                />
               </>
             )}
           </nav>
         </div>
 
-        <div
-          className={`sidebar-footer flex-column ${isSidebarOpen ? "" : "p-2"}`}
-        >
-          <button
-            className={`btn ${
-              theme === "light" ? "btn-outline-success" : "btn-outline-light"
-            } mb-2`}
-            onClick={toggleTheme}
-          >
-            {theme === "light" ? (
-              <i className="fas fa-moon"></i>
-            ) : (
-              <i className="fas fa-sun"></i>
-            )}
-            {isSidebarOpen && <span className="ms-2">Toggle Theme</span>}
-          </button>
-          <button
-            className={`btn btn-outline-danger ${isSidebarOpen ? "" : "px-1"}`}
-            onClick={handleLogout}
-          >
-            {isSidebarOpen ? (
-              <>
-                <CiLogout size={24} className="me-2" /> Logout
-              </>
-            ) : (
-              <CiLogout size={24} />
-            )}
-          </button>
-        </div>
+        <SidebarFooter />
       </div>
     </>
   );

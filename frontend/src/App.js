@@ -1,15 +1,14 @@
 import React, { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import UserDashboard from "./pages/UserDashboard";
+import Dashboard from "./pages/Dashboard/Dashboard.js";
+import UserDashboard from "./pages/UserDashboard/UserDashboard.js";
 import Employees from "./pages/Employees";
 import Companies from "./pages/Companies";
 import Emissions from "./pages/Emissions";
 import Registration from "./pages/Registration";
 import EmissionTypesPage from "./pages/EmissionTypes";
 import EnergyEmissions from "./pages/EnergyEmissions";
-import TransportEmissions from "./pages/TransportEmissions";
 import VehiclePage from "./pages/Vehicles";
 import VehicleRegisterPage from "./pages/VehicleRegister";
 import YearlyReportsPage from "./pages/YearlyReports";
@@ -156,14 +155,6 @@ const App = () => {
           element={
             <EmployeeRoute>
               <UserDashboard />
-            </EmployeeRoute>
-          }
-        />
-        <Route
-          path="/transport-emissions"
-          element={
-            <EmployeeRoute>
-              <TransportEmissions />
             </EmployeeRoute>
           }
         />

@@ -3,10 +3,6 @@ import { debounce } from "lodash";
 import PropTypes from "prop-types";
 import "./LocationAutocomplete.css";
 
-/**
- * A location autocomplete component that displays suggestions as you type
- * and allows selection from a dropdown of options
- */
 const LocationAutocomplete = ({
   value,
   onChange,

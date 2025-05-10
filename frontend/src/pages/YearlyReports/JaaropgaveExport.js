@@ -263,32 +263,59 @@ const JaaropgaveExport = ({ reportId, theme, onClose }) => {
         reportData.scenarioOutcomes &&
         reportData.scenarioOutcomes.length > 0
       ) {
-        if (pdf.previousAutoTable && pdf.previousAutoTable.finalY > 200) {
-          pdf.addPage();
-        }
+        // Always start scenarios on a new page for better organization
+        pdf.addPage();
 
-        const scenarioY = pdf.previousAutoTable
-          ? pdf.previousAutoTable.finalY + 15
-          : 30;
+        // Reset position for the new page
+        let scenarioY = 20;
         pdf.setFontSize(16);
+        pdf.setTextColor(40, 40, 40);
         pdf.text("Scenario Outcomes", 14, scenarioY);
 
         reportData.scenarioOutcomes.forEach((scenario, index) => {
-          // Scenario header
-          const scenarioHeaderY =
-            index === 0 ? scenarioY + 10 : pdf.previousAutoTable.finalY + 15;
+          // Check if we need a new page for this scenario
+          if (index > 0) {
+            // For scenarios after the first one, check if we need a new page
+            const estimatedContentHeight = 80; // Base height for scenario header + potential table
+
+            if (
+              pdf.previousAutoTable &&
+              pdf.previousAutoTable.finalY + estimatedContentHeight >
+                pdf.internal.pageSize.height - 20
+            ) {
+              pdf.addPage();
+              scenarioY = 20;
+            } else {
+              // If we're on the same page, position below the previous table with adequate spacing
+              scenarioY = pdf.previousAutoTable
+                ? pdf.previousAutoTable.finalY + 25
+                : 50;
+            }
+          } else {
+            // First scenario starts at a position below the header
+            scenarioY += 15;
+          }
+
+          // Scenario header with better spacing
           pdf.setFontSize(12);
-          pdf.text(`Scenario: ${scenario.name}`, 14, scenarioHeaderY);
+          pdf.setTextColor(40, 40, 40);
+          pdf.text(`Scenario: ${scenario.name}`, 14, scenarioY);
+
+          // Add period information with better vertical spacing
           pdf.setFontSize(10);
+          scenarioY += 8; // Increase spacing between lines
           pdf.text(
             `Period: ${scenario.startYear} - ${scenario.endYear}`,
             14,
-            scenarioHeaderY + 5
+            scenarioY
           );
+
+          // Add progress information with better vertical spacing
+          scenarioY += 8; // Increase spacing between lines
           pdf.text(
             `Progress: ${formatNumber(scenario.progressPercentage)}%`,
             14,
-            scenarioHeaderY + 10
+            scenarioY
           );
 
           // Measures table for this scenario
@@ -300,12 +327,22 @@ const JaaropgaveExport = ({ reportId, theme, onClose }) => {
               measure.status,
             ]);
 
+            // Position the table with adequate spacing from the text above
             pdf.autoTable({
-              startY: scenarioHeaderY + 15,
+              startY: scenarioY + 10, // Increase spacing before table
               head: [["Measure", "Estimated", "Actual", "Status"]],
               body: measuresData,
               theme: "grid",
               headStyles: { fillColor: [52, 152, 219] },
+              margin: { top: 10, bottom: 10 }, // Add margins for better spacing
+              didDrawPage: (data) => {
+                // When a new page is created for the table, add the scenario header again
+                if (data.pageCount > 1 && data.pageNumber > 1) {
+                  pdf.setFontSize(10);
+                  pdf.setTextColor(80, 80, 80);
+                  pdf.text(`Continued: ${scenario.name}`, 14, 10);
+                }
+              },
             });
           }
         });

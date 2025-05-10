@@ -1,11 +1,18 @@
-import React, { useEffect, useState } from "react";
-import { Modal, Button, Form } from "react-bootstrap";
+import React, { useEffect, useState, useCallback } from "react";
+import { Modal, Button } from "react-bootstrap";
 import { FaPlus } from "react-icons/fa";
-import { JWT_ADMIN_SECRET, REACT_APP_API_URL } from "../env";
-import { isYearlyRecordEditable, formatDecimal } from "../utils/dateUtils";
+import { JWT_ADMIN_SECRET, REACT_APP_API_URL } from "../../../env";
+import {
+  isYearlyRecordEditable,
+  formatDecimal,
+} from "../../../utils/dateUtils";
+import TransportEmissionsModal from "./modals/TransportEmissionsModal";
 
-const TransportEmissions = (tab) => {
-  console.log(tab);
+/**
+ * Transport Emissions component for monthly transport emissions tracking
+ * Used as a tab within the UserDashboard
+ */
+const TransportEmissions = ({ activeTab }) => {
   // Safely get and parse user data
   const userObj = localStorage.getItem("userObj");
   let user = null;
@@ -52,52 +59,57 @@ const TransportEmissions = (tab) => {
       weight: "",
       emissionFactor: "",
     });
+    setIsEdit(false);
     setShowModal(true);
     setError("");
   };
 
-  useEffect(() => {
-    const fetchTransportEmissions = async () => {
-      setIsLoading(true);
+  // Move loadTransportEmissions to useCallback to prevent unnecessary rerenders
+  const loadTransportEmissions = useCallback(async () => {
+    setIsLoading(true);
 
-      // Skip fetch if no userId
-      if (!userId) {
-        setError("User information not found. Please log in again.");
-        setIsLoading(false);
-        return;
-      }
+    // Skip fetch if no userId
+    if (!userId) {
+      setError("User information not found. Please log in again.");
+      setIsLoading(false);
+      return;
+    }
 
-      try {
-        console.log("Fetching transport emissions for user ID:", userId);
+    try {
+      console.log("Fetching transport emissions for user ID:", userId);
 
-        const response = await fetch(
-          `${REACT_APP_API_URL}/transport-emissions/${userId}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Error ${response.status}: ${response.statusText}`);
+      const response = await fetch(
+        `${REACT_APP_API_URL}/transport-emissions/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
+          },
         }
+      );
 
-        const data = await response.json();
-        setTransportRecords(data);
-        console.log("Transport Emission Records:", data);
-      } catch (error) {
-        console.error("Error fetching transport emissions:", error);
-        setError(`Failed to load transport emissions: ${error.message}`);
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
-    };
 
-    fetchTransportEmissions();
-  }, [userId]); // Depend on userId
+      const data = await response.json();
+      setTransportRecords(data);
+      console.log("Transport Emission Records:", data);
+    } catch (error) {
+      console.error("Error fetching transport emissions:", error);
+      setError(`Failed to load transport emissions: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId]);
+
+  // Load data when tab becomes active
+  useEffect(() => {
+    if (activeTab === "TransportEmissions") {
+      loadTransportEmissions();
+    }
+  }, [activeTab, loadTransportEmissions]);
 
   const handleEdit = (record) => {
     if (!userId) {
@@ -109,8 +121,8 @@ const TransportEmissions = (tab) => {
       ...record,
       userId: userId,
     });
-    setShowModal(true);
     setIsEdit(true);
+    setShowModal(true);
     setError("");
   };
 
@@ -175,77 +187,24 @@ const TransportEmissions = (tab) => {
     }));
   };
 
-  // Submit new or updated record
-  const handleSubmit = async (e, isUpdate = isEdit) => {
-    e.preventDefault();
-
-    if (!userId) {
-      setError("User information not found. Please log in again.");
-      return;
+  // Submit new or updated record - now uses the modal's callback
+  const handleSubmitSuccess = (newRecord, isUpdating) => {
+    // Update the local state immediately for fast UI response
+    if (isUpdating) {
+      setTransportRecords((prev) =>
+        prev.map((record) =>
+          record._id === newRecord._id ? newRecord : record
+        )
+      );
+    } else {
+      setTransportRecords((prev) => [...prev, newRecord]);
     }
 
-    console.log(
-      isUpdate ? "Updating record..." : "Adding new record...",
-      currentRecord
-    );
+    // Also refresh the data from server to ensure consistency
+    loadTransportEmissions();
 
-    try {
-      setIsLoading(true);
-
-      const url = isUpdate
-        ? `${REACT_APP_API_URL}/transport-emissions/${currentRecord._id}`
-        : `${REACT_APP_API_URL}/transport-emissions`;
-
-      const method = isUpdate ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${JWT_ADMIN_SECRET}`,
-        },
-        body: JSON.stringify({
-          ...currentRecord,
-          userId: userId,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message ||
-            `Error: ${response.status} - ${response.statusText}`
-        );
-      }
-
-      const responseData = await response.json();
-      console.log(
-        `Transport Records record ${
-          isUpdate ? "updated" : "added"
-        } successfully!`,
-        responseData
-      );
-
-      // Update state instead of reloading
-      if (isUpdate) {
-        setTransportRecords((prev) =>
-          prev.map((record) =>
-            record._id === currentRecord._id ? responseData : record
-          )
-        );
-      } else {
-        setTransportRecords((prev) => [...prev, responseData]);
-      }
-
-      setShowModal(false);
-    } catch (error) {
-      console.error(`Error ${isUpdate ? "updating" : "adding"} record:`, error);
-      setError(
-        `Failed to ${isUpdate ? "update" : "add"} record: ${error.message}`
-      );
-    } finally {
-      setIsLoading(false);
-    }
+    // Close the modal
+    setShowModal(false);
   };
 
   // Helper to format loading state
@@ -272,18 +231,7 @@ const TransportEmissions = (tab) => {
 
   return (
     <>
-      {/* <nav className="navbar navbar-expand-lg navbar-light bg-light">
-                <div className="container-fluid">
-                    <div className="card-header d-flex align-items-center">
-                        <i className="fas fa-bus fa-2x me-3"></i>
-                        <h4 className="card-title mb-0">Transport Emission Records</h4>
-                    </div>
-                    <button className="btn btn-outline-success" onClick={() => navigate("/dashboard")}>
-                        <FaHome className="me-2" /> Home
-                    </button>
-                </div>
-            </nav> */}
-      {tab.activeTab === "TransportEmissions" && (
+      {activeTab === "TransportEmissions" && (
         <div className="container py-5">
           {error && renderError()}
 
@@ -371,112 +319,14 @@ const TransportEmissions = (tab) => {
       )}
 
       {/* Add/Edit Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>
-            {currentRecord._id ? "Edit" : "Add"} Transport Emission Record
-          </Modal.Title>
-        </Modal.Header>
-        <Form onSubmit={handleSubmit}>
-          <Modal.Body>
-            {error && renderError()}
-
-            <Form.Group className="mb-3">
-              <Form.Label>Month</Form.Label>
-              <Form.Control
-                as="select"
-                value={currentRecord.month}
-                onChange={(e) => handleInputChange(e, "month")}
-                required
-              >
-                <option value="">Select Month</option>
-                {[
-                  "January",
-                  "February",
-                  "March",
-                  "April",
-                  "May",
-                  "June",
-                  "July",
-                  "August",
-                  "September",
-                  "October",
-                  "November",
-                  "December",
-                ].map((month, index) => (
-                  <option key={index} value={month}>
-                    {month}
-                  </option>
-                ))}
-              </Form.Control>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Year</Form.Label>
-              <Form.Control
-                type="number"
-                value={currentRecord.year}
-                onChange={(e) => handleInputChange(e, "year")}
-                placeholder="Enter Year"
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Transport Mode</Form.Label>
-              <Form.Control
-                as="select"
-                value={currentRecord.transportMode}
-                onChange={(e) => handleInputChange(e, "transportMode")}
-              >
-                <option value="">Select Mode</option>
-                {["Truck", "Train", "Ship", "Airplane"].map((mode, index) => (
-                  <option key={index} value={mode}>
-                    {mode}
-                  </option>
-                ))}
-              </Form.Control>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Distance (km)</Form.Label>
-              <Form.Control
-                type="number"
-                value={currentRecord.distance}
-                onChange={(e) => handleInputChange(e, "distance")}
-                placeholder="Enter Distance"
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Weight (tons)</Form.Label>
-              <Form.Control
-                type="number"
-                value={currentRecord.weight}
-                onChange={(e) => handleInputChange(e, "weight")}
-                placeholder="Enter Weight"
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Emission Factor (kg CO₂/ton-km)</Form.Label>
-              <Form.Control
-                type="number"
-                value={currentRecord.emissionFactor}
-                onChange={(e) => handleInputChange(e, "emissionFactor")}
-                placeholder="Enter Emission Factor"
-              />
-            </Form.Group>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>
-              Cancel
-            </Button>
-            <Button variant="success" type="submit">
-              {isEdit ? "Update" : "Save"}{" "}
-            </Button>
-          </Modal.Footer>
-        </Form>
-      </Modal>
+      <TransportEmissionsModal
+        showModal={showModal}
+        closeModal={() => setShowModal(false)}
+        currentRecord={currentRecord}
+        isEdit={isEdit}
+        handleInputChange={handleInputChange}
+        onSubmitSuccess={handleSubmitSuccess}
+      />
 
       {/* Delete Confirmation Modal */}
       <Modal

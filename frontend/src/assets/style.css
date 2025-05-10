@@ -310,7 +310,7 @@ a {
 }
 
 .dark-theme .modal-content {
-  background-color: #343a40;
+  background-color: #343a40 !important;
   color: #f8f9fa;
   border-color: #495057;
 }
@@ -615,6 +615,12 @@ a {
 }
 
 /* Light theme modal */
+.light-theme .modal-content {
+  background-color: #ffffff;
+  color: #212529;
+  border-color: #dee2e6;
+}
+
 .light-theme .modal-header {
   background-color: #f8f9fa;
   border-bottom-color: #dee2e6;
@@ -625,8 +631,285 @@ a {
   border-top-color: #dee2e6;
 }
 
+/* Dark theme modal */
+.dark-theme .modal-content {
+  background-color: #343a40;
+  color: #f8f9fa;
+  border-color: #495057;
+}
+
+.dark-theme .modal-header {
+  background-color: #2c3034;
+  border-bottom-color: #495057;
+  color: #f8f9fa;
+}
+
+.dark-theme .modal-footer {
+  background-color: #2c3034;
+  border-top-color: #495057;
+}
+
+.dark-theme .modal-title {
+  color: #f8f9fa;
+}
+
 .dark-theme .btn-close {
-  filter: invert(1) grayscale(90%) brightness(100%);
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Modal form controls in dark theme */
+.dark-theme .modal-content .form-control,
+.dark-theme .modal-content .form-select {
+  background-color: #343a40;
+  color: #f8f9fa;
+  border-color: #495057;
+}
+
+.dark-theme .modal-content .form-control:focus,
+.dark-theme .modal-content .form-select:focus {
+  background-color: #343a40;
+  color: #f8f9fa;
+  border-color: #34d399;
+  box-shadow: 0 0 0 0.25rem rgba(52, 211, 153, 0.25);
+}
+
+.dark-theme .modal-content .form-control::placeholder {
+  color: #adb5bd;
+}
+
+/* Table inside modal for dark theme */
+.dark-theme .modal-content .table {
+  color: #f8f9fa;
+}
+
+.dark-theme .modal-content .table th,
+.dark-theme .modal-content .table td {
+  border-color: #495057;
+}
+
+.dark-theme .modal-content .table-striped > tbody > tr:nth-of-type(odd) {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Modal backdrop */
+.modal-backdrop.show {
+  opacity: 0.7;
+}
+
+.dark-theme .modal-backdrop.show {
+  opacity: 0.8;
+}
+
+/* Modal animations */
+.modal.fade .modal-dialog {
+  transition: transform 0.2s ease-out;
+}
+
+.modal.fade.show .modal-dialog {
+  transform: none;
+}
+
+/* Scrollbar for modal content in dark theme */
+.dark-theme .modal-content ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark-theme .modal-content ::-webkit-scrollbar-track {
+  background: #2c3034;
+}
+
+.dark-theme .modal-content ::-webkit-scrollbar-thumb {
+  background-color: #495057;
+  border-radius: 4px;
+}
+
+.dark-theme .modal-content ::-webkit-scrollbar-thumb:hover {
+  background-color: #6c757d;
+}
+
+/* Pre and code blocks inside modal */
+.dark-theme .modal-content pre,
+.dark-theme .modal-content code {
+  background-color: #2c3034;
+  color: #f8f9fa;
+  border-color: #495057;
+}
+
+/* Alert styling inside modal */
+.dark-theme .modal-content .alert {
+  background-color: #2c3034;
+  border-color: #495057;
+  color: #f8f9fa;
+}
+
+.dark-theme .modal-content .alert-info {
+  background-color: rgba(13, 202, 240, 0.15);
+  border-color: rgba(13, 202, 240, 0.4);
+  color: #0dcaf0;
+}
+
+.dark-theme .modal-content .alert-success {
+  background-color: rgba(25, 135, 84, 0.15);
+  border-color: rgba(25, 135, 84, 0.4);
+  color: #34d399;
+}
+
+.dark-theme .modal-content .alert-warning {
+  background-color: rgba(255, 193, 7, 0.15);
+  border-color: rgba(255, 193, 7, 0.4);
+  color: #ffc107;
+}
+
+.dark-theme .modal-content .alert-danger {
+  background-color: rgba(220, 53, 69, 0.15);
+  border-color: rgba(220, 53, 69, 0.4);
+  color: #dc3545;
+}
+
+/* Badge styling inside modal */
+.dark-theme .modal-content .badge {
+  background-color: #495057;
+  color: #f8f9fa;
+}
+
+/* Text colors inside modal */
+.dark-theme .modal-content .text-muted {
+  color: #adb5bd !important;
+}
+
+.dark-theme .modal-content .text-primary {
+  color: #34d399 !important;
+}
+
+.dark-theme .modal-content .text-success {
+  color: #34d399 !important;
+}
+
+/* Border colors inside modal */
+.dark-theme .modal-content .border {
+  border-color: #495057 !important;
+}
+
+.dark-theme .modal-content .border-bottom {
+  border-bottom-color: #495057 !important;
+}
+
+.dark-theme .modal-content .border-top {
+  border-top-color: #495057 !important;
+}
+
+/* Background colors inside modal */
+.dark-theme .modal-content .bg-light {
+  background-color: #2c3034 !important;
+}
+
+.dark-theme .modal-content .bg-white {
+  background-color: #343a40 !important;
+}
+
+/* List group inside modal */
+.dark-theme .modal-content .list-group-item {
+  background-color: #343a40;
+  border-color: #495057;
+  color: #f8f9fa;
+}
+
+/* Card inside modal */
+.dark-theme .modal-content .card {
+  background-color: #2c3034;
+  border-color: #495057;
+}
+
+.dark-theme .modal-content .card-header {
+  background-color: #343a40;
+  border-bottom-color: #495057;
+}
+
+.dark-theme .modal-content .card-footer {
+  background-color: #343a40;
+  border-top-color: #495057;
+}
+
+/* Input group inside modal */
+.dark-theme .modal-content .input-group-text {
+  background-color: #2c3034;
+  border-color: #495057;
+  color: #f8f9fa;
+}
+
+/* Custom select inside modal */
+.dark-theme .modal-content .custom-select {
+  background-color: #343a40;
+  color: #f8f9fa;
+  border-color: #495057;
+}
+
+/* Modal close button hover effect */
+.dark-theme .modal-content .btn-close:hover {
+  opacity: 0.75;
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Modal size utilities */
+.modal-dialog.modal-xl {
+  max-width: 1140px;
+}
+
+.modal-dialog.modal-lg {
+  max-width: 800px;
+}
+
+.modal-dialog.modal-sm {
+  max-width: 500px;
+}
+
+@media (max-width: 992px) {
+  .modal-dialog.modal-xl,
+  .modal-dialog.modal-lg {
+    max-width: 95%;
+    margin: 1.75rem auto;
+  }
+}
+
+/* Prevent modal content overflow */
+.modal-content {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Ensure modal header and footer stay fixed */
+.modal-header,
+.modal-footer {
+  position: sticky;
+  background-color: inherit;
+  z-index: 1020;
+}
+
+.modal-header {
+  top: 0;
+}
+
+.modal-footer {
+  bottom: 0;
+}
+
+/* Add shadow to fixed header/footer when content is scrolled */
+.modal-content.is-scrolled .modal-header {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.modal-content.is-scrolled .modal-footer {
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark theme shadows */
+.dark-theme .modal-content.is-scrolled .modal-header {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.dark-theme .modal-content.is-scrolled .modal-footer {
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .list-group-item {
@@ -1911,7 +2194,7 @@ h4 {
 }
 
 .light-theme .apexcharts-tooltip-marker {
-  background-color: #198754 !important;
+  background-color: transparent !important;
 }
 
 .light-theme .apexcharts-tooltip-series-group.active,
@@ -1928,6 +2211,10 @@ h4 {
 /* Override Bootstrap's blue progress bar */
 .light-theme .progress-bar {
   background-color: #198754 !important;
+}
+
+.dark-theme .progress {
+  background-color: #c9cbcd !important;
 }
 
 /* Fix any remaining button styles */

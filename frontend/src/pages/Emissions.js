@@ -8,7 +8,7 @@ import { isRecordEditable, formatDecimal } from "../utils/dateUtils";
 import { authenticatedFetch } from "../utils/axiosConfig";
 import Sidebar from "../components/Sidebar";
 import { FaPlusCircle } from "react-icons/fa";
-import { Line, Bar, Pie } from "react-chartjs-2";
+import { Line, Pie } from "react-chartjs-2";
 import EmployeeSelect from "../components/EmployeeSelect";
 import CarsSelect from "../components/CarsSelect";
 import {
@@ -449,17 +449,6 @@ const EmissionPage = () => {
 
     setFilteredRecords(filtered);
     console.log("Final filtered records:", filtered.length);
-  };
-
-  // Reset filters
-  const resetFilters = () => {
-    setFilters({
-      startDate: "",
-      endDate: "",
-      employees: [],
-      transportations: [],
-    });
-    setFilteredRecords(emissionRecords);
   };
 
   // Initialize filtered records when emission records change

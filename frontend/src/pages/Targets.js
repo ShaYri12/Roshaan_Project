@@ -11,7 +11,7 @@ import {
   Table,
 } from "react-bootstrap";
 import { Line } from "react-chartjs-2";
-import { JWT_ADMIN_SECRET, REACT_APP_API_URL } from "../env";
+import { REACT_APP_API_URL } from "../env";
 import { authenticatedFetch } from "../utils/axiosConfig";
 import Sidebar from "../components/Sidebar";
 import { FaPlusCircle, FaEdit, FaTrash } from "react-icons/fa";

@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
-import {
-  JWT_ADMIN_SECRET,
-  JWT_EMPLOYEE_SECRET,
-  REACT_APP_API_URL,
-} from "../env";
+import { JWT_EMPLOYEE_SECRET, REACT_APP_API_URL } from "../env";
 import { FaEye, FaEyeSlash } from "react-icons/fa"; // Importing the eye icons
 import LocationPicker from "../components/LocationPicker"; // Import LocationPicker
 
@@ -31,7 +25,6 @@ const UpdateEmployee = ({ userData, isModelVisible, onUpdate }) => {
   const [password, setPassword] = useState(userData?.password || ""); // Password input (optional for editing)
   const [showPassword, setShowPassword] = useState(false); // State for toggling password visibility
   const [isLoading, setIsLoading] = useState(false); // State for toggling password visibility
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (isModelVisible) {
@@ -101,7 +94,7 @@ const UpdateEmployee = ({ userData, isModelVisible, onUpdate }) => {
         console.log("Profile updated successfully!");
       } else {
         const errorData = await response.json(); // Parse the error response data
-        console.error("Profile update failed!");
+        console.error("Profile update failed!", errorData);
       }
     } catch (error) {
       // Log detailed error information
@@ -245,4 +238,3 @@ const UpdateEmployee = ({ userData, isModelVisible, onUpdate }) => {
 };
 
 export default UpdateEmployee;
-

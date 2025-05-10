@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { FaEye, FaEyeSlash } from "react-icons/fa"; // Importing the eye icons
 import { REACT_APP_API_URL } from "../env";
 
 const UpdateVehicle = ({ userData, isModelVisible, onUpdate }) => {
@@ -182,4 +181,3 @@ const UpdateVehicle = ({ userData, isModelVisible, onUpdate }) => {
 };
 
 export default UpdateVehicle;
-

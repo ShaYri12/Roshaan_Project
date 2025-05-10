@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -7,11 +7,10 @@ import {
   Button,
   Form,
   Table,
-  Dropdown,
   ButtonGroup,
 } from "react-bootstrap";
-import { Line, Bar, Pie, Doughnut } from "react-chartjs-2";
-import { JWT_ADMIN_SECRET, REACT_APP_API_URL } from "../env";
+import { Line, Bar, Pie } from "react-chartjs-2";
+import { REACT_APP_API_URL } from "../env";
 import { authenticatedFetch } from "../utils/axiosConfig";
 import Sidebar from "../components/Sidebar";
 import EmployeeSelect from "../components/EmployeeSelect";
@@ -33,6 +32,7 @@ const AnalyticsPage = () => {
   const [userData, setUserData] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const navigate = useNavigate();
+  const chartsRef = useRef(null);
 
   // Added states for dropdown data
   const [employees, setEmployees] = useState([]);
@@ -50,6 +50,7 @@ const AnalyticsPage = () => {
 
   // Chart type state
   const [selectedChart, setSelectedChart] = useState("line");
+  const [showFilters, setShowFilters] = useState(false);
 
   // Authentication check
   useEffect(() => {
@@ -206,6 +207,11 @@ const AnalyticsPage = () => {
     }
 
     setFilteredEmissions(filteredData);
+
+    // Scroll to charts section after applying filters
+    if (chartsRef.current) {
+      chartsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   // Reset filters
@@ -480,9 +486,19 @@ const AnalyticsPage = () => {
         <div className="container-fluid mt-4">
           <div className="d-flex flex-wrap justify-content-between align-items-center mb-4">
             <h1>Emissions Analytics</h1>
-            <Button variant="outline-success" onClick={exportCSV}>
-              <FaDownload className="me-2" /> Export Data
-            </Button>
+            <div>
+              <Button
+                variant="outline-primary"
+                className="me-2"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <FaFilter className="me-2" />{" "}
+                {showFilters ? "Hide Filters" : "Show Filters"}
+              </Button>
+              <Button variant="outline-success" onClick={exportCSV}>
+                <FaDownload className="me-2" /> Export Data
+              </Button>
+            </div>
           </div>
 
           {error && (
@@ -492,101 +508,103 @@ const AnalyticsPage = () => {
           )}
 
           {/* Filters */}
-          <Card className={`bg-${theme} m-0 mb-4 z-3 position-relative`}>
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0">
-                  <FaFilter className="me-2" /> Filters
-                </h5>
-              </div>
-              <Row>
-                <Col xl={3} lg={4} md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Start Date</Form.Label>
-                    <Form.Control
-                      type="date"
-                      name="startDate"
-                      value={filters.startDate}
-                      onChange={(e) =>
-                        handleFilterChange("startDate", e.target.value)
-                      }
+          {showFilters && (
+            <Card className={`bg-${theme} m-0 mb-4 z-3 position-relative`}>
+              <Card.Body>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h5 className="mb-0">
+                    <FaFilter className="me-2" /> Filters
+                  </h5>
+                </div>
+                <Row>
+                  <Col xl={3} lg={4} md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Start Date</Form.Label>
+                      <Form.Control
+                        type="date"
+                        name="startDate"
+                        value={filters.startDate}
+                        onChange={(e) =>
+                          handleFilterChange("startDate", e.target.value)
+                        }
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col xl={3} lg={4} md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>End Date</Form.Label>
+                      <Form.Control
+                        type="date"
+                        name="endDate"
+                        value={filters.endDate}
+                        onChange={(e) =>
+                          handleFilterChange("endDate", e.target.value)
+                        }
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col xl={3} lg={4} md={6}>
+                    <EmployeeSelect
+                      modalData={{ employees: filters.employees }}
+                      employeesState={employees}
+                      handleEmployeeChange={handleEmployeeChange}
+                      theme={theme}
                     />
-                  </Form.Group>
-                </Col>
-                <Col xl={3} lg={4} md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>End Date</Form.Label>
-                    <Form.Control
-                      type="date"
-                      name="endDate"
-                      value={filters.endDate}
-                      onChange={(e) =>
-                        handleFilterChange("endDate", e.target.value)
-                      }
+                  </Col>
+                  <Col xl={3} lg={4} md={6}>
+                    <CarsSelect
+                      modalData={{ cars: filters.transportations }}
+                      carsState={transportations}
+                      handleCarChange={handleTransportationChange}
+                      theme={theme}
                     />
-                  </Form.Group>
-                </Col>
-                <Col xl={3} lg={4} md={6}>
-                  <EmployeeSelect
-                    modalData={{ employees: filters.employees }}
-                    employeesState={employees}
-                    handleEmployeeChange={handleEmployeeChange}
-                    theme={theme}
-                  />
-                </Col>
-                <Col xl={3} lg={4} md={6}>
-                  <CarsSelect
-                    modalData={{ cars: filters.transportations }}
-                    carsState={transportations}
-                    handleCarChange={handleTransportationChange}
-                    theme={theme}
-                  />
-                </Col>
+                  </Col>
 
-                <Col xl={3} lg={4} md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Min Emissions (kg)</Form.Label>
-                    <Form.Control
-                      type="number"
-                      name="minEmissions"
-                      value={filters.minEmissions}
-                      onChange={(e) =>
-                        handleFilterChange("minEmissions", e.target.value)
-                      }
-                    />
-                  </Form.Group>
-                </Col>
-                <Col xl={3} lg={4} md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Max Emissions (kg)</Form.Label>
-                    <Form.Control
-                      type="number"
-                      name="maxEmissions"
-                      value={filters.maxEmissions}
-                      onChange={(e) =>
-                        handleFilterChange("maxEmissions", e.target.value)
-                      }
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={12} className="d-flex align-items-center mt-2">
-                  <Button
-                    variant="primary"
-                    onClick={applyFilters}
-                    className="me-2"
-                  >
-                    Apply Filters
-                  </Button>
-                  <Button variant="outline-secondary" onClick={resetFilters}>
-                    Reset Filters
-                  </Button>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
+                  <Col xl={3} lg={4} md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Min Emissions (kg)</Form.Label>
+                      <Form.Control
+                        type="number"
+                        name="minEmissions"
+                        value={filters.minEmissions}
+                        onChange={(e) =>
+                          handleFilterChange("minEmissions", e.target.value)
+                        }
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col xl={3} lg={4} md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Max Emissions (kg)</Form.Label>
+                      <Form.Control
+                        type="number"
+                        name="maxEmissions"
+                        value={filters.maxEmissions}
+                        onChange={(e) =>
+                          handleFilterChange("maxEmissions", e.target.value)
+                        }
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={12} className="d-flex align-items-center mt-2">
+                    <Button
+                      variant="primary"
+                      onClick={applyFilters}
+                      className="me-2"
+                    >
+                      Apply Filters
+                    </Button>
+                    <Button variant="outline-secondary" onClick={resetFilters}>
+                      Reset Filters
+                    </Button>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
+          )}
 
           {/* Charts */}
-          <Card className={`bg-${theme} m-0 mb-4`}>
+          <Card ref={chartsRef} className={`bg-${theme} m-0 mb-4`}>
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h5 className="mb-0">Visualization</h5>

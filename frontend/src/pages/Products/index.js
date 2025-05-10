@@ -3,55 +3,42 @@ import { useNavigate } from "react-router-dom";
 import { REACT_APP_API_URL, JWT_ADMIN_SECRET } from "../../env";
 import Sidebar from "../../components/Sidebar";
 
+// Import components
+import ProductTable from "./components/ProductTable";
+import NoProductsFound from "./components/NoProductsFound";
+import ProductModal from "./components/ProductModal";
+
+// Import utilities
+import {
+  fetchProducts,
+  addProduct,
+  updateProduct,
+  deleteProduct,
+  getEmptyFormData,
+  getFormDataFromProduct,
+  CATEGORIES,
+  UNITS,
+  TRANSPORT_METHODS,
+} from "./utils/productUtils";
+
 const ProductsPage = () => {
   const navigate = useNavigate();
+
+  // UI state
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
-  const [userData, setUserData] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // User state
+  const [userData, setUserData] = useState(null);
+
+  // Product state
+  const [products, setProducts] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [error, setError] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    size: "",
-    unit: "kg",
-    co2Value: "",
-    category: "",
-    manufacturer: "",
-    description: "",
-    materialType: "",
-    origin: "",
-    transportMethod: "",
-    productionYear: new Date().getFullYear(),
-    additionalInfo: "",
-    user: "",
-  });
-
-  const categories = [
-    "Electronics",
-    "Furniture",
-    "Office Supplies",
-    "Food & Beverages",
-    "Construction Materials",
-    "Packaging",
-    "Textiles",
-    "Chemicals",
-    "Automotive",
-    "Other",
-  ];
-
-  const units = ["kg", "g", "ton", "liter", "m²", "m³", "piece", "other"];
-  const transportMethods = [
-    "Road",
-    "Sea",
-    "Air",
-    "Rail",
-    "Multiple",
-    "Unknown",
-  ];
+  const [formData, setFormData] = useState(getEmptyFormData());
 
   // Fetch user data and products on component mount
   useEffect(() => {
@@ -118,33 +105,14 @@ const ProductsPage = () => {
       }
     };
 
-    const fetchProducts = async () => {
+    const loadProducts = async () => {
       setIsLoading(true);
       try {
-        // Get the token - either the user's token or the admin secret
         const token = localStorage.getItem("token") || JWT_ADMIN_SECRET;
+        const productsData = await fetchProducts(token);
 
-        const response = await fetch(`${REACT_APP_API_URL}/products`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            // No products found is not an error
-            setProducts([]);
-            setIsLoading(false);
-            return;
-          }
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log("Products fetched:", data);
-        setProducts(data);
+        console.log("Products fetched:", productsData);
+        setProducts(productsData);
         setError(null);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -157,23 +125,10 @@ const ProductsPage = () => {
     };
 
     fetchUserData();
-    fetchProducts();
+    loadProducts();
   }, [navigate, theme]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userObj");
-    localStorage.removeItem("userData");
-    navigate("/");
-  };
-
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    document.body.className = `${newTheme}-theme`;
-  };
-
+  // Form handling functions
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -185,70 +140,21 @@ const ProductsPage = () => {
   const resetForm = () => {
     // Always ensure we have a user ID, using the most reliable source
     const userId = userData?._id || "6624c7ab8a89c9f76ded3d9e";
-
-    setFormData({
-      name: "",
-      size: "",
-      unit: "kg",
-      co2Value: "",
-      category: "",
-      manufacturer: "",
-      description: "",
-      materialType: "",
-      origin: "",
-      transportMethod: "",
-      productionYear: new Date().getFullYear(),
-      additionalInfo: "",
-      user: userId, // Always set the user ID
-    });
+    setFormData(getEmptyFormData(userId));
   };
 
+  // Modal functions
   const openAddModal = () => {
     // Get the user ID from state, with a fallback
     const userId = userData?._id || "6624c7ab8a89c9f76ded3d9e";
-
-    // Reset the form with the current user ID
-    setFormData({
-      name: "",
-      size: "",
-      unit: "kg",
-      co2Value: "",
-      category: "",
-      manufacturer: "",
-      description: "",
-      materialType: "",
-      origin: "",
-      transportMethod: "",
-      productionYear: new Date().getFullYear(),
-      additionalInfo: "",
-      user: userId,
-    });
-
+    setFormData(getEmptyFormData(userId));
     setShowAddModal(true);
   };
 
   const openEditModal = (product) => {
     setSelectedProduct(product);
-
-    // For safety, use the current user's ID or the product's existing user ID, with a fallback
-    const userId = userData?._id || product.user || "6624c7ab8a89c9f76ded3d9e";
-
-    setFormData({
-      name: product.name,
-      size: product.size,
-      unit: product.unit,
-      co2Value: product.co2Value,
-      category: product.category,
-      manufacturer: product.manufacturer || "",
-      description: product.description || "",
-      materialType: product.materialType || "",
-      origin: product.origin || "",
-      transportMethod: product.transportMethod || "",
-      productionYear: product.productionYear || new Date().getFullYear(),
-      additionalInfo: product.additionalInfo || "",
-      user: userId, // Always set the user ID
-    });
-
+    const userId = userData?._id || "6624c7ab8a89c9f76ded3d9e";
+    setFormData(getFormDataFromProduct(product, userId));
     setShowEditModal(true);
   };
 
@@ -258,13 +164,13 @@ const ProductsPage = () => {
     resetForm();
   };
 
+  // CRUD operations
   const handleAddProduct = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
 
     try {
-      // For consistency, always use the token from localStorage if available
       const token = localStorage.getItem("token") || JWT_ADMIN_SECRET;
 
       // Make sure user ID is set in the form data
@@ -282,31 +188,13 @@ const ProductsPage = () => {
 
       console.log("Sending product data:", productData);
 
-      const response = await fetch(`${REACT_APP_API_URL}/products`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(productData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || `HTTP error! Status: ${response.status}`
-        );
-      }
-
-      const newProduct = await response.json();
+      const newProduct = await addProduct(productData, token);
       console.log("Product added successfully:", newProduct);
 
       // Update the products list and close the modal
       setProducts((prev) => [...prev, newProduct]);
       setError(null);
       closeModal();
-
-      // No need to refresh the page or redirect - just close the modal and show success
     } catch (error) {
       console.error("Error adding product:", error);
       setError(`Error adding product: ${error.message}`);
@@ -321,7 +209,6 @@ const ProductsPage = () => {
     setError(null);
 
     try {
-      // For consistency, always use the token from localStorage if available
       const token = localStorage.getItem("token") || JWT_ADMIN_SECRET;
 
       // Make sure user ID is set in the form data
@@ -337,26 +224,11 @@ const ProductsPage = () => {
         productData.user = "6624c7ab8a89c9f76ded3d9e"; // Development fallback
       }
 
-      const response = await fetch(
-        `${REACT_APP_API_URL}/products/${selectedProduct._id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(productData),
-        }
+      const updatedProduct = await updateProduct(
+        selectedProduct._id,
+        productData,
+        token
       );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || `HTTP error! Status: ${response.status}`
-        );
-      }
-
-      const updatedProduct = await response.json();
       console.log("Product updated successfully:", updatedProduct);
 
       // Update the products list and close the modal
@@ -382,23 +254,8 @@ const ProductsPage = () => {
     setError(null);
 
     try {
-      // Use JWT_ADMIN_SECRET as a fallback if token is missing
       const token = localStorage.getItem("token") || JWT_ADMIN_SECRET;
-
-      const response = await fetch(`${REACT_APP_API_URL}/products/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || `HTTP error! Status: ${response.status}`
-        );
-      }
+      await deleteProduct(id, token);
 
       console.log("Product deleted successfully");
       setProducts((prev) => prev.filter((p) => p._id !== id));
@@ -409,6 +266,21 @@ const ProductsPage = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Theme and sidebar functions
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("userObj");
+    localStorage.removeItem("userData");
+    navigate("/");
+  };
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.body.className = `${newTheme}-theme`;
   };
 
   return (
@@ -445,600 +317,46 @@ const ProductsPage = () => {
               </div>
             </div>
           ) : products.length === 0 ? (
-            <div className={`card bg-${theme} border-0 shadow-sm`}>
-              <div className="card-body text-center py-5">
-                <i className="fas fa-box-open fa-3x mb-3 text-muted"></i>
-                <h5>No Products Found</h5>
-                <p className="text-muted">
-                  Add your first product to start tracking carbon footprints.
-                </p>
-                <button className="btn btn-success mt-3" onClick={openAddModal}>
-                  <i className="fas fa-plus me-2"></i>
-                  Add Product
-                </button>
-              </div>
-            </div>
+            <NoProductsFound theme={theme} openAddModal={openAddModal} />
           ) : (
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Size</th>
-                    <th>Category</th>
-                    <th>CO₂ Value</th>
-                    <th>Manufacturer</th>
-                    <th>Origin</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map((product) => (
-                    <tr key={product._id}>
-                      <td>{product.name}</td>
-                      <td>
-                        {product.size} {product.unit}
-                      </td>
-                      <td>{product.category}</td>
-                      <td>{product.co2Value} kg CO₂</td>
-                      <td>{product.manufacturer}</td>
-                      <td>{product.origin}</td>
-                      <td className="text-center">
-                        <div className="d-flex flex-wrap align-items-center justify-content-center gap-2">
-                          <button
-                            className="btn btn-sm btn-outline-success"
-                            onClick={() => openEditModal(product)}
-                          >
-                            <i className="fas fa-edit"></i>
-                          </button>
-                          <button
-                            className="btn btn-sm btn-outline-danger"
-                            onClick={() => handleDeleteProduct(product._id)}
-                          >
-                            <i className="fas fa-trash"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ProductTable
+              products={products}
+              openEditModal={openEditModal}
+              handleDeleteProduct={handleDeleteProduct}
+            />
           )}
 
           {/* Add Product Modal */}
-          {showAddModal && (
-            <div className="modal-overlay">
-              <div
-                className="modal mw-100 w-100 show d-block custom-scrollbar"
-                tabIndex="-1"
-              >
-                <div
-                  className="modal-dialog w-100"
-                  style={{ maxWidth: "740px" }}
-                >
-                  <div className={`modal-content bg-${theme}`}>
-                    <div className="modal-header">
-                      <h5 className="modal-title">Add New Product</h5>
-                      <button
-                        type="button"
-                        className="btn-close"
-                        onClick={closeModal}
-                      ></button>
-                    </div>
-                    <form onSubmit={handleAddProduct}>
-                      <div className="modal-body">
-                        <div className="row">
-                          <div className="col-md-6 mb-3">
-                            <label htmlFor="name" className="form-label">
-                              Product Name*
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              id="name"
-                              name="name"
-                              value={formData.name}
-                              onChange={handleInputChange}
-                              required
-                            />
-                          </div>
-                          <div className="col-md-3 mb-3">
-                            <label htmlFor="size" className="form-label">
-                              Size/Weight*
-                            </label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              className="form-control"
-                              id="size"
-                              name="size"
-                              value={formData.size}
-                              onChange={handleInputChange}
-                              required
-                            />
-                          </div>
-                          <div className="col-md-3 mb-3">
-                            <label htmlFor="unit" className="form-label">
-                              Unit*
-                            </label>
-                            <select
-                              className="form-select"
-                              id="unit"
-                              name="unit"
-                              value={formData.unit}
-                              onChange={handleInputChange}
-                              required
-                            >
-                              {units.map((unit) => (
-                                <option key={unit} value={unit}>
-                                  {unit}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-
-                        <div className="row">
-                          <div className="col-md-6 mb-3">
-                            <label htmlFor="category" className="form-label">
-                              Category*
-                            </label>
-                            <select
-                              className="form-select"
-                              id="category"
-                              name="category"
-                              value={formData.category}
-                              onChange={handleInputChange}
-                              required
-                            >
-                              <option value="">Select Category</option>
-                              {categories.map((category) => (
-                                <option key={category} value={category}>
-                                  {category}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="col-md-6 mb-3">
-                            <label htmlFor="co2Value" className="form-label">
-                              CO₂ Value (kg)*
-                            </label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              className="form-control"
-                              id="co2Value"
-                              name="co2Value"
-                              value={formData.co2Value}
-                              onChange={handleInputChange}
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        <div className="row">
-                          <div className="col-md-6 mb-3">
-                            <label
-                              htmlFor="manufacturer"
-                              className="form-label"
-                            >
-                              Manufacturer
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              id="manufacturer"
-                              name="manufacturer"
-                              value={formData.manufacturer}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-                          <div className="col-md-6 mb-3">
-                            <label htmlFor="origin" className="form-label">
-                              Country of Origin
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              id="origin"
-                              name="origin"
-                              value={formData.origin}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="row">
-                          <div className="col-md-6 mb-3">
-                            <label
-                              htmlFor="materialType"
-                              className="form-label"
-                            >
-                              Material Type
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              id="materialType"
-                              name="materialType"
-                              value={formData.materialType}
-                              onChange={handleInputChange}
-                              placeholder="e.g. Plastic, Metal, Wood"
-                            />
-                          </div>
-                          <div className="col-md-6 mb-3">
-                            <label
-                              htmlFor="transportMethod"
-                              className="form-label"
-                            >
-                              Transport Method
-                            </label>
-                            <select
-                              className="form-select"
-                              id="transportMethod"
-                              name="transportMethod"
-                              value={formData.transportMethod}
-                              onChange={handleInputChange}
-                            >
-                              <option value="">Select Transport Method</option>
-                              {transportMethods.map((method) => (
-                                <option key={method} value={method}>
-                                  {method}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-
-                        <div className="row">
-                          <div className="col-md-6 mb-3">
-                            <label
-                              htmlFor="productionYear"
-                              className="form-label"
-                            >
-                              Production Year
-                            </label>
-                            <input
-                              type="number"
-                              className="form-control"
-                              id="productionYear"
-                              name="productionYear"
-                              value={formData.productionYear}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-                          <div className="col-12 mb-3">
-                            <label htmlFor="description" className="form-label">
-                              Description
-                            </label>
-                            <textarea
-                              className="form-control"
-                              id="description"
-                              name="description"
-                              rows="2"
-                              value={formData.description}
-                              onChange={handleInputChange}
-                            ></textarea>
-                          </div>
-                          <div className="col-12 mb-3">
-                            <label
-                              htmlFor="additionalInfo"
-                              className="form-label"
-                            >
-                              Additional Information
-                            </label>
-                            <textarea
-                              className="form-control"
-                              id="additionalInfo"
-                              name="additionalInfo"
-                              rows="2"
-                              value={formData.additionalInfo}
-                              onChange={handleInputChange}
-                              placeholder="Any additional details about the product's carbon footprint"
-                            ></textarea>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="modal-footer">
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={closeModal}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          className="btn btn-success"
-                          disabled={isLoading}
-                        >
-                          {isLoading ? (
-                            <>
-                              <span
-                                className="spinner-border spinner-border-sm me-2"
-                                role="status"
-                                aria-hidden="true"
-                              ></span>
-                              Adding...
-                            </>
-                          ) : (
-                            "Add Product"
-                          )}
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          <ProductModal
+            showModal={showAddModal}
+            modalTitle="Add New Product"
+            theme={theme}
+            closeModal={closeModal}
+            formData={formData}
+            handleInputChange={handleInputChange}
+            handleSubmit={handleAddProduct}
+            isLoading={isLoading}
+            isEdit={false}
+            categories={CATEGORIES}
+            units={UNITS}
+            transportMethods={TRANSPORT_METHODS}
+          />
 
           {/* Edit Product Modal */}
-          {showEditModal && selectedProduct && (
-            <div className="modal-overlay">
-              <div
-                className="modal mw-100 w-100 show d-block custom-scrollbar"
-                tabIndex="-1"
-              >
-                <div
-                  className="modal-dialog w-100"
-                  style={{ maxWidth: "740px" }}
-                >
-                  <div className={`modal-content bg-${theme}`}>
-                    <div className="modal-header">
-                      <h5 className="modal-title">Edit Product</h5>
-                      <button
-                        type="button"
-                        className="btn-close"
-                        onClick={closeModal}
-                      ></button>
-                    </div>
-                    <form onSubmit={handleUpdateProduct}>
-                      <div className="modal-body">
-                        <div className="row">
-                          <div className="col-md-6 mb-3">
-                            <label htmlFor="name" className="form-label">
-                              Product Name*
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              id="name"
-                              name="name"
-                              value={formData.name}
-                              onChange={handleInputChange}
-                              required
-                            />
-                          </div>
-                          <div className="col-md-3 mb-3">
-                            <label htmlFor="size" className="form-label">
-                              Size/Weight*
-                            </label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              className="form-control"
-                              id="size"
-                              name="size"
-                              value={formData.size}
-                              onChange={handleInputChange}
-                              required
-                            />
-                          </div>
-                          <div className="col-md-3 mb-3">
-                            <label htmlFor="unit" className="form-label">
-                              Unit*
-                            </label>
-                            <select
-                              className="form-select"
-                              id="unit"
-                              name="unit"
-                              value={formData.unit}
-                              onChange={handleInputChange}
-                              required
-                            >
-                              {units.map((unit) => (
-                                <option key={unit} value={unit}>
-                                  {unit}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-
-                        <div className="row">
-                          <div className="col-md-6 mb-3">
-                            <label htmlFor="category" className="form-label">
-                              Category*
-                            </label>
-                            <select
-                              className="form-select"
-                              id="category"
-                              name="category"
-                              value={formData.category}
-                              onChange={handleInputChange}
-                              required
-                            >
-                              <option value="">Select Category</option>
-                              {categories.map((category) => (
-                                <option key={category} value={category}>
-                                  {category}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="col-md-6 mb-3">
-                            <label htmlFor="co2Value" className="form-label">
-                              CO₂ Value (kg)*
-                            </label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              className="form-control"
-                              id="co2Value"
-                              name="co2Value"
-                              value={formData.co2Value}
-                              onChange={handleInputChange}
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        <div className="row">
-                          <div className="col-md-6 mb-3">
-                            <label
-                              htmlFor="manufacturer"
-                              className="form-label"
-                            >
-                              Manufacturer
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              id="manufacturer"
-                              name="manufacturer"
-                              value={formData.manufacturer}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-                          <div className="col-md-6 mb-3">
-                            <label htmlFor="origin" className="form-label">
-                              Country of Origin
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              id="origin"
-                              name="origin"
-                              value={formData.origin}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="row">
-                          <div className="col-md-6 mb-3">
-                            <label
-                              htmlFor="materialType"
-                              className="form-label"
-                            >
-                              Material Type
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              id="materialType"
-                              name="materialType"
-                              value={formData.materialType}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-                          <div className="col-md-6 mb-3">
-                            <label
-                              htmlFor="transportMethod"
-                              className="form-label"
-                            >
-                              Transport Method
-                            </label>
-                            <select
-                              className="form-select"
-                              id="transportMethod"
-                              name="transportMethod"
-                              value={formData.transportMethod}
-                              onChange={handleInputChange}
-                            >
-                              <option value="">Select Transport Method</option>
-                              {transportMethods.map((method) => (
-                                <option key={method} value={method}>
-                                  {method}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-
-                        <div className="row">
-                          <div className="col-md-6 mb-3">
-                            <label
-                              htmlFor="productionYear"
-                              className="form-label"
-                            >
-                              Production Year
-                            </label>
-                            <input
-                              type="number"
-                              className="form-control"
-                              id="productionYear"
-                              name="productionYear"
-                              value={formData.productionYear}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-                          <div className="col-12 mb-3">
-                            <label htmlFor="description" className="form-label">
-                              Description
-                            </label>
-                            <textarea
-                              className="form-control"
-                              id="description"
-                              name="description"
-                              rows="2"
-                              value={formData.description}
-                              onChange={handleInputChange}
-                            ></textarea>
-                          </div>
-                          <div className="col-12 mb-3">
-                            <label
-                              htmlFor="additionalInfo"
-                              className="form-label"
-                            >
-                              Additional Information
-                            </label>
-                            <textarea
-                              className="form-control"
-                              id="additionalInfo"
-                              name="additionalInfo"
-                              rows="2"
-                              value={formData.additionalInfo}
-                              onChange={handleInputChange}
-                            ></textarea>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="modal-footer">
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={closeModal}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          className="btn btn-success"
-                          disabled={isLoading}
-                        >
-                          {isLoading ? (
-                            <>
-                              <span
-                                className="spinner-border spinner-border-sm me-2"
-                                role="status"
-                                aria-hidden="true"
-                              ></span>
-                              Updating...
-                            </>
-                          ) : (
-                            "Update Product"
-                          )}
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          <ProductModal
+            showModal={showEditModal}
+            modalTitle="Edit Product"
+            theme={theme}
+            closeModal={closeModal}
+            formData={formData}
+            handleInputChange={handleInputChange}
+            handleSubmit={handleUpdateProduct}
+            isLoading={isLoading}
+            isEdit={true}
+            categories={CATEGORIES}
+            units={UNITS}
+            transportMethods={TRANSPORT_METHODS}
+          />
         </div>
       </div>
     </div>

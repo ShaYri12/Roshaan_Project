@@ -3,9 +3,6 @@ import PropTypes from "prop-types";
 import LocationAutocomplete from "./LocationAutocomplete";
 import MapComponent from "./MapComponent";
 
-/**
- * A combined location picker component with both search and map interaction
- */
 const LocationPicker = ({
   value,
   onChange,

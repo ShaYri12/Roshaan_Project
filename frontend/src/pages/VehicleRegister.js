@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { Link } from "react-router-dom";
 import { REACT_APP_API_URL } from "../env";
 
-const VehicleRegisterPage = ({ userData, isModelVisible, isAdmin }) => {
+const VehicleRegisterPage = ({
+  userData,
+  isModelVisible,
+  isAdmin,
+  onSuccess,
+}) => {
   const [vehicleName, setVehicleName] = useState(userData?.vehicleName || "");
   const [vehicleType, setVehicleType] = useState(
-    userData?.vehicleType || "car"
+    userData?.vehicleType || "Car"
   );
   const [engineNumber, setEngineNumber] = useState(
     userData?.engineNumber || ""
@@ -29,7 +33,7 @@ const VehicleRegisterPage = ({ userData, isModelVisible, isAdmin }) => {
 
   useEffect(() => {
     if (isModelVisible) {
-      setVehicleName(userData?.vehicleName || "car");
+      setVehicleName(userData?.vehicleName || "Car");
       setVehicleType(userData?.vehicleType || "");
       setEngineNumber(userData?.engineNumber || "");
       setVehicleModel(userData?.vehicleModel || "");
@@ -39,9 +43,10 @@ const VehicleRegisterPage = ({ userData, isModelVisible, isAdmin }) => {
       setError("");
     }
   }, [userData, isModelVisible]);
-  const user = JSON.parse(localStorage.getItem("userData") || "{}");
-  const userId = user?.id;
-  console.log("User ID:", userId); // ✅ Output: 677d81fc514db45c144072af
+
+  const userObj = JSON.parse(localStorage.getItem("userObj") || "{}");
+  const userId = userObj?._id;
+  console.log("User ID:", userId);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -91,7 +96,12 @@ const VehicleRegisterPage = ({ userData, isModelVisible, isAdmin }) => {
         // ✅ Store updated user data
         localStorage.setItem("userObj", JSON.stringify(existingUserData));
 
-        window.location.reload();
+        // Call onSuccess callback if provided, otherwise reload
+        if (onSuccess && typeof onSuccess === "function") {
+          onSuccess();
+        } else {
+          window.location.reload();
+        }
       } else {
         const errorData = await response.json();
         console.error("Error:", errorData);
