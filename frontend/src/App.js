@@ -16,7 +16,7 @@ import InvoicesPage from "./pages/Invoices";
 import ProductsPage from "./pages/Products";
 import LicensePlatePage from "./pages/LicensePlate";
 import ScenariosPage from "./pages/Scenarios";
-import TargetsPage from "./pages/Targets";
+import TargetsPage from "./pages/Targets/Targets.js";
 import AnalyticsPage from "./pages/Analytics";
 import { AdminRoute, EmployeeRoute } from "./utils/RouteProtection";
 import "./assets/style.css";
