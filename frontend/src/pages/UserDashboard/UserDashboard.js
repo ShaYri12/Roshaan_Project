@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -47,9 +47,7 @@ const DashboardPage = () => {
   // Destructure state from hooks for convenience
   const {
     employeeTransListing,
-    globalTransportationData,
     workTransportationData,
-    globalWorkTransportationData,
     transport,
     employeeTransportationData,
     employeeWorkTransportationData,
@@ -115,23 +113,30 @@ const DashboardPage = () => {
     otherResources.length,
   ]);
 
-  // Apply filter when filter type or tab changes
+  // Apply filter when filter type or tab changes, but only for transport and workTransport tabs
   useEffect(() => {
-    filterTransportationData(filterType, activeTab);
-  }, [
-    filterType,
-    activeTab,
-    globalTransportationData,
-    globalWorkTransportationData,
-    filterTransportationData,
-  ]);
+    // Only apply filtering for transport-related tabs, not for TransportEmissions
+    if (activeTab === "transport" || activeTab === "workTransport") {
+      filterTransportationData(filterType, activeTab);
+    }
+  }, [filterType, activeTab, filterTransportationData]);
 
   // Fetch user data on component mount
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const userObj = JSON.parse(localStorage.getItem("userObj"));
+        let userObj = null;
+
+        try {
+          const userObjStr = localStorage.getItem("userObj");
+          if (userObjStr) {
+            userObj = JSON.parse(userObjStr);
+          }
+        } catch (parseError) {
+          console.error("Error parsing user object:", parseError);
+        }
+
         if (token && userObj) {
           setUserData(userObj);
         } else {
@@ -146,37 +151,48 @@ const DashboardPage = () => {
   }, [navigate]);
 
   // Handle transportation form changes
-  const handleTransportationChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setEmployeeTransportationData((prevData) => {
-      if (type === "checkbox") {
-        return { ...prevData, [name]: checked };
-      }
-      return { ...prevData, [name]: value };
-    });
-  };
+  const handleTransportationChange = useCallback(
+    (e) => {
+      const { name, value, type, checked } = e.target;
+      setEmployeeTransportationData((prevData) => {
+        if (type === "checkbox") {
+          return { ...prevData, [name]: checked };
+        }
+        return { ...prevData, [name]: value };
+      });
+    },
+    [setEmployeeTransportationData]
+  );
 
   // Handle work transportation form changes
-  const handleWorkTransportationChange = (e) => {
-    const { name, value } = e.target;
-    setEmployeeWorkTransportationData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
+  const handleWorkTransportationChange = useCallback(
+    (e) => {
+      const { name, value } = e.target;
+      setEmployeeWorkTransportationData((prevData) => ({
+        ...prevData,
+        [name]: value,
+      }));
+    },
+    [setEmployeeWorkTransportationData]
+  );
 
   // Handle profile update
-  const handleProfileUpdate = (updatedData) => {
+  const handleProfileUpdate = useCallback((updatedData) => {
     localStorage.setItem("userObj", JSON.stringify(updatedData));
     window.location.reload();
-  };
+  }, []);
 
-  // Handle logout
-  const handleLogout = () => {
+  // Handle logout with stable identity
+  const handleLogout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("userObj");
     navigate("/");
-  };
+  }, [navigate]);
+
+  // Don't re-render TransportEmissions unnecessarily
+  const renderTransportEmissions = useCallback(() => {
+    return <TransportEmissions activeTab={activeTab} />;
+  }, [activeTab]);
 
   return (
     <div className={`dashboard-container bg-${theme}`}>
@@ -334,10 +350,8 @@ const DashboardPage = () => {
             </div>
           )}
 
-          {/* Transport Emissions Tab */}
-          {activeTab === "TransportEmissions" && (
-            <TransportEmissions activeTab={activeTab} />
-          )}
+          {/* Transport Emissions Tab - Use memoized rendering */}
+          {activeTab === "TransportEmissions" && renderTransportEmissions()}
 
           {/* Modals */}
           <TransportationModal
@@ -345,8 +359,14 @@ const DashboardPage = () => {
             onClose={() => setIsTransportationModalVisible(false)}
             formData={employeeTransportationData}
             onChange={handleTransportationChange}
-            onSubmitSuccess={() => {
+            onSubmitSuccess={async () => {
+              // First close the modal
               setIsTransportationModalVisible(false);
+
+              // Then reload the data from the server to get the latest records
+              await transportData.loadTransportationData();
+
+              // Finally apply the filter to update the UI
               filterTransportationData(filterType, "transport");
             }}
           />
@@ -357,8 +377,14 @@ const DashboardPage = () => {
             formData={employeeWorkTransportationData}
             onChange={handleWorkTransportationChange}
             transportOptions={transport}
-            onSubmitSuccess={() => {
+            onSubmitSuccess={async () => {
+              // First close the modal
               setIsWorkTransportationModalVisible(false);
+
+              // Then reload the data from the server to get the latest records
+              await transportData.loadWorkTransportationData();
+
+              // Finally apply the filter to update the UI
               filterTransportationData(filterType, "workTransport");
             }}
           />

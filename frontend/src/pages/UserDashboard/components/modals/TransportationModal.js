@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { saveTransportationRecord } from "../../utils/transportUtils";
 
 /**
@@ -11,19 +11,57 @@ const TransportationModal = ({
   onChange,
   onSubmitSuccess,
 }) => {
+  // Add state for error messages
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Reset error message
+    setError("");
+    setIsSubmitting(true);
+
     try {
+      // Validate required fields
+      if (!formData.transportationMode) {
+        throw new Error("Please select a transportation mode");
+      }
+
+      if (!formData.date) {
+        throw new Error("Please select a date");
+      }
+
+      if (!formData.co2Emission) {
+        throw new Error("Please enter CO₂ emission value");
+      }
+
+      if (!formData.usageType) {
+        throw new Error("Please select a usage type");
+      }
+
+      // Submit the record
       await saveTransportationRecord(formData);
       console.log("Transportation record saved successfully!");
       if (onSubmitSuccess) onSubmitSuccess();
     } catch (error) {
       console.error("Error saving transportation record:", error);
-      alert(
+      setError(
         error.message ||
           "Failed to save transportation record. Please try again."
       );
+      // Scroll to top of modal to show error
+      const modalBody = document.querySelector(".modal-body");
+      if (modalBody) modalBody.scrollTop = 0;
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  // Function to close modal and reset error state
+  const handleClose = () => {
+    setError("");
+    onClose();
   };
 
   if (!visible) return null;
@@ -41,7 +79,7 @@ const TransportationModal = ({
         bottom: 0,
         zIndex: 1040,
       }}
-      onClick={onClose}
+      onClick={handleClose}
     ></div>
   );
 
@@ -64,15 +102,22 @@ const TransportationModal = ({
               <button
                 type="button"
                 className="btn-close"
-                onClick={onClose}
+                onClick={handleClose}
                 aria-label="Close"
               ></button>
             </div>
             <div className="modal-body">
+              {/* Display error message if there is one */}
+              {error && (
+                <div className="alert alert-danger" role="alert">
+                  {error}
+                </div>
+              )}
+
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label htmlFor="transportationMode" className="form-label">
-                    Transportation Mode
+                    Transportation Mode*
                   </label>
                   <select
                     id="transportationMode"
@@ -82,6 +127,7 @@ const TransportationModal = ({
                     onChange={onChange}
                     required
                   >
+                    <option value="">Select Mode</option>
                     <option value="bike">Bike</option>
                     <option value="walking">Walking</option>
                     <option value="public_transport">Public Transport</option>
@@ -120,7 +166,7 @@ const TransportationModal = ({
 
                 <div className="mb-3">
                   <label htmlFor="co2Emission" className="form-label">
-                    CO₂ Emission per km
+                    CO₂ Emission per km*
                   </label>
                   <input
                     type="number"
@@ -142,7 +188,7 @@ const TransportationModal = ({
 
                 <div className="mb-3">
                   <label htmlFor="usageType" className="form-label">
-                    Usage Type
+                    Usage Type*
                   </label>
                   <select
                     id="usageType"
@@ -218,7 +264,7 @@ const TransportationModal = ({
 
                 <div className="mb-3">
                   <label htmlFor="date" className="form-label">
-                    Date
+                    Date*
                   </label>
                   <input
                     type="date"
@@ -238,9 +284,31 @@ const TransportationModal = ({
                   />
                 </div>
 
-                <div className="d-flex justify-content-end">
-                  <button type="submit" className="btn btn-success">
-                    Save Transportation Record
+                <div className="d-flex justify-content-between">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleClose}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-success"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Transportation Record"
+                    )}
                   </button>
                 </div>
               </form>

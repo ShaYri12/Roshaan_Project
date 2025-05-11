@@ -161,43 +161,15 @@ export const EmployeeRoute = ({ children }) => {
   }
 
   // Check if user is logged in
-  const userStr = localStorage.getItem("userObj");
-  if (!userStr) {
-    // Not logged in, redirect to login
-    return <Navigate to="/" state={{ from: location }} replace />;
-  }
-
-  // Check user role
+  let user = null;
   try {
-    const user = JSON.parse(userStr);
-    console.log("User object for employee check:", user);
-
-    // Check if the user is an employee
-    // An employee has firstName, lastName, homeAddress, car properties
-    // Or if role is explicitly set to 'employee'
-    const isEmployee =
-      (user &&
-        user.firstName &&
-        user.lastName &&
-        (user.car || user.homeAddress)) ||
-      (user && user.role === "employee");
-
-    console.log("Is Employee check result:", isEmployee);
-
-    if (isEmployee) {
-      // User is employee, allow access
-      return children;
-    } else {
-      // User is not employee, redirect to admin dashboard
-      console.log("Non-employee tried to access employee route, redirecting");
-      return (
-        <Navigate
-          to="/dashboard"
-          state={{ from: location, isRedirected: true }}
-          replace
-        />
-      );
+    const userStr = localStorage.getItem("userObj");
+    if (!userStr) {
+      // Not logged in, redirect to login
+      return <Navigate to="/" state={{ from: location }} replace />;
     }
+
+    user = JSON.parse(userStr);
   } catch (error) {
     console.error("Error parsing user data:", error);
     // Invalid user data, redirect to login
@@ -205,6 +177,25 @@ export const EmployeeRoute = ({ children }) => {
     localStorage.removeItem("token");
     localStorage.removeItem("userData");
     return <Navigate to="/" state={{ from: location }} replace />;
+  }
+
+  // Check user role - simplified check to prevent re-renders
+  const isEmployee =
+    user && (user.role === "employee" || (user.firstName && user.lastName));
+
+  if (isEmployee) {
+    // User is employee, allow access
+    return children;
+  } else {
+    // User is not employee, redirect to admin dashboard
+    console.log("Non-employee tried to access employee route, redirecting");
+    return (
+      <Navigate
+        to="/dashboard"
+        state={{ from: location, isRedirected: true }}
+        replace
+      />
+    );
   }
 };
 

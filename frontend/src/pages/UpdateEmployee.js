@@ -24,7 +24,9 @@ const UpdateEmployee = ({ userData, isModelVisible, onUpdate }) => {
   const [email, setEmail] = useState(userData?.email || ""); // Email input
   const [password, setPassword] = useState(userData?.password || ""); // Password input (optional for editing)
   const [showPassword, setShowPassword] = useState(false); // State for toggling password visibility
-  const [isLoading, setIsLoading] = useState(false); // State for toggling password visibility
+  const [isLoading, setIsLoading] = useState(false); // State for loading indicator
+  const [updateSuccess, setUpdateSuccess] = useState(false); // State for showing success message
+  const [updateError, setUpdateError] = useState(""); // State for showing error message
 
   useEffect(() => {
     if (isModelVisible) {
@@ -44,11 +46,18 @@ const UpdateEmployee = ({ userData, isModelVisible, onUpdate }) => {
       setLicensePlate(userData?.car?.licensePlate || "");
       setCarType(userData?.car?.companyCar);
       setEmail(userData?.email || "");
+      // Reset states when modal opens
+      setUpdateSuccess(false);
+      setUpdateError("");
     }
   }, [userData, isModelVisible]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Reset states
+    setUpdateSuccess(false);
+    setUpdateError("");
 
     // Prepare the data object
     const data = {
@@ -87,19 +96,32 @@ const UpdateEmployee = ({ userData, isModelVisible, onUpdate }) => {
         },
         body: JSON.stringify(data), // Convert data to JSON format
       });
+
       if (response.ok) {
-        const data = await response.json();
-        console.log("data", data);
-        onUpdate(data?.employee);
+        const responseData = await response.json();
+        console.log("API response:", responseData);
+
+        // Call onUpdate with the updated employee data but prevent default form submission behavior
+        if (onUpdate && typeof onUpdate === "function") {
+          onUpdate(responseData?.employee);
+        }
+
+        // Set success message
+        setUpdateSuccess(true);
+
+        // Log success but don't redirect
         console.log("Profile updated successfully!");
       } else {
         const errorData = await response.json(); // Parse the error response data
         console.error("Profile update failed!", errorData);
+        setUpdateError(
+          errorData.message || "Failed to update profile. Please try again."
+        );
       }
     } catch (error) {
       // Log detailed error information
-      console.error("Error during registration/update", error);
-      alert("An error occurred. Please try again later.");
+      console.error("Error during update", error);
+      setUpdateError("An error occurred. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -107,6 +129,18 @@ const UpdateEmployee = ({ userData, isModelVisible, onUpdate }) => {
 
   return (
     <div className="container">
+      {updateSuccess && (
+        <div className="alert alert-success mb-3" role="alert">
+          Profile updated successfully!
+        </div>
+      )}
+
+      {updateError && (
+        <div className="alert alert-danger mb-3" role="alert">
+          {updateError}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit}>
         <div className="row">
           <div className="col-6 mb-3">

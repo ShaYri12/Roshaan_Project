@@ -37,54 +37,65 @@ const useUIState = (
   const [isRegModel, setIsRegModel] = useState(false);
   const [isModalVisible, setModalVisible] = useState(null);
 
-  // Theme toggle handler
-  const handleThemeToggle = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    document.body.className = `${newTheme}-theme`; // Apply theme class to body
-  };
+  // Theme toggle handler - memoized to ensure stable identity
+  const handleThemeToggle = useCallback(() => {
+    setTheme((prevTheme) => {
+      const newTheme = prevTheme === "light" ? "dark" : "light";
+      localStorage.setItem("theme", newTheme);
+      document.body.className = `${newTheme}-theme`; // Apply theme class to body
+      return newTheme;
+    });
+  }, []);
 
   // Memoize event handler callbacks
   const handleAddNewTransportCallback = useCallback(() => {
-    if (handleAddNewTransport) {
+    if (handleAddNewTransport && typeof handleAddNewTransport === "function") {
       handleAddNewTransport();
     }
     setIsTransportationModalVisible(true);
   }, [handleAddNewTransport]);
 
   const handleAddNewWorkTransportCallback = useCallback(() => {
-    if (handleAddNewWorkTransport) {
+    if (
+      handleAddNewWorkTransport &&
+      typeof handleAddNewWorkTransport === "function"
+    ) {
       handleAddNewWorkTransport();
     }
     setIsWorkTransportationModalVisible(true);
   }, [handleAddNewWorkTransport]);
 
   const handleAddOtherResourceCallback = useCallback(() => {
-    if (handleAddOtherResource) {
+    if (
+      handleAddOtherResource &&
+      typeof handleAddOtherResource === "function"
+    ) {
       handleAddOtherResource();
     }
     setIsOtherResourcesModalVisible(true);
   }, [handleAddOtherResource]);
 
   const handleVehicleModalCallback = useCallback(() => {
-    if (handleVehicleModal) {
+    if (handleVehicleModal && typeof handleVehicleModal === "function") {
       handleVehicleModal(true);
     }
     setIsRegModel(true);
   }, [handleVehicleModal]);
 
   const handleProfileModalCallback = useCallback(() => {
-    if (handleProfileModal) {
+    if (handleProfileModal && typeof handleProfileModal === "function") {
       handleProfileModal();
     }
     setIsProfileModalVisible(true);
   }, [handleProfileModal]);
 
-  // Set up event listeners for modals
+  // Initialize theme once on mount
   useEffect(() => {
     document.body.className = `${theme}-theme`;
+  }, [theme]);
 
+  // Set up event listeners for modals - this effect doesn't depend on theme
+  useEffect(() => {
     // Add event listeners for modal triggers
     window.addEventListener(
       "openTransportModal",
@@ -125,7 +136,6 @@ const useUIState = (
       );
     };
   }, [
-    theme,
     handleAddNewTransportCallback,
     handleAddNewWorkTransportCallback,
     handleVehicleModalCallback,
@@ -133,11 +143,11 @@ const useUIState = (
     handleProfileModalCallback,
   ]);
 
-  // Close modal handlers
-  const closeModal = () => {
+  // Close modal handler
+  const closeModal = useCallback(() => {
     setModalVisible(false);
     setIsRegModel(false);
-  };
+  }, []);
 
   return {
     // UI state

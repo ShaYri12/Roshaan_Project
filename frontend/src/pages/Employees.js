@@ -14,6 +14,7 @@ const EmployeePage = () => {
   const [error, setError] = useState(null);
   const [isRegModel, setIsRegModel] = useState(false);
   const [isModalVisible, setModalVisible] = useState(null); // Store the employee to be edited
+  const [successMessage, setSuccessMessage] = useState(""); // For showing success messages
   const navigate = useNavigate();
 
   // Add Sidebar state variables
@@ -146,8 +147,19 @@ const EmployeePage = () => {
   }
 
   const handleProfileUpdate = (updatedData) => {
-    localStorage.setItem("userObj", JSON.stringify(updatedData));
-    window.location.reload();
+    // Update the employees list instead of reloading the page
+    setEmployees(
+      employees.map((emp) => (emp._id === updatedData._id ? updatedData : emp))
+    );
+
+    // Close the modal
+    setModalVisible(false);
+
+    // Show success message with auto-dismiss after 3 seconds
+    setSuccessMessage("Employee updated successfully!");
+    setTimeout(() => {
+      setSuccessMessage("");
+    }, 3000);
   };
 
   const handleLogout = () => {
@@ -178,6 +190,38 @@ const EmployeePage = () => {
       <div className={`main-content ${!isSidebarOpen ? "sidebar-closed" : ""}`}>
         <div className="container mt-4">
           <h1 className="mb-4">Employees</h1>
+
+          {/* Success Message Alert */}
+          {successMessage && (
+            <div
+              className="alert alert-success alert-dismissible fade show"
+              role="alert"
+            >
+              {successMessage}
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => setSuccessMessage("")}
+                aria-label="Close"
+              ></button>
+            </div>
+          )}
+
+          {/* Error Message Alert */}
+          {error && (
+            <div
+              className="alert alert-danger alert-dismissible fade show"
+              role="alert"
+            >
+              {error}
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => setError(null)}
+                aria-label="Close"
+              ></button>
+            </div>
+          )}
 
           <div className="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
             <p className="mb-0">Total: {employees.length}</p>

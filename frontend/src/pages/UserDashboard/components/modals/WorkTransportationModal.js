@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { saveWorkTransportationRecord } from "../../utils/transportUtils";
 
 /**
@@ -12,19 +12,53 @@ const WorkTransportationModal = ({
   transportOptions = [],
   onSubmitSuccess,
 }) => {
+  // Add state for error messages
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Reset error message
+    setError("");
+    setIsSubmitting(true);
+
     try {
+      // Validate required fields
+      if (!formData.carType) {
+        throw new Error("Please select a car type");
+      }
+
+      if (!formData.date) {
+        throw new Error("Please select a date");
+      }
+
+      if (!formData.usageType) {
+        throw new Error("Please select a usage type");
+      }
+
+      // Submit the record
       await saveWorkTransportationRecord(formData);
       console.log("Work transportation record saved!");
       if (onSubmitSuccess) onSubmitSuccess();
     } catch (error) {
       console.error("Error saving work transportation record:", error);
-      alert(
+      setError(
         error.message ||
           "Failed to save work transportation record. Please try again."
       );
+      // Scroll to top of modal to show error
+      const modalBody = document.querySelector(".modal-body");
+      if (modalBody) modalBody.scrollTop = 0;
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  // Function to close modal and reset error state
+  const handleClose = () => {
+    setError("");
+    onClose();
   };
 
   if (!visible) return null;
@@ -42,7 +76,7 @@ const WorkTransportationModal = ({
         bottom: 0,
         zIndex: 1040,
       }}
-      onClick={onClose}
+      onClick={handleClose}
     ></div>
   );
 
@@ -65,15 +99,22 @@ const WorkTransportationModal = ({
               <button
                 type="button"
                 className="btn-close"
-                onClick={onClose}
+                onClick={handleClose}
                 aria-label="Close"
               ></button>
             </div>
             <div className="modal-body">
+              {/* Display error message if there is one */}
+              {error && (
+                <div className="alert alert-danger" role="alert">
+                  {error}
+                </div>
+              )}
+
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label htmlFor="carType" className="form-label">
-                    Choose Car Type
+                    Choose Car Type*
                   </label>
                   <select
                     id="carType"
@@ -152,7 +193,7 @@ const WorkTransportationModal = ({
 
                 <div className="mb-3">
                   <label htmlFor="usageType" className="form-label">
-                    Usage Type
+                    Usage Type*
                   </label>
                   <select
                     id="usageType"
@@ -228,7 +269,7 @@ const WorkTransportationModal = ({
 
                 <div className="mb-3">
                   <label htmlFor="date" className="form-label">
-                    Date
+                    Date*
                   </label>
                   <input
                     type="date"
@@ -248,9 +289,31 @@ const WorkTransportationModal = ({
                   />
                 </div>
 
-                <div className="d-flex justify-content-end">
-                  <button type="submit" className="btn btn-success">
-                    Save Work Transport Record
+                <div className="d-flex justify-content-between">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleClose}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-success"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Work Transport Record"
+                    )}
                   </button>
                 </div>
               </form>

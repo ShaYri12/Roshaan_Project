@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   fetchTransportationRecords,
   fetchWorkTransportationRecords,
@@ -40,44 +40,81 @@ const useTransportData = (employeeId) => {
   const [employeeWorkTransportationData, setEmployeeWorkTransportationData] =
     useState({});
 
-  // Fetch personal transportation data
-  useEffect(() => {
-    const loadTransportationData = async () => {
+  // Helper function to safely get user object
+  const getSafeUserObj = useCallback(() => {
+    try {
+      const userObjStr = localStorage.getItem("userObj");
+      if (!userObjStr) return null;
+      return JSON.parse(userObjStr);
+    } catch (error) {
+      console.error("Error parsing user object from localStorage:", error);
+      return null;
+    }
+  }, []);
+
+  // Create a memoized function to load transportation data that can be exported
+  const loadTransportationData = useCallback(async () => {
+    try {
+      console.log("Loading transportation data...");
       const { filteredRecords, allRecords } = await fetchTransportationRecords(
         employeeId
       );
       setEmployeeTransListing(filteredRecords);
       setGlobalTransportationData(allRecords);
-    };
-
-    loadTransportationData();
+      console.log("Transportation data loaded successfully!");
+      return { filteredRecords, allRecords };
+    } catch (error) {
+      console.error("Error loading transportation data:", error);
+      return null;
+    }
   }, [employeeId]);
 
-  // Fetch work transportation data
-  useEffect(() => {
-    const loadWorkTransportationData = async () => {
+  // Create a memoized function to load work transportation data that can be exported
+  const loadWorkTransportationData = useCallback(async () => {
+    try {
+      console.log("Loading work transportation data...");
       const { filteredRecords, allRecords } =
         await fetchWorkTransportationRecords(employeeId);
       setWorkTransportationData(filteredRecords);
       setGlobalWorkTransportationData(allRecords);
-    };
-
-    loadWorkTransportationData();
+      console.log("Work transportation data loaded successfully!");
+      return { filteredRecords, allRecords };
+    } catch (error) {
+      console.error("Error loading work transportation data:", error);
+      return null;
+    }
   }, [employeeId]);
 
   // Fetch transportation modes
-  useEffect(() => {
-    const loadTransportModes = async () => {
+  const loadTransportModes = useCallback(async () => {
+    try {
+      console.log("Loading transport modes...");
       const data = await fetchTransportationModes();
       setTransport(data);
-    };
-
-    loadTransportModes();
+      console.log("Transport modes loaded successfully!");
+      return data;
+    } catch (error) {
+      console.error("Error loading transport modes:", error);
+      return [];
+    }
   }, []);
 
+  // Initial data loading
+  useEffect(() => {
+    loadTransportationData();
+  }, [loadTransportationData]);
+
+  useEffect(() => {
+    loadWorkTransportationData();
+  }, [loadWorkTransportationData]);
+
+  useEffect(() => {
+    loadTransportModes();
+  }, [loadTransportModes]);
+
   // Initialize transport data with user address
-  const initializeTransportationData = () => {
-    const userObj = JSON.parse(localStorage.getItem("userObj"));
+  const initializeTransportationData = useCallback(() => {
+    const userObj = getSafeUserObj();
     if (!userObj) {
       console.error("User object not found in localStorage");
       return;
@@ -85,15 +122,15 @@ const useTransportData = (employeeId) => {
 
     setEmployeeTransportationData((prev) => ({
       ...prev,
-      beginLocation: userObj?.homeAddress,
-      endLocation: userObj?.companyAddress,
-      employeeId: employeeId ? employeeId : userObj._id,
+      beginLocation: userObj?.homeAddress || "",
+      endLocation: userObj?.companyAddress || "",
+      employeeId: employeeId || userObj._id,
     }));
-  };
+  }, [employeeId, getSafeUserObj]);
 
   // Initialize work transport data
-  const initializeWorkTransportationData = () => {
-    const userObj = JSON.parse(localStorage.getItem("userObj"));
+  const initializeWorkTransportationData = useCallback(() => {
+    const userObj = getSafeUserObj();
     if (!userObj) {
       console.error("User object not found in localStorage");
       return;
@@ -101,47 +138,86 @@ const useTransportData = (employeeId) => {
 
     setEmployeeWorkTransportationData((prev) => ({
       ...prev,
-      employeeId: userObj?._id,
+      employeeId: userObj?._id || "",
     }));
-  };
+  }, [getSafeUserObj]);
 
-  // Filter data based on filter type
-  const filterTransportationData = (filterType, activeTab) => {
-    try {
-      if (!filterType) {
-        console.error("Invalid filter type provided.");
-        return;
-      }
+  // Filter data based on filter type - memoized with useCallback to prevent recreating on every render
+  const filterTransportationData = useCallback(
+    (filterType, activeTab) => {
+      try {
+        if (!filterType) {
+          console.error("Invalid filter type provided.");
+          return;
+        }
 
-      if (filterType === "global") {
-        if (activeTab === "transport") {
-          setEmployeeTransListing(globalTransportationData || []);
-        } else {
-          setWorkTransportationData(globalWorkTransportationData || []);
+        // Get the filtered records based on the current filter and tab
+        let newRecords;
+        const userObj = getSafeUserObj();
+        const userId = employeeId || (userObj && userObj._id);
+
+        if (!userId) {
+          console.error("No user ID available for filtering");
+          return;
         }
-      } else {
-        const userObj = JSON.parse(localStorage.getItem("userObj"));
-        if (activeTab === "transport") {
-          const filteredRecords = globalTransportationData.filter((record) =>
-            employeeId
-              ? record?.employeeId === employeeId
-              : record?.employeeId === userObj._id
-          );
-          setEmployeeTransListing(filteredRecords);
+
+        if (filterType === "global") {
+          // Show all records
+          if (activeTab === "transport") {
+            newRecords = globalTransportationData || [];
+            // Only update if actually different to avoid unnecessary rerenders
+            if (
+              JSON.stringify(newRecords) !==
+              JSON.stringify(employeeTransListing)
+            ) {
+              setEmployeeTransListing(newRecords);
+            }
+          } else if (activeTab === "workTransport") {
+            newRecords = globalWorkTransportationData || [];
+            if (
+              JSON.stringify(newRecords) !==
+              JSON.stringify(workTransportationData)
+            ) {
+              setWorkTransportationData(newRecords);
+            }
+          }
         } else {
-          const filteredRecords = globalWorkTransportationData.filter(
-            (record) =>
-              employeeId
-                ? record?.employeeId === employeeId
-                : record?.employeeId === userObj._id
-          );
-          setWorkTransportationData(filteredRecords);
+          // Filter by user ID
+          if (activeTab === "transport") {
+            newRecords = (globalTransportationData || []).filter(
+              (record) => record?.employeeId === userId
+            );
+            if (
+              JSON.stringify(newRecords) !==
+              JSON.stringify(employeeTransListing)
+            ) {
+              setEmployeeTransListing(newRecords);
+            }
+          } else if (activeTab === "workTransport") {
+            newRecords = (globalWorkTransportationData || []).filter(
+              (record) => record?.employeeId === userId
+            );
+            if (
+              JSON.stringify(newRecords) !==
+              JSON.stringify(workTransportationData)
+            ) {
+              setWorkTransportationData(newRecords);
+            }
+          }
         }
+      } catch (error) {
+        console.error("Error in filtering transportation records:", error);
       }
-    } catch (error) {
-      console.error("Error in filtering transportation records:", error);
-    }
-  };
+    },
+    [
+      employeeId,
+      getSafeUserObj,
+      globalTransportationData,
+      globalWorkTransportationData,
+      employeeTransListing,
+      workTransportationData,
+    ]
+  );
 
   return {
     // States
@@ -160,6 +236,11 @@ const useTransportData = (employeeId) => {
     setGlobalWorkTransportationData,
     setEmployeeTransportationData,
     setEmployeeWorkTransportationData,
+
+    // Data loading functions - exposed for direct calls
+    loadTransportationData,
+    loadWorkTransportationData,
+    loadTransportModes,
 
     // Utilities
     initializeTransportationData,

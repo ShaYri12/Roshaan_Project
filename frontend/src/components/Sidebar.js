@@ -302,41 +302,45 @@ const EmployeeMenu = memo(
     isActive,
     handleNavigation,
   }) => {
-    // Create stable event handlers using useCallback
-    const openTransportModal = useCallback((e) => {
-      e.stopPropagation();
-      const event = new CustomEvent("openTransportModal");
-      window.dispatchEvent(event);
-    }, []);
+    // Create custom event dispatchers - these don't depend on props so they're stable
+    const dispatchCustomEvent = useCallback(
+      (eventName) => (e) => {
+        e.stopPropagation();
+        window.dispatchEvent(new CustomEvent(eventName));
+      },
+      []
+    );
 
-    const openWorkTransportModal = useCallback((e) => {
-      e.stopPropagation();
-      const event = new CustomEvent("openWorkTransportModal");
-      window.dispatchEvent(event);
-    }, []);
+    // Define all event handlers using the stable dispatchCustomEvent function
+    const openTransportModal = useCallback(
+      () => dispatchCustomEvent("openTransportModal"),
+      [dispatchCustomEvent]
+    );
 
-    const openVehicleModal = useCallback((e) => {
-      e.stopPropagation();
-      const event = new CustomEvent("openVehicleModal");
-      window.dispatchEvent(event);
-    }, []);
+    const openWorkTransportModal = useCallback(
+      () => dispatchCustomEvent("openWorkTransportModal"),
+      [dispatchCustomEvent]
+    );
 
-    const openOtherResourceModal = useCallback((e) => {
-      e.stopPropagation();
-      const event = new CustomEvent("openOtherResourceModal");
-      window.dispatchEvent(event);
-    }, []);
+    const openVehicleModal = useCallback(
+      () => dispatchCustomEvent("openVehicleModal"),
+      [dispatchCustomEvent]
+    );
 
-    const openProfileModal = useCallback((e) => {
-      e.stopPropagation();
-      const event = new CustomEvent("openProfileModal");
-      window.dispatchEvent(event);
-    }, []);
+    const openOtherResourceModal = useCallback(
+      () => dispatchCustomEvent("openOtherResourceModal"),
+      [dispatchCustomEvent]
+    );
 
-    // Memoize the onToggle function to prevent re-renders
-    const handleToggleExpand = useCallback(() => {
+    const openProfileModal = useCallback(
+      () => dispatchCustomEvent("openProfileModal"),
+      [dispatchCustomEvent]
+    );
+
+    // This toggles the travel menu - we now include toggleExpand in dependencies
+    const handleToggleTravelMenu = useCallback(() => {
       toggleExpand("travel");
-    }, [toggleExpand]);
+    }, [toggleExpand]); // Include the dependency to fix the warning
 
     return (
       <div className="nav-group mb-1">
@@ -345,7 +349,7 @@ const EmployeeMenu = memo(
           title="Travel & Commute"
           isExpanded={expandedItem === "travel"}
           isSidebarOpen={isSidebarOpen}
-          onToggle={handleToggleExpand}
+          onToggle={handleToggleTravelMenu}
         />
 
         {isSidebarOpen && expandedItem === "travel" && (
@@ -409,24 +413,13 @@ const Sidebar = ({
     [location.pathname]
   );
 
-  // Toggle expanded state for menu items - memoized
+  // Toggle expanded state for menu items - memoized with stable identity
   const toggleExpand = useCallback(
     (itemName) => {
       setIsSidebarOpen(true);
       setExpandedItem((prev) => (prev === itemName ? null : itemName));
     },
     [setIsSidebarOpen]
-  );
-
-  // Add a stopPropagation utility for footer buttons - memoized
-  const handleFooterButtonClick = useCallback(
-    (callback) => (e) => {
-      e.stopPropagation(); // Stop event from bubbling up
-      if (typeof callback === "function") {
-        callback();
-      }
-    },
-    []
   );
 
   // Enhanced link handler to prevent unauthorized navigation - memoized
@@ -484,6 +477,24 @@ const Sidebar = ({
     setIsSidebarOpen(!isSidebarOpen);
   }, [isSidebarOpen, setIsSidebarOpen]);
 
+  // Handle logout with explicit stopPropagation
+  const handleLogoutClick = useCallback(
+    (e) => {
+      e.stopPropagation();
+      handleLogout();
+    },
+    [handleLogout]
+  );
+
+  // Handle theme toggle with explicit stopPropagation
+  const handleThemeToggle = useCallback(
+    (e) => {
+      e.stopPropagation();
+      toggleTheme();
+    },
+    [toggleTheme]
+  );
+
   // Sidebar header with logo and toggle button - memoized
   const SidebarHeader = useCallback(
     () => (
@@ -534,7 +545,7 @@ const Sidebar = ({
           className={`btn ${
             theme === "light" ? "btn-outline-success" : "btn-outline-light"
           } mb-2`}
-          onClick={handleFooterButtonClick(toggleTheme)}
+          onClick={handleThemeToggle}
         >
           {theme === "light" ? (
             <i className="fas fa-moon"></i>
@@ -545,7 +556,7 @@ const Sidebar = ({
         </button>
         <button
           className={`btn btn-outline-danger ${isSidebarOpen ? "" : "px-1"}`}
-          onClick={handleFooterButtonClick(handleLogout)}
+          onClick={handleLogoutClick}
         >
           {isSidebarOpen ? (
             <>
@@ -557,7 +568,7 @@ const Sidebar = ({
         </button>
       </div>
     ),
-    [isSidebarOpen, theme, handleFooterButtonClick, toggleTheme, handleLogout]
+    [isSidebarOpen, theme, handleThemeToggle, handleLogoutClick]
   );
 
   return (
