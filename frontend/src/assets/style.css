@@ -731,7 +731,6 @@ a {
 /* Pre and code blocks inside modal */
 .dark-theme .modal-content pre,
 .dark-theme .modal-content code {
-  background-color: #2c3034;
   color: #f8f9fa;
   border-color: #495057;
 }
